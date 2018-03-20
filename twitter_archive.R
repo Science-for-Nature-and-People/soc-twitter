@@ -32,7 +32,7 @@ names(twitter.data)
 str(twitter.data)
 
 ## Simplified DF based on info that seemed most used (MODIFY select() inputs as needed)
-twitter_data_simplified<-twitter.data %>% 
+twitter_data_simplified <- twitter.data %>% 
   select(actor.displayName, actor.favoritesCount, actor.followersCount,
          actor.friendsCount, actor.image, actor.link, actor.location.displayName, actor.location.objectType,
          actor.objectType, actor.postedTime, actor.preferredUsername,
@@ -91,3 +91,12 @@ twitter.data_else<-twitter.data %>%
 # DOWNLOAD FROM TEAMDRIVE _ unsuccessful
 # download.file("https://drive.google.com/open?id=0B2bffCSnw4I4UlJOei1qdnQ4RXBhaXJQZlVKbXRXX1RqbjlB", "twitter.json")
 # --> not working. turns data json into a HTML file 
+
+
+#####################################################
+# From Steven 03/19/2018: He is saying he is getting very different data strucutre with these different ways to 
+# read in the Twitter data; to be checked
+# 
+# tweet2 <- ndjson::stream_in(twitter.data)
+# tweet3 <- rjson::fromJSON(file=twitter.data) # Reads into strangely short object
+# tweet4 <- jsonlite::stream_in(file(twitter.data)) # Passes into weird data frame format
