@@ -9,7 +9,7 @@ library(jsonlite)
 library(streamR)
 library(devtools)
 library(googledrive)
-#library(ndjson)
+library(ndjson)
 library(dplyr)
 library(tidytext)
 library(rtweet)
@@ -33,10 +33,10 @@ twitter.data.full<-stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
 # 3500 variables, 90000 obs.
 
 ### Wrangle dataframe - remove unecessary columns such as those with "NA" or objec id.
-class(twitter.data.full)
+class(twitter.data)
 names(twitter.data)
-str(twitter.data.full)
-test1<-sample_n(twitter.data.full, 10)
+str(twitter.data)
+
 ### Simplified DF based on info that seemed most used (MODIFY select() inputs as needed)
 twitter_data_simplified <- twitter.data %>% 
   select(actor.displayName, actor.favoritesCount, actor.followersCount,
