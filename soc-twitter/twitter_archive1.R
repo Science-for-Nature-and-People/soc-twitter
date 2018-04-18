@@ -12,6 +12,8 @@ library(googledrive)
 library(ndjson)
 library(dplyr)
 library(tidytext)
+library(rtweet)
+library(rjson)
 
 ### import json data 
 #Put twitter.json into you wd
@@ -20,6 +22,15 @@ library(tidytext)
 
 #short json dataframe 
 twitter.data <- stream_in("twitter.json")
+
+twitter.data2<-fromJSON(file= "twitter.json")
+twitter.data.2<-as.data.frame(twitter.data2)
+
+#, simplifyVector = TRUE, simplifyDataFrame = simplifyVector,
+#                      simplifyMatrix = simplifyVector, flatten = FALSE)
+
+twitter.data.1<-parse_stream("twitter.json")
+
 
 #Full json to dataframe 
 twitter.data.full<-stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
@@ -122,14 +133,26 @@ twitter.lo.full<-twitter.data.full %>%
 twitter.gnip.full<-twitter.data.full %>% 
   select(starts_with("gnip"))
 
+twitter.info.full<-twitter.data.full %>% 
+  select(starts_with("info"))
+
+#only column of class character
+twitter.data_chr<-twitter.data %>% 
+  select(which(sapply(., is.character)))
+
+twitter.data_chr<-twitter.data.full %>% 
+  select(which(sapply(., is.character)))
+
 #All other columns that are not part of a particulay group  
 
-twitter.else.full>fll<-twitter.data.full %>% 
+twitter.else.full<-twitter.data.full %>% 
   select(-starts_with("gnip"), -starts_with("long_object"), -starts_with("twitter"),
          -starts_with("provider."), -starts_with("generator"), -starts_with("actor"), -starts_with("object"))
 twitter.character.full<-twitter.data.full %>% 
   
 ###just class character columns: (to do) 
+twitter.data5 <- twitter.data %>% sum(is.na(,1:165))
+
   
 #subset of important items for each dataframe 
 
