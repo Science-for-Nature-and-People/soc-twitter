@@ -88,20 +88,20 @@ twitter.data_else<-twitter.data %>%
          -starts_with("provider."), -starts_with("generator"), -starts_with("actor"), -starts_with("object"))
 
 
-##### B.Full json to dataframe
+##### B.Full twitter.data.json to dataframe
 
 twitter.data.full<-stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
 test1<-sample_n(twitter.data.full, 10)
 # Notes: (1) Ensure path is linked to the soil-carbon twitter file; (2) avoid opening dataframe - 3480 columns, 96553 obs.
 
 ## removed all NA rows 
-# Note: all NA rows are like this in JSON: 
+# Note: all NA rows are like this in JSON: recommend using for analysis 
 twitter_noNA<-twitter.data.full %>% 
   filter(!is.na(twitter.data.full))
 sample_1<-sample_n(twitter_noNA, 10)
 
-### Wrangle dataframe - remove unecessary columns such as those with "NA" or objec id.
-###With full df: twitter.data.full
+### 1. Wrangle dataframe - remove unecessary columns
+#With full df: twitter.data.full - subset of important items  
 tw.full_simplified <- twitter.data.full %>% 
   select(actor.displayName, actor.favoritesCount, actor.followersCount,
          actor.friendsCount, actor.image, actor.link, actor.location.displayName, actor.location.objectType,
@@ -114,8 +114,7 @@ tw.full_simplified <- twitter.data.full %>%
          twitter_filter_level,twitter_lang, long_object.body, object.actor.displayName,
          object.actor.favoritesCount, object.actor.followersCount, object.actor.friendsCount)
 
-##Twitter.data df to smaller dfs according to column name
-
+### 2.Twitter.data df to smaller dfs according to column name
 #object
 twitter.object.full<-twitter.data.full %>% 
   select(starts_with("object"))
@@ -149,7 +148,6 @@ twitter.else.full<-twitter.data.full %>%
          -starts_with("provider."), -starts_with("generator"), -starts_with("actor"), -starts_with("object"))
 twitter.character.full<-twitter.data.full %>% 
   
-#subset of important items for each dataframe 
 
 ###Verifying NAs total in each subDF
 #object
