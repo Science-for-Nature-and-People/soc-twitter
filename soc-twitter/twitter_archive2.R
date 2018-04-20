@@ -3,6 +3,8 @@
 # from a JSON file into Dataframe ##
 # ##################################
 
+# install.packages("ndjson","rtweet","tidytext","streamR","rtweet")
+
 ## Libraries ##
 library(tidyverse)
 library(jsonlite)
@@ -44,27 +46,29 @@ names(twitter.data)
 str(twitter.data)
 
 
-install.packages("ndjson","rtweet","tidytext","streamR","rtweet")
+
 
 ### import json data 
 
-setwd("~/github/sci-comp-SNAPP-soil_carbon/soc-twitter")
+# setwd("~/github/sci-comp-SNAPP-soil_carbon/soc-twitter")
+
 
 ### Full twitter.data parsed into a dataframe: 
 #short json dataframe 
-twitter.data <- stream_in("twitter1.json")
+# twitter.data <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
 # twitter.data.1<-stream_in("twitter.json") # use wit jsonlite
-fromJSON(twitter.data)
-rtweet::parse_stream("twitter1.json")
-p### Full json to dataframe 
+# fromJSON(twitter.data)
+# rtweet::parse_stream("twitter1.json")
+### Full json to dataframe 
 twitter.data.full<-stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
 # Notes:
 # Ensure path is linked to the soil-carbon twitter file
 # 3500 variables, 90000 obs.
 
+
 ### Wrangle dataframe - remove unecessary columns such as those with "NA" or objec id.
 class(twitter.data.full)
-names(twitter.data)
+names(twitter.data.full)
 str(twitter.data.full)
 test1<-sample_n(twitter.data.full, 10)
 ### Simplified DF based on info that seemed most used (MODIFY select() inputs as needed)
