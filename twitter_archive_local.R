@@ -9,43 +9,18 @@ library(jsonlite)
 library(streamR)
 library(devtools)
 library(googledrive)
-#library(ndjson)
+library(ndjson)
 library(dplyr)
 library(tidytext)
 library(rtweet)
-library(rjson)
+
+install.packages("ndjson","rtweet","tidytext","streamR","rtweet")
 
 ### import json data 
-#Put twitter.json into you wd
-# setwd("~/github/lter-wg-scicomp/sci-comp-SNAPP-soil_carbon")
-# Full twitter.data parsed into a dataframe: 
-
-#short json dataframe 
-twitter.data <- stream_in("twitter.json")
-
-twitter.data2<-fromJSON(file= "twitter.json")
-twitter.data.2<-as.data.frame(twitter.data2)
-
-#, simplifyVector = TRUE, simplifyDataFrame = simplifyVector,
-#                      simplifyMatrix = simplifyVector, flatten = FALSE)
-
-twitter.data.1<-parse_stream("twitter.json")
-
 
 setwd("~/github/sci-comp-SNAPP-soil_carbon/soc-twitter")
 
 ### Full twitter.data parsed into a dataframe: 
-
-#Full json to dataframe 
-twitter.data.full<-stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
-# Notes:
-# Ensure path is linked to the soil-carbon twitter file
-# 3500 variables, 90000 obs.
-
-#install.packages("ndjson","rtweet","tidytext","streamR","rtweet")
-
-### import json data 
-
 #short json dataframe 
 twitter.data <- stream_in("twitter1.json")
 # twitter.data.1<-stream_in("twitter.json") # use wit jsonlite
@@ -56,6 +31,11 @@ twitter.data.full<-stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
 # Notes:
 # Ensure path is linked to the soil-carbon twitter file
 # 3500 variables, 90000 obs.
+
+### Wrangle dataframe - remove unecessary columns such as those with "NA" or objec id.
+class(twitter.data)
+names(twitter.data)
+str(twitter.data)
 
 ### Simplified DF based on info that seemed most used (MODIFY select() inputs as needed)
 twitter_data_simplified <- twitter.data %>% 
@@ -69,7 +49,6 @@ twitter_data_simplified <- twitter.data %>%
          retweetCount, twitter_entities.hashtags,twitter_entities.user_mentions,
          twitter_filter_level,twitter_lang, long_object.body, object.actor.displayName,
          object.actor.favoritesCount, object.actor.followersCount, object.actor.friendsCount)
-
 ###Twitter.data df to smaller dfs according to column name
 #object
 twitter.data_object<-twitter.data %>% 
@@ -110,52 +89,6 @@ tw.full_simplified <- twitter.data.full %>%
          twitter_filter_level,twitter_lang, long_object.body, object.actor.displayName,
          object.actor.favoritesCount, object.actor.followersCount, object.actor.friendsCount)
 
-##Twitter.data.full df to smaller dfs according to column name
-
-#object
-twitter.object.full<-twitter.data.full %>% 
-  select(starts_with("object"))
-
-#actor
-twitter.actor.full<-twitter.data.full %>% 
-  select(starts_with("actor"))
-#generator
-twitter.generator.full<-twitter.data.full %>% 
-  select(starts_with("generator"))
-#provider
-twitter.provider.full<-twitter.data.full %>% 
-  select(starts_with("provider"))
-#twitter
-twitter.twi.full<-twitter.data.full %>% 
-  select(starts_with("twitter"))
-#long object
-twitter.lo.full<-twitter.data.full %>% 
-  select(starts_with("long_object"))
-#gnip 
-twitter.gnip.full<-twitter.data.full %>% 
-  select(starts_with("gnip"))
-#info
-twitter.info.full<-twitter.data.full %>% 
-  select(starts_with("info"))
-
-#only column of class character
-twitter.data_chr<-twitter.data %>% 
-  select(which(sapply(., is.character)))
-
-twitter.data_chr<-twitter.data.full %>% 
-  select(which(sapply(., is.character)))
-
-#All other columns that are not part of a particulay group  
-twitter.else.full<-twitter.data.full %>% 
-  select(-starts_with("gnip"), -starts_with("long_object"), -starts_with("twitter"),
-         -starts_with("provider."), -starts_with("generator"), -starts_with("actor"), -starts_with("object"))
-twitter.character.full<-twitter.data.full %>% 
-  
-###just class character columns: (to do) 
-twitter.data5 <- twitter.data %>% sum(is.na(,1:165))
-
-  
-#subset of important items for each dataframe 
 ###Twitter.data df to smaller dfs according to column name
 #object
 twitter.object.full<-twitter.data.full %>% 
@@ -193,7 +126,6 @@ twitter.else.full>fll<-twitter.data.full %>%
          -starts_with("provider."), -starts_with("generator"), -starts_with("actor"), -starts_with("object"))
 twitter.character.full<-twitter.data.full 
 na.omit(twitter.data.full)
-
 ####
 ##filter all NA rows 
 full.no.na<-na.omit(twitter.data.full)
@@ -227,9 +159,6 @@ twitter.character<-twitter.data.full %>%
 # From Steven 03/19/2018: He is saying he is getting very different data strucutre with these different ways to 
 # read in the Twitter data; to be checked
 #
-# tweet2 <- ndjson::stream_in(twitter.data)
-# tweet3 <- rjson::fromJSON(file=twitter.data) # Reads into strangely short object
-# tweet4 <- jsonlite::stream_in(file(twitter.data)) # Passes into weird data frame format
 # tweet2 <- ndjson::stream_in(twitter.data) --> works (MS)
 # tweet3 <- rjson::fromJSON(file=twitter.data) # Reads into strangely short object --> does not work
 # tweet4 <- jsonlite::stream_in(file(twitter.data)) # Passes into weird data frame format --> works
