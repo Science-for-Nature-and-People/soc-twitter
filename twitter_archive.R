@@ -22,7 +22,7 @@ library(tidytext)
 
 # Full twitter.data parsed into a dataframe: 
 
-twitter.data <- stream_in("twitter.json")
+twitter.data <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
 View(twitter.data)
 
 ### Wrangle dataframe - remove unecessary columns such as those with "NA" or objec id.
