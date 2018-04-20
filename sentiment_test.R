@@ -2,6 +2,21 @@
 # Testing sentiment analysis with tweets
 ########################################
 
+library(tidytext)
+library(wordcloud)
+library(tidyverse)
+library(dplyr)
+
+#### loading data
+# not: uncomment if not yet loaded 
+# twitter.data.full<-stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
+# 
+# class(twitter.data.full)
+# names(twitter.data.full)
+# str(twitter.data.full)
+# test1<-sample_n(twitter.data.full, 10)
+
+
 ### Parsing through tweets ####
 
 # Selecting relevant columns: 
