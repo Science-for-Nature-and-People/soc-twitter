@@ -1,6 +1,7 @@
-########################################
-# Testing sentiment analysis with tweets
-########################################
+#########################################
+# Testing sentiment analysis with tweets#
+# This scripts analyzes twitter data    #
+#########################################
 
 library(tidytext)
 library(wordcloud)
@@ -15,7 +16,6 @@ library(dplyr)
 # names(twitter.data.full)
 # str(twitter.data.full)
 # test1<-sample_n(twitter.data.full, 10)
-
 
 ### Parsing through tweets ####
 
