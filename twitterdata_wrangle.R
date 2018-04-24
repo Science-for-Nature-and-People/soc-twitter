@@ -26,14 +26,11 @@
 library(tidyverse)
 library(ndjson)
 library(streamR)
-# library(devtools)
-# # library(googledrive)
- 
-
-# # library(dplyr)
+# library(data.table)
 # library(tidytext)
 # library(stringr)
-# # library(rtweet)
+# library(rtweet)
+
 
 ### CONSTANTS ---- 
 
@@ -109,20 +106,20 @@ twitter.else.full<-twitter.data.full %>%
 twitter.character.full<-twitter.data.full %>% 
   
 
-###Verifying NAs total in each subDF
-#object
-unique(twitter.object.full)
-sum(is.na(twitter.object.full$object.id)) 
-#: number: 23479
-#actor
-unique(twitter.actor.full)
-sum(is.na(twitter.actor.full$actor.displayName))
-#object
-unique(twitter.generator.full)
-sum(is.na(twitter.generator.full$generator.displayName))
-#provider
-unique(twitter.provider.full)
-sum(is.na(twitter.provider.full$provider.displayName))
+# ###Verifying NAs total in each subDF
+# #object
+# base::unique(twitter.object.full)
+# sum(is.na(twitter.object.full$object.id)) 
+# #: number: 23479
+# #actor
+# unique(twitter.actor.full)
+# sum(is.na(twitter.actor.full$actor.displayName))
+# #object
+# unique(twitter.generator.full)
+# sum(is.na(twitter.generator.full$generator.displayName))
+# #provider
+# unique(twitter.provider.full)
+# sum(is.na(twitter.provider.full$provider.displayName))
 
 #####################################
 # random 
