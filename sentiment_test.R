@@ -58,7 +58,7 @@ tweet_counts<-unnest_tweets %>%
 ##Wordcloud  
 library(wordcloud)
 tweet_counts %>% 
-  with(wordcloud(word, n, max.words=500, color=brewer.pal(7,"Dark2")))
+  with(wordcloud(word, n, max.words=200, color=brewer.pal(7,"Dark2")))
 
 ###Sentiment analysis
 # in general, get_sentiment has afinn scores/ranks fro -5 to +5 for positive or negative sentiment
@@ -72,12 +72,12 @@ tweets_sentiment<-unnest_tweets %>%
   filter(sentiment !="NA")
 
 ## Sorting words with associated adjective:
-count_sentiment<-tweets_sentiment %>% 
+count_sentiment <- tweets_sentiment %>% 
   count(word, sentiment, sort=TRUE)
 count_sentiment
 
 ## group sentiment adjectives  
-total_sentiment<-count_sentiment %>% 
+total_sentiment <- count_sentiment %>% 
   group_by(sentiment) %>% 
   summarise(totals=sum(n)) %>% 
   arrange(-totals)
