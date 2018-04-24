@@ -33,10 +33,10 @@ colnames(main_tweet_columns)<-c("name", "actorSummary", "tweet_body", "tweet_bod
 # main_tweet_columns_sample<-sample_n(main_tweet_columns, 10) #comment out when running twitter.data.full
 
 ##Call whole dataset 
-main_tweet_columns_sample<-main_tweet_columns
+main_tweet_columns_sample <- main_tweet_columns
 
 ##Separate tweets and make edited column where we can manipulate:
-tweets<-main_tweet_columns_sample %>% 
+tweets <- main_tweet_columns_sample %>% 
   select(tweet_body) %>% # take only raw tweets
   mutate(tweet_edited=as.character(tweet_body)) %>% # change from character to factor  
   mutate(tweet_edited=tolower(tweet_body)) %>% #make lower case
@@ -46,11 +46,11 @@ tweets<-main_tweet_columns_sample %>%
 # note: there are 73074 out of 96553 tweets that are valid. 23479 NA rows. 
 
 ##Unnest to separate by words
-unnest_tweets<-tweets %>% 
+unnest_tweets <- tweets %>% 
   unnest_tokens(word, tweet_edited) #unnest to get words
 
 ##Count table with sorted words by number of times seen  
-tweet_counts<-unnest_tweets %>% 
+tweet_counts <- unnest_tweets %>% 
   anti_join(stop_words) %>% 
   count(word, sort=TRUE) %>% 
   filter(!word %in% c("https","rt","t.co"))
@@ -67,7 +67,7 @@ tweet_counts %>%
 # head(20)
 
 #For our Tweets:
-tweets_sentiment<-unnest_tweets %>% 
+tweets_sentiment <- unnest_tweets %>% 
   left_join(get_sentiments("nrc"), by = "word") %>% 
   filter(sentiment !="NA")
 
