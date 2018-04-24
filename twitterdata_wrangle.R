@@ -1,7 +1,12 @@
-# ##################################
-# This scipt imports twitter data ##
-# from a JSON file into Dataframe ##
-# ##################################
+######################################################################
+# This script imports twitter data from a JSON file into Dataframe  ##
+#                                                                   ##
+# For SNAPP - Soil Organic Carbon Working group                     ##
+#                                                                   ##
+# Authors: Margaux Sleckman and Julien Brun - NCEAS/UCSB            ##
+# Contact: scicomp@nceas.ucsb.edu                                   ##
+# ####################################################################
+
 
 ### Definitions
 # JSON definitions - from twitter developer page:
@@ -11,94 +16,49 @@
 # Entities - Contains object arrays of #hashtags, @mentions, $symbols, URLs, and media.
 # Extended Entities - Contains up to four native photos, or one video or animated GIF.
 # Places - Parent to ‘coordinates’ object.
+#
+# It seems we have more this `GNIP` format in our files: http://support.gnip.com/sources/twitter/data_format.html
 
-#  install.packages("ndjson","rtweet","tidytext","streamR","rtweet")
+
+#  install.packages(c("ndjson","rtweet","tidytext","streamR","rtweet"))
 
 ### Libraries 
 library(tidyverse)
-library(jsonlite)
-library(streamR)
-library(devtools)
-library(googledrive)
 library(ndjson)
-library(dplyr)
-library(tidytext)
-library(stringr)
-library(rtweet)
-library(rjson)
+library(streamR)
+# library(devtools)
+# # library(googledrive)
+ 
 
-### import json data 
-# setwd("~/github/lter-wg-scicomp/sci-comp-SNAPP-soil_carbon")
+# # library(dplyr)
+# library(tidytext)
+# library(stringr)
+# # library(rtweet)
 
-#### A. dataframe created from short json data: 
-twitter.data <- stream_in("twitter.json") # WORKS
-View(twitter.data)
+### CONSTANTS ---- 
+
+server_path <- "/home/shares/soilcarbon/Twitter"
+twitter_file <- "twitter.json"
+  
+
+#### Full twitter.data.json to dataframe
+twitter.data.full <- stream_in(file.path(server_path,twitter_file)) # WORKS
 
     ## other trials
     # twitter.data2<-fromJSON(file= "twitter.json") # list, not parsed
     # twitter.data3<-as.data.frame(twitter.data2)
     # twitter.data.1<-parse_stream("twitter.json") # creates null dataframe
 
-## Creating dataframes for short twitter.data df:
-# 1. Simplified DF based on info that seemed most useful (MODIFY select() inputs as needed)
-twitter_data_simplified <- twitter.data %>% 
-  select(actor.displayName, actor.favoritesCount, actor.followersCount,
-         actor.friendsCount, actor.image, actor.link, actor.location.displayName, actor.location.objectType,
-         actor.objectType, actor.postedTime, actor.preferredUsername,
-         actor.statusesCount, actor.summary, actor.twitterTimeZone,
-         body, favoritesCount, generator.link, gnip.matching_rules.0.id,
-         gnip.urls.0.expanded_url_description, gnip.urls.0.expanded_url_title,
-         link, object.objectType, object.postedTime, object.summary,objectType, postedTime,
-         retweetCount, twitter_entities.hashtags,twitter_entities.user_mentions,
-         twitter_filter_level,twitter_lang, long_object.body, object.actor.displayName,
-         object.actor.favoritesCount, object.actor.followersCount, object.actor.friendsCount)
 
-## Twitter.data df to smaller dfs according to tweet column name
-
-#object
-twitter.data_object<-twitter.data %>% 
-  select(starts_with("object"))
-#actor
-twitter.data_actor<-twitter.data %>% 
-  select(starts_with("actor"))
-#object
-twitter.data_generator<-twitter.data %>% 
-  select(starts_with("generator"))
-#provider
-twitter.data_provider<-twitter.data %>% 
-  select(starts_with("provider"))
-#twitter
-twitter.data_twitter<-twitter.data %>% 
-  select(starts_with("twitter"))
-#long object
-twitter.data_twitter<-twitter.data %>% 
-  select(starts_with("long_object"))
-#gnip 
-twitter.data_gnip<-twitter.data %>% 
-  select(starts_with("gnip"))
-#info
-twitter.data_info<-twitter.data %>% 
-  select(starts_with("info"))
-#Only columns of class character
-twitter.data_chr<-twitter.data %>% 
-  select(which(sapply(., is.character)))
-#All other columns that are not part of a particular group  
-twitter.data_else<-twitter.data %>% 
-  select(-starts_with("gnip"), -starts_with("long_object"), -starts_with("twitter"),
-         -starts_with("provider."), -starts_with("generator"), -starts_with("actor"), -starts_with("object"))
-
-
-##### B.Full twitter.data.json to dataframe
-
-twitter.data.full<-stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
-test1<-sample_n(twitter.data.full, 10)
 # Notes: (1) Ensure path is linked to the soil-carbon twitter file; (2) avoid opening dataframe - 3480 columns, 96553 obs.
+test1 <- sample_n(twitter.data.full, 10)
+View(test1)
 
 ## removed all NA rows 
 # Note: all NA rows are like this in JSON: recommend using for analysis 
-twitter_noNA<-twitter.data.full %>% 
+twitter_noNA <- twitter.data.full %>% 
   filter(!is.na(twitter.data.full))
-sample_1<-sample_n(twitter_noNA, 10)
+sample_1 <- sample_n(twitter_noNA, 10)
 
 ### 1. Wrangle dataframe - remove unecessary columns
 #With full df: twitter.data.full - subset of important items  
