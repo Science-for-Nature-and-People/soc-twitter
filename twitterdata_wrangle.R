@@ -103,8 +103,8 @@ twitter.data_chr<-twitter.data.full %>%
 twitter.else.full<-twitter.data.full %>% 
   select(-starts_with("gnip"), -starts_with("long_object"), -starts_with("twitter"),
          -starts_with("provider."), -starts_with("generator"), -starts_with("actor"), -starts_with("object"))
-twitter.character.full<-twitter.data.full %>% 
-  
+
+
 
 # ###Verifying NAs total in each subDF
 # #object
