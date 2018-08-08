@@ -359,8 +359,17 @@ ggplot(head(merge_3_favorites, 10), aes(screen_name, favorites)) +
   coord_flip()+
   theme_classic()
 
+# Group_by query word data of provenance API
+  # number of tweets per  query word
+  query_count_df <- twitter_merged %>%
+     filter(provenance == "API") %>%
+     group_by(query) %>%
+     count()
 
-# TBC...
+  ggplot(query_count_df, aes(x=query, y=n))+
+     geom_bar(stat = "identity")+
+     coord_flip()+
+     theme_bw()
 
 
 ########################
