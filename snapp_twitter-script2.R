@@ -12,6 +12,8 @@
 # Number of retweets per Tweet
 # Most retweeted person
 # Most followers
+# co-occurance of different query words
+# compare trend of words 
 ##
 
 ##Packages/wd
@@ -181,8 +183,7 @@ str(snapp_twitterdata$twitter_entities.hashtags.3.text)
 str(snapp_twitterdata$twitter_entities.hashtags.2.text)
 str(snapp_twitterdata$twitter_entities.hashtags.1.text)
 
-#######################################################
-
+#--------------------------------------------------------------
 ### Merge tables
 ##Cleaning
 ##ARC:
@@ -275,7 +276,7 @@ dim(twitter_merged_noRT[which(is.na(twitter_merged_noRT$favorite_count)),]) #pro
 View(twitter_merged)
 View(twitter_merged_noRT)
 
-#################################################
+#--------------------------------------------
 
 #### PART 2: analyse dataset
 merge_A <- sample_n(twitter_merged, 10)
@@ -336,7 +337,7 @@ merge_3_favorites <- merge_3 %>%
   head(100)
 merge_3_favorites
 
-### bar plots 
+#---bar plots 
 # w/ RT
 ggplot(head(merge_C_retweets, 20), aes(screen_name, retweet)) + 
   geom_bar(stat="identity", fill = 'blue', size=1 )+
@@ -371,7 +372,15 @@ ggplot(head(merge_3_favorites, 10), aes(screen_name, favorites)) +
      coord_flip()+
      theme_bw()
 
-
+#QUERY----------------------------
+  
+ggplot(merge_C %>% 
+                filter(query == "soil quality"), aes(x=created_at, y=query))+
+    geom_line()+
+    theme_bw()
+  
+  
+  
 ########################
 # UNUSED CODE:
 # 
