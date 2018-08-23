@@ -374,9 +374,8 @@ ggplot(head(merge_3_favorites, 10), aes(screen_name, favorites)) +
 
 #QUERY----------------------------
   
-ggplot(merge_C %>% 
-                filter(query == "soil quality"), aes(x=created_at, y=query))+
-    geom_line()+
+ggplot(merge_C, aes(x=created_at, y=query))+
+    geom_histogram()+
     theme_bw()
   
   
