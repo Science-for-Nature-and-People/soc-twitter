@@ -12,11 +12,9 @@
 # Number of retweets per Tweet
 # Most retweeted person
 # Most followers
-# co-occurance of different query words
-# compare trend of words 
 ##
 
-##Packages/wd
+# Packages/wd ####
 # Packages needed:
 library(tidyverse)
 library(jsonlite)
@@ -42,25 +40,41 @@ library(lubridate)
 library(ids)
 
 setwd("/home/sleckman/R/soc-twitter1")
+# setwd("/home/shares/soilcarbon/Twitter/")
+getwd()
 
-### Reading json/API twitter datasets:
+###########READING_DATA##################################
+### Reading json(ARC)/API twitter datasets ####
 
-#ARC
-snapp_twitterdata <- jsonlite::stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
+## ARC        #####
+snapp_twitterdata <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
 
-# Notes: termed twitter.json as Archived (ARC) dataset in script
-# (1) Ensure path is linked to the soil-carbon twitter file
-# (2) VERY LARGE DF: avoid opening - 3480 columns, 96553 obs.
+#' The \code{stream_in} and \code{stream_out} functions implement line-by-line processing
+#' of JSON data over a \code{\link{connection}}, such as a socket, url, file or pipe. JSON
+#' streaming requires the \href{http://ndjson.org}{ndjson} format, which slightly differs
+#' from \code{\link{fromJSON}} and \code{\link{toJSON}}, see details.
+#' 
+#' Notes: termed twitter.json as Archived (ARC) dataset in script
+#' (1) Ensure path is linked to the soil-carbon twitter file
+#' (2) VERY LARGE DF: avoid opening - 3480 columns, 96553 obs.
+
 test <- sample_n(snapp_twitterdata, 10)
+test2 <- head(snapp_twitterdata, 10)
 
 ## remove all NA rows  
 snapp_twitterdata <- snapp_twitterdata %>% 
   filter(!is.na(snapp_twitterdata))
-sampleA <- sample_n(snapp_twitterdata, 10)
 
-#API:
-# Run bash script on API files in /home/shares/soilcarbon/Twitter/rTweet/ before running. 
-# Used personal folder to retrieve fixed_datasets. substitute wd() to  
+test3 <- head(snapp_twitterdata, 10)
+sampleA <- sample_n(snapp_twitterdata, 100)
+View(rbind(test2, test3)) # verify NA rows are removed
+
+# write.csv(sampleA, file = "./sampleA.csv")
+
+#API  ####
+
+#' Run bash script on API files in /home/shares/soilcarbon/Twitter/rTweet/ before running. 
+#' Used personal folder to retrieve fixed_datasets. substitute wd() to local
 
 list.files(path="soc-twitter/", pattern="^fixed_", full.names=TRUE)
 
@@ -68,21 +82,15 @@ twitter_API <- do.call(rbind,
                        lapply(list.files(path="soc-twitter/",
                                          pattern="^fixed_",
                                          full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)}))
-unique(twitter_API$query)
 
-
-# Old version pulling from original rTweet folder:
-  # twitter_API_old <- do.call(rbind,
-      #                        lapply(list.files(path="/home/shares/soilcarbon/Twitter/rTweet/",
-      #                                          pattern="*8.csv|*7.csv",
-      #                                          full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)}))
+head(unique(twitter_API$query))
+head(unique(twitter_API$created_at))
+class(twitter_API$created_at)
+# twitter_API$created_at <- as_datetime(twitter_API$created_at, format = "%Y-%m-%d %H:%M:%S")
 
 str(twitter_API)
-names(twitter_API)
 
-sample_n(twitter_API, 100)
-skim(twitter_API)
-# what can be unique ID:
+# Is there a unique ID in dataset? resolved --> made new uid: ####
 length(twitter_API$status_id)
 length(which(!duplicated(twitter_API$status_id)))
 length(twitter_API$user_id)
@@ -112,7 +120,8 @@ gnip <- snapp_twitterdata %>%
   select(starts_with("gnip"))
 info <- snapp_twitterdata %>% 
   select(starts_with("info"))
-
+hashtags <- snapp_twitterdata %>% 
+  select(actor.preferredUsername, body, contains("hashtag"))
 #only columns of class character
 all_char <- snapp_twitterdata %>% 
   select(which(sapply(., is.character)))
@@ -120,10 +129,25 @@ all_char <- snapp_twitterdata %>%
 # Find relevant columns from the archives to match to API dataset: 
 columns <- as.character(names(snapp_twitterdata))  
 grep(pattern = "Reply", columns, value = TRUE)
+grep(pattern = "key", columns, value = TRUE) # --> no key word
 grep(pattern = "status_id", columns, value = TRUE)
 grep("quote|status|id", columns, value = TRUE)
 grep("retweet", columns, value = TRUE)
 grep("favorite", columns, value = TRUE)
+hashtags <- grep("hashtags", columns, value = TRUE)
+unique(snapp_twitterdata$twitter_entities.hashtags)
+hashtags[10,10]
+
+
+dim(snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))])
+
+View(snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))])
+
+snapp_twitterdata[,snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))]]
+head(snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))])
+
+lapply(snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))],
+       function(x){length(x)}) 
 
 ### Understanding Favorites and Retweet Counts 
 #In Twitter_API:
@@ -183,40 +207,47 @@ str(snapp_twitterdata$twitter_entities.hashtags.3.text)
 str(snapp_twitterdata$twitter_entities.hashtags.2.text)
 str(snapp_twitterdata$twitter_entities.hashtags.1.text)
 
-#--------------------------------------------------------------
+
+###################MERGING_TABLES####################################
 ### Merge tables
 ##Cleaning
-##ARC:
 
+#ARC: #####
 snapp_twitterdata_merge <- snapp_twitterdata %>% 
   select(object.postedTime, actor.id,
          actor.preferredUsername, body, generator.displayName,
          object.favoritesCount, retweetCount, id) %>%
-  mutate(query = NA) %>% 
+  mutate(query = NA) %>%  # to populated
   set_colnames(c("created_at", "user_id","screen_name",
                  "text","source","favorite_count","retweet_count", "id", "query")) %>% 
-  separate(id, into=c("id_text", "id_num"), sep="5:")
+  separate(id, into=c("id_text", "id_num"), sep="5:") # done to later remove id_text
 
 names(snapp_twitterdata_merge)
-str(snapp_twitterdata_merge$query)
+str(snapp_twitterdata_merge$query) # nothin in query
+
 # Remove id:twitter.com in user id
 snapp_twitterdata_merge$user_id<- str_remove(snapp_twitterdata_merge$user_id, "id:twitter.com:")
+head(snapp_twitterdata_merge$user_id)
 
 # Remove additional zeros in date 
 snapp_twitterdata_merge$created_at<- str_remove(snapp_twitterdata_merge$created_at, ".000")
-
+head(snapp_twitterdata_merge$created_at)
+class(snapp_twitterdata_merge$created_at)
 # Convert create_at date to date format
 snapp_twitterdata_merge$created_at<- as_datetime(snapp_twitterdata_merge$created_at)
 
 class(snapp_twitterdata_merge$id_num)
 length(unique((snapp_twitterdata_merge$id_num)))
-length(nchar(snapp_twitterdata_merge$id_num))
+length(nchar(snapp_twitterdata_merge$id_num)) 
 # --> several duplicates exist in the ID column for twitter --> decided to create new UID for the dataset that is merged (select(c())).
 
 names(snapp_twitterdata_merge)
 str(snapp_twitterdata_merge)
 
-#API:
+
+#API: #####
+head(unique(twitter_API$hashtags))
+
 twitter_API_merge <- twitter_API %>% 
   select(created_at, user_id, screen_name, text, source, favorite_count, retweet_count, query)
 
@@ -226,7 +257,26 @@ twitter_API_merge$created_at <- as_datetime(twitter_API_merge$created_at)
 # Adjust dfs to common column class  
 str(twitter_API_merge)
 str(snapp_twitterdata_merge)
-  # to convert: 
+
+matching_querywords<-sample_n(snapp_twitterdata_merge, 100)
+querywords<-unique(twitter_API_merge$query)
+
+#--- Fill query column with query words
+
+query_ARC <- str_match(snapp_twitterdata_merge$text, pattern = 'soil health|healthy soil|#soilhealth|#SoilHealth|#healthysoil|soil quality|soil fertility|#soilquality|#soilfertility|rangeland health|#rangelandhealth|healthy rangelands|#healthyrangelands') 
+
+snapp_twitterdata_merge$query <- paste0(query_ARC) #, sep = "|", collapse = NULL)
+
+View(head(snapp_twitterdata_merge$query))
+View(snapp_twitterdata_merge$query[1:20, ])                                        
+View(snapp_twitterdata_merge[1:20, ])
+# head(snapp_twitterdata_merge$query)
+# snapp_twitterdata_merge$hashtags <- str_extract(snapp_twitterdata_merge, startsWith(snapp_twitterdata_merge$text, "#"))
+# 
+# startsWith(snapp_twitterdata_merge$text, "#")
+# head(snapp_twitterdata_merge$text, 5)
+
+# to convert: 
 twitter_API_merge$user_id <- as.character(twitter_API_merge$user_id) # char --> num
   # twitter_API_merge$favorite_count <- as.numeric(twitter_API_merge$favorite_count) # char --> num #
   # twitter_API_merge$retweet_count <- as.numeric(twitter_API_merge$retweet_count) # char --> num 
@@ -245,7 +295,7 @@ twitter_merged_noRT <- bind_rows(namelist, .id = "provenance")
 twitter_merged_noRT <- twitter_merged_noRT %>% 
   mutate(UID = id(twitter_merged_noRT, drop = FALSE)) %>% 
   filter(!str_detect(text, "^RT")) # ^ used to select only RT at start of text. subs with "starts_with()"
-    #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
+                                   #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
 
 # Confirm UIDs
 which(duplicated(twitter_merged, fromLast = T))
@@ -276,7 +326,9 @@ dim(twitter_merged_noRT[which(is.na(twitter_merged_noRT$favorite_count)),]) #pro
 View(twitter_merged)
 View(twitter_merged_noRT)
 
-#--------------------------------------------
+write.csv(twitter_merged, file = "./soc-twitter/twitter_merged_sheet.csv", row.names = FALSE)
+
+#################################################
 
 #### PART 2: analyse dataset
 merge_A <- sample_n(twitter_merged, 10)
@@ -297,7 +349,7 @@ length(unique(twitter_merged_noRT$screen_name))
 length(which(duplicated(twitter_merged_noRT$screen_name)))
 # Almost half of users have have duplicates, i.e. tweet more than once!
 
-## grouping by screenname! 
+# grouping by screenname! 
 
     # # View(sample_n(screenname_duplicates,10))
     # screenname_duplicates <- twitter_merged[which(duplicated(twitter_merged$screen_name)),]
@@ -309,7 +361,7 @@ length(which(duplicated(twitter_merged_noRT$screen_name)))
 grep("p1thywords", twitter_merged$screen_name, value = T) # 2
 grep("ADAMA_CAN", twitter_merged$screen_name, value = T) # 5
 
-# Retweet_count/Favorite_count grouping - w/RT
+#Retweet_count/Favorite_count grouping - w/RT
 merge_C_retweets <- merge_C %>% 
   group_by(screen_name) %>% 
   summarise(retweet = sum(retweet_count)) %>% 
@@ -337,7 +389,7 @@ merge_3_favorites <- merge_3 %>%
   head(100)
 merge_3_favorites
 
-#---bar plots 
+### bar plots 
 # w/ RT
 ggplot(head(merge_C_retweets, 20), aes(screen_name, retweet)) + 
   geom_bar(stat="identity", fill = 'blue', size=1 )+
@@ -360,26 +412,76 @@ ggplot(head(merge_3_favorites, 10), aes(screen_name, favorites)) +
   coord_flip()+
   theme_classic()
 
-# Group_by query word data of provenance API
-  # number of tweets per  query word
-  query_count_df <- twitter_merged %>%
-     filter(provenance == "API") %>%
-     group_by(query) %>%
-     count()
+# Group_by query word data of provenance API 
+# number of tweets per  query word
 
-  ggplot(query_count_df, aes(x=query, y=n))+
-     geom_bar(stat = "identity")+
-     coord_flip()+
-     theme_bw()
+query_time <- ggplot(query_df, aes(x=created_at, y=text))+ 
+  geom_line(aes(color=query))
 
-#QUERY----------------------------
-  
-ggplot(merge_C, aes(x=created_at, y=query))+
-    geom_histogram()+
-    theme_bw()
-  
-  
-  
+query_time
+query_df <- twitter_merged
+query_df_2 <- twitter_merged_noRT
+
+min(twitter_merged$created_at)
+
+query_count_df <- twitter_merged %>% 
+  filter(provenance == "API") %>% 
+  group_by(query) %>% 
+  count()
+
+ts_wRT <- query_df %>% group_by(query)
+ts_noRT <- query_df_2 %>% group_by(query)
+
+par(mfrow(1,2))
+ts_plot(ts_wRT)
+ts_plot(ts_noRT)
+
+max(ts_noRT$created_at)
+
+plot(query_count_df, x=query, y=n)
+
+ggplot(query_count_df, aes(x=query, y=n))+
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  theme_bw()
+
+# time series by word:
+require()
+ts::(query_count_df)
+ts_plot(merge_C)
+
+ts_plot(merge_3, filter = "soil health")
+ 
+  geom_point()
+names(merge_3)
+
+ts <- merge_3 %>% 
+  select(created_at, text)
+require(tstools)
+install.packages("tstools")
+tstools::tsplot(ts)
+
+### new column with keywords from text ###
+keywords <- paste0(c("soil health", "healthy soil", "#soilhealth", "#healthysoil", 
+                     "soil quality", "soil fertility", "#soilquality", "#soilfertility",
+                     "rangeland health","#rangelandhealth","healthy rangelands",
+                     "#healthyrangelands"), collapse = "|")
+
+# merged_csv$keywords <- regmatches(keywords, merged_csv$text) 
+
+twitter_merged$keywords <- str_extract_all(twitter_merged$text, pattern = regex(keywords, ignore_case = T))             
+twitter_merged$keywords <- lapply(twitter_merged$keywords,function(x) if(identical(x,
+                                                       character(0))) NA_character_ else x) %>% 
+  as.character() %>% 
+  str_remove_all('[c()"]')
+
+twitter_merged_noRT$keywords <- str_extract_all(twitter_merged_noRT$text, pattern = regex(keywords, ignore_case = T))             
+twitter_merged_noRT$keywords <- lapply(twitter_merged_noRT$keywords,function(x) if(identical(x,
+                                                                               character(0))) NA_character_ else x) %>% 
+  as.character() %>% 
+  str_remove_all('[c()"]')
+head(twitter_merged_noRT)
+
 ########################
 # UNUSED CODE:
 # 
