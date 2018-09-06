@@ -138,7 +138,7 @@ hashtags <- grep("hashtags", columns, value = TRUE)
 unique(snapp_twitterdata$twitter_entities.hashtags)
 hashtags[10,10]
 
-
+# hashtags 
 dim(snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))])
 
 View(snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))])
@@ -328,9 +328,8 @@ View(twitter_merged_noRT)
 
 write.csv(twitter_merged, file = "./soc-twitter/twitter_merged_sheet.csv", row.names = FALSE)
 
-#################################################
+############Analysis of dataset retweets and favorites##############
 
-#### PART 2: analyse dataset
 merge_A <- sample_n(twitter_merged, 10)
 merge_B <- sample_n(twitter_merged, 50)
 merge_C <- sample_n(twitter_merged, 100)
@@ -445,42 +444,45 @@ ggplot(query_count_df, aes(x=query, y=n))+
   coord_flip()+
   theme_bw()
 
-# time series by word:
-require()
-ts::(query_count_df)
-ts_plot(merge_C)
+##################### ANALYSIS OF WORD USE################
 
-ts_plot(merge_3, filter = "soil health")
- 
-  geom_point()
-names(merge_3)
+### Create new column with keyword hits from tweet text
 
-ts <- merge_3 %>% 
-  select(created_at, text)
-require(tstools)
-install.packages("tstools")
-tstools::tsplot(ts)
-
-### new column with keywords from text ###
 keywords <- paste0(c("soil health", "healthy soil", "#soilhealth", "#healthysoil", 
                      "soil quality", "soil fertility", "#soilquality", "#soilfertility",
                      "rangeland health","#rangelandhealth","healthy rangelands",
                      "#healthyrangelands"), collapse = "|")
 
-# merged_csv$keywords <- regmatches(keywords, merged_csv$text) 
+# Function to replace `character(0)` with NAs as NULL values are dropped when flattening list
+    # inspired by: https://colinfay.me/purrr-set-na/
+charnull_set <- function(x){
+  p <- as_mapper(~identical(., character(0)))
+  x[p(x)] <- NA
+  return(x)
+}
 
-twitter_merged$keywords <- str_extract_all(twitter_merged$text, pattern = regex(keywords, ignore_case = T))             
-twitter_merged$keywords <- lapply(twitter_merged$keywords,function(x) if(identical(x,
-                                                       character(0))) NA_character_ else x) %>% 
-  as.character() %>% 
-  str_remove_all('[c()"]')
+# Text bits to search through
 
-twitter_merged_noRT$keywords <- str_extract_all(twitter_merged_noRT$text, pattern = regex(keywords, ignore_case = T))             
-twitter_merged_noRT$keywords <- lapply(twitter_merged_noRT$keywords,function(x) if(identical(x,
-                                                                               character(0))) NA_character_ else x) %>% 
-  as.character() %>% 
-  str_remove_all('[c()"]')
-head(twitter_merged_noRT)
+# keywords
+keywords <- paste0(c("soil health", "healthy soil", "#soilhealth", "#healthysoil", 
+                     "soil quality", "soil fertility", "#soilquality", "#soilfertility",
+                     "rangeland health","#rangelandhealth","healthy rangelands",
+                     "#healthyrangelands"), collapse = "|")
+
+## Store the matches as a new columns with words seprated by `;`
+twitter_merged <- twitter_merged %>%
+  mutate(hits = str_extract_all(text, pattern = regex(keywords, ignore_case=TRUE)) %>%  # Extract all the keywords
+           map(~charnull_set(.x)) %>%   # Replace character(0) with NAs
+           map_chr(~glue::glue_collapse(.x, sep = ";")) %>%   # collapse the multiple hits
+           tolower) # all our keywords are lower case
+
+twitter_merged_noRT <- twitter_merged_noRT %>%
+  mutate(hits = str_extract_all(text, pattern = regex(keywords, ignore_case=TRUE)) %>%  # Extract all the keywords
+           map(~charnull_set(.x)) %>%   # Replace character(0) with NAs
+           map_chr(~glue::glue_collapse(.x, sep = ";")) %>%   # collapse the multiple hits
+           tolower) # all our keywords are lower case
+
+View(sample_n(twitter_merged_noRT,10))
 
 ########################
 # UNUSED CODE:
