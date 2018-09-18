@@ -18,6 +18,7 @@ The following scripts can be used for:
 - Associated script: 
 fixed_tweet.sh
   - Used to correct for parsing error found in the csv files derived from the API (cell overlap)
+
 Sentiment_test.R
   - Used to explore text mining options with Archived/json data. Reproducible for the larger merged dataset.
 
