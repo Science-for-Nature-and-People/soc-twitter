@@ -1,0 +1,137 @@
+##################################################
+# Twitter Influencers regarding Soil Health     ##
+#                                               ##
+# Script 2: Data analysis and Viz               ##   
+#                                               ##
+# For SNAPP - Soil Organic Carbon Working Group ##
+# Author: Margaux Sleckman                      ##
+# Contact: scicomp@nceas.ucsb.edu               ##
+##################################################
+
+#soc-twitter on SNAPP version !!!
+
+##Task##
+# Find the main influencers regarding soil health on Twitter
+# Look into:
+# Number of retweets per Tweet
+# Most retweeted person
+# Most followers
+##
+
+# Packages/wd ####
+
+# Packages needed:
+library(tidyverse)
+library(jsonlite)
+library(streamR)
+library(devtools)
+library(googledrive)
+library(ndjson)
+library(dplyr)
+library(tidytext)
+library(stringr)
+library(rtweet)
+library(rjson)
+#install.packages("skimr")
+library(skimr)
+#install.packages("janitor")
+library(janitor)
+library(gtools)
+library(magrittr)
+# install.packages("data.table")
+library(data.table)
+library(lubridate)
+#install.packages("ids")
+library(ids)
+
+#Sourcing initial script:
+setwd('/home/sleckman/R/soc-twitter/')  ## change as needed 
+# setwd()
+source("snapp_twitter-script2.R")
+
+### Data viz/Analysis of dataset retweets and favorites #####
+#Retweet_count/Favorite_count grouping - w/RT
+top_retweet_user <- twitter_merged %>% 
+  group_by(screen_name) %>% 
+  summarise(retweet = sum(retweet_count)) %>% 
+  arrange(- retweet) %>% 
+  head(20)
+View(top_retweet_user) # top 20 list in slide
+
+top_favorite_user <- twitter_merged %>% 
+  group_by(screen_name) %>% 
+  summarise(favorites = sum(favorite_count)) %>% 
+  arrange(- favorites) %>% 
+  head(20)
+View(top_favorite_user) # top 20 list in slide
+
+# Retweet_count/Favorite_count grouping - noRT
+top_retweets_user_noRT <- twitter_merged_noRT %>% 
+  group_by(screen_name) %>% 
+  summarise(retweet = sum(retweet_count)) %>% 
+  arrange(- retweet) %>% 
+  head(20)
+View(top_retweets_user_noRT) 
+
+top_favorites_user_noRT <- twitter_merged_noRT %>% 
+  group_by(screen_name) %>% 
+  summarise(favorites = sum(favorite_count)) %>% 
+  arrange(- favorites) %>% 
+  head(20)
+View(top_favorites_user_noRT)
+
+### bar plots 
+# w/ RT
+ggplot(head(top_retweet_user, 20), aes(screen_name, retweet)) + 
+  geom_bar(stat="identity", fill = 'blue', size=1 )+
+  coord_flip()+
+  theme_classic()
+
+# Huge skew with RT of pope
+ggplot(head(top_favorite_user, 20), aes(screen_name, favorites)) + 
+  geom_bar(stat="identity", fill='firebrick', size=1)+
+  coord_flip()+
+  theme_classic()
+
+## No RT
+ggplot(head(top_retweets_user_noRT, 10), aes(screen_name, retweet)) + 
+  geom_bar(stat="identity", fill = 'blue', size=1 )+
+  coord_flip()+
+  theme_classic()
+
+ggplot(head(top_favorites_user_noRT, 10), aes(screen_name, favorites)) + 
+  geom_bar(stat="identity", fill='firebrick', size=1)+
+  coord_flip()+
+  theme_classic()
+
+# Group_by query word data of provenance API 
+# number of tweets per  query word
+
+query_df <- twitter_merged
+query_df_2 <- twitter_merged_noRT
+
+query_count_df <- twitter_merged %>%   # filter(query != 'NA') %>% 
+  group_by(query = tolower(query)) %>% 
+  count() 
+
+query_count_df_noRT <- twitter_merged_noRT %>%  
+  # filter(query != 'NA') %>%
+  group_by(query = tolower(query)) %>% 
+  count()
+
+ggplot(query_count_df, aes(x=query, y=n))+
+  geom_bar(stat = "identity", fill = "firebrick")+
+  theme(axis.text.y = element_text(colour="grey20", size=12),
+        axis.text.x = element_text(colour="grey20", size=12),
+        element_blank(),
+        element_rect())+ 
+  coord_flip()
+
+ggplot(query_count_df_noRT, aes(x=query, y=n))+
+  geom_bar(stat = "identity", fill = "skyblue")+
+  theme(axis.text.y = element_text(colour="grey20", size=12),
+        axis.text.x = element_text(colour="grey20", size=12),
+        element_blank(),
+        element_rect())+ 
+  coord_flip()
+
