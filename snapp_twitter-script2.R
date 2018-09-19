@@ -15,7 +15,8 @@
 # 2. read in R API data from twitter based on Twitter.R script {found in: /home/shares/soilcarbon/Twitter/
 # 3. Understand both datasets (diff/sim) and gather most valuable information 
 # 4. Clean datasets to enable a merge of both df
-# 5.  
+# 5. Merge (created a first dataset with all tweets (~130,000 tweets) and a second dataset without RT (~42,000 tweets))
+
 # Packages/wd ####
 # Packages needed:
 library(tidyverse)
@@ -73,23 +74,23 @@ test3 <- head(snapp_twitterdata, 10)
 #' Run bash script on API files in /home/shares/soilcarbon/Twitter/rTweet/ before running. 
 #' Used personal folder to retrieve fixed_datasets. substitute wd() to local
 
-# setwd("/home/sleckman/R/soc-twitter1") # change this wd to where your "FIXED" csv files are stored.
-getwd()
+
+getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
 dir.create(path = "./API_csv", showWarnings = F)
 file.copy(list.files("/home/shares/soilcarbon/Twitter/rTweet/", "*.csv", full.names=T), "./API_csv/")
-getwd()
 
 system("sh fix_tweet.sh") # unsuccessful at the moment
 
-list.files(path="soc-twitter/", pattern="^fixed_", full.names=TRUE)
+list.files(path=".", pattern="^fixed_", full.names=TRUE)
 
 twitter_API <- do.call(rbind,
-                       lapply(list.files(path="soc-twitter/",
+                       lapply(list.files(path="./",
                                          pattern="^fixed_",
                                          full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)}))
 
+
+str(twitter_API) #check structure. mainly chr or num/int
 class(twitter_API$created_at) # is.character() at the moment - will covert upon merge
-str(twitter_API)
 
 # Understanding Archived df: Splitting header categories ####
 object <- snapp_twitterdata %>% 
@@ -368,6 +369,6 @@ twitter_merged_noRT <- twitter_merged_noRT %>%
   #View(twitter_merged_noRT)
 
 # f. Write CSV!
-write.csv(twitter_merged, file = "./soc-twitter/twitter_merged_sheet.csv", row.names = FALSE)
-write.csv(twitter_merged_noRT, file = "./soc-twitter/twitter_merged_sheet.csv", row.names = FALSE)
+write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
+write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)
 

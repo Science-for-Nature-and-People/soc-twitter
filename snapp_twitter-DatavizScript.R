@@ -51,56 +51,42 @@ source("snapp_twitter-script2.R")
 
 ### Data viz/Analysis of dataset retweets and favorites #####
 #Retweet_count/Favorite_count grouping - w/RT
-top_retweet_user <- twitter_merged %>% 
-  group_by(screen_name) %>% 
-  summarise(retweet = sum(retweet_count)) %>% 
-  arrange(- retweet) %>% 
-  head(20)
-View(top_retweet_user) # top 20 list in slide
 
-top_favorite_user <- twitter_merged %>% 
+top_user <- twitter_merged %>% 
   group_by(screen_name) %>% 
-  summarise(favorites = sum(favorite_count)) %>% 
-  arrange(- favorites) %>% 
-  head(20)
-View(top_favorite_user) # top 20 list in slide
+  summarise(total_tweets = n(), retweet_count = sum(retweet_count), fav_count = sum(favorite_count)) %>% 
+  arrange(- total_tweets) %>% 
+  head(1000)
+View(top_user)
 
 # Retweet_count/Favorite_count grouping - noRT
-top_retweets_user_noRT <- twitter_merged_noRT %>% 
+top_user_noRT <- twitter_merged_noRT %>% 
   group_by(screen_name) %>% 
-  summarise(retweet = sum(retweet_count)) %>% 
-  arrange(- retweet) %>% 
-  head(20)
-View(top_retweets_user_noRT) 
-
-top_favorites_user_noRT <- twitter_merged_noRT %>% 
-  group_by(screen_name) %>% 
-  summarise(favorites = sum(favorite_count)) %>% 
-  arrange(- favorites) %>% 
-  head(20)
-View(top_favorites_user_noRT)
+  summarise(total_tweets = n(), retweet_count = sum(retweet_count), fav_count = sum(favorite_count)) %>% 
+  arrange(- total_tweets) %>% 
+  head(1000)
+View(top_user_noRT) 
 
 ### bar plots 
-# w/ RT
-ggplot(head(top_retweet_user, 20), aes(screen_name, retweet)) + 
-  geom_bar(stat="identity", fill = 'blue', size=1 )+
+# w/RTs
+ggplot(head(top_user, 20), aes(screen_name, retweet_count)) + 
+  geom_bar(, stat="identity", fill = 'blue', size=1 )+
   coord_flip()+
   theme_classic()
 
-# Huge skew with RT of pope
-ggplot(head(top_favorite_user, 20), aes(screen_name, favorites)) + 
+ggplot(head(top_user, 20), aes(screen_name, fav_count)) + 
+  geom_bar(, stat="identity", fill = 'firebrick', size=1 )+
+  coord_flip()+
+  theme_classic()
+
+# W/out RT
+ggplot(top_user_noRT, aes(screen_name, retweet_count)) + 
   geom_bar(stat="identity", fill='firebrick', size=1)+
   coord_flip()+
   theme_classic()
 
-## No RT
-ggplot(head(top_retweets_user_noRT, 10), aes(screen_name, retweet)) + 
+ggplot(top_user_noRT, aes(screen_name, fav_count)) + 
   geom_bar(stat="identity", fill = 'blue', size=1 )+
-  coord_flip()+
-  theme_classic()
-
-ggplot(head(top_favorites_user_noRT, 10), aes(screen_name, favorites)) + 
-  geom_bar(stat="identity", fill='firebrick', size=1)+
   coord_flip()+
   theme_classic()
 
@@ -135,3 +121,20 @@ ggplot(query_count_df_noRT, aes(x=query, y=n))+
         element_rect())+ 
   coord_flip()
 
+
+# time series:
+str(twitter_merged)
+# general plot over time of tweets
+ts_plot(twitter_merged)
+ts_plot(twitter_merged_noRT)
+
+# Timeseries by query word 
+
+query_df <- twitter_merged %>% 
+  group_by(query = tolower(query))
+
+query_df_2 <- twitter_merged_noRT %>% 
+  group_by(query = tolower(query))
+
+ts_plot(query_df)
+ts_plot(query_df_2)
