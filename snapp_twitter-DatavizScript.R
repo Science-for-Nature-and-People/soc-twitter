@@ -133,8 +133,21 @@ ts_plot(twitter_merged_noRT)
 query_df <- twitter_merged %>% 
   group_by(query = tolower(query))
 
+query_df_2[, grep("2017", query_df_2$created_at)]
+
+View(query_df)
 query_df_2 <- twitter_merged_noRT %>% 
   group_by(query = tolower(query))
 
 ts_plot(query_df)
-ts_plot(query_df_2)
+ts_plot(query_df_2) #n = the number of tweets on that day 
+
+# Group by country
+tweets_country <- twitter_merged %>% 
+  group_by(country = country_code) %>% 
+  summarise(n())
+View(tweets_country)
+
+
+
+

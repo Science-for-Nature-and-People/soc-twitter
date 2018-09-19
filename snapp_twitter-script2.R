@@ -64,7 +64,7 @@ test2 <- head(snapp_twitterdata, 10)
 snapp_twitterdata <- snapp_twitterdata_raw %>% 
   filter(!is.na(body))
   # nrow(snapp_twitterdata) #73074
-names(test3)
+names(test2)
 
 test3 <- head(snapp_twitterdata, 10)
 # View(rbind(test2, test3)) # to verify NA rows are removed
@@ -92,6 +92,7 @@ twitter_API <- do.call(rbind,
 str(twitter_API) #check structure. mainly chr or num/int
 class(twitter_API$created_at) # is.character() at the moment - will covert upon merge
 
+####2/ Understanding data ########
 # Understanding Archived df: Splitting header categories ####
 object <- snapp_twitterdata %>% 
   select(starts_with("object"))
@@ -147,7 +148,10 @@ grep("quote|status|id", columns, value = TRUE)
 grep("retweet", columns, value = TRUE)
 grep("favorite", columns, value = TRUE)
 hashtags_columns <- grep("hashtags", columns, value = TRUE)
-
+grep("location", columns, value = T)
+unique(snapp_twitterdata$location.country_code)
+grep('coor', names(twitter_API), value = T)
+unique(twitter_API$geo_coords)
 ## hashtags: 
     # lapply(snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))],
     #        function(x){length(x)})  # looking at length of each hashtag column
@@ -195,6 +199,13 @@ head(snapp_twitterdata$object.favoritesCount)
 # a. Create and clean hashtag column for ARC/json derived data - pull all hashtags from tweets in json file into one column 
 # unite all content of all hashtag.text columns in ARC df. Separated with a `|`
 
+snapp_twitterdata <- snapp_twitterdata %>%
+unite("hashtag_text", grep("twitter_entities.hashtags.*text", names(snapp_twitterdata)), sep = "|", remove = F)
+sprintf(snapp_twitterdata$hashtag_text[45])
+#Remove NA, and trailing `|`
+snapp_twitterdata$hashtag_text <- gsub("\\|NA|NA|^\\|", "", snapp_twitterdata$hashtag_text)
+sprintf(snapp_twitterdata$hashtag_text[45])
+
 #verify hashtag edits
   # head(snapp_twitterdata_2$hashtag_text))
   # sample_hashtagtext <-sample_n(snapp_twitterdata, 10)
@@ -211,7 +222,7 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
          object.favoritesCount,
          retweetCount,
          hashtag_text,
-         id) %>%
+         location.country_code) %>%
   mutate(query = NA) %>%  # to be populated in next step
   set_colnames(c("created_at",
                  "user_id",
@@ -221,9 +232,10 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
                  "favorite_count",
                  "retweet_count",
                  "hashtags",
-                 "id",
-                 "query")) %>% 
-  separate(id, into=c("id_text", "id_num"), sep="5:") # done to later remove id_text
+                 "country_code",
+                 # "id",
+                 "query")) 
+# %>% separate(id, into=c("id_text", "id_num"), sep="5:") # done to later remove id_text
 
   # sprintf(names(snapp_twitterdata_merge))
   # str(snapp_twitterdata_merge$query) # nothin in query
@@ -256,6 +268,14 @@ is.na(snapp_twitterdata_merge$query) <- snapp_twitterdata_merge$query == "NA"
 head(snapp_twitterdata_merge$query)
 sprintf(snapp_twitterdata_merge$query[70:80])
 
+# f. country_code
+is.na(snapp_twitterdata_merge$country_code) <- snapp_twitterdata_merge$country_code == NA
+sprintf(snapp_twitterdata_merge$country_code[70:80])
+head(which(is.na(snapp_twitterdata_merge$country_code)))
+
+class(snapp_twitterdata_merge$country_code)
+class(twitter_API_merge$country_code)
+
 # Overall structure verification
   # names(snapp_twitterdata_merge)
   # str(snapp_twitterdata_merge)
@@ -273,6 +293,7 @@ twitter_API_merge <- twitter_API %>%
          favorite_count,
          retweet_count,
          hashtags,
+         country_code,
          query)
 
 # names(twitter_API_merge)
@@ -285,8 +306,8 @@ twitter_API_merge$created_at <- as_datetime(twitter_API_merge$created_at)
 twitter_API_merge$user_id <- as.character(twitter_API_merge$user_id) # char --> num
 
 # d. Verify both dfs have matching class  
-  # str(twitter_API_merge)
-  # str(snapp_twitterdata_merge)
+str(twitter_API_merge)
+str(snapp_twitterdata_merge)
   # matching_querywords <- sample_n(snapp_twitterdata_merge, 100)
   # querywords <- unique(twitter_API_merge$query)
 
