@@ -41,6 +41,8 @@ library(data.table)
 library(lubridate)
 #install.packages("ids")
 library(ids)
+# install.packages("countrycode")
+library(countrycode)
 
 # setwd("/home/shares/soilcarbon/Twitter/")
 getwd()
@@ -269,12 +271,11 @@ head(snapp_twitterdata_merge$query)
 sprintf(snapp_twitterdata_merge$query[70:80])
 
 # f. country_code
-is.na(snapp_twitterdata_merge$country_code) <- snapp_twitterdata_merge$country_code == NA
+# is.na(snapp_twitterdata_merge$country_code) <- snapp_twitterdata_merge$country_code == NA
 sprintf(snapp_twitterdata_merge$country_code[70:80])
-head(which(is.na(snapp_twitterdata_merge$country_code)))
+sprintf(snapp_twitterdata_merge$country_code[1000:1020])
 
-class(snapp_twitterdata_merge$country_code)
-class(twitter_API_merge$country_code)
+
 
 # Overall structure verification
   # names(snapp_twitterdata_merge)
@@ -317,7 +318,7 @@ str(snapp_twitterdata_merge)
 ##########III. MERGE ###################
 
 # a. Created a provenance column and a unique id column
-namelist <- list( API = twitter_API_merge, ARC = snapp_twitterdata_merge[,-8:-9]) # For merged (i.e. bind_rows), removed remove id column for Archived Dataset
+namelist <- list( API = twitter_API_merge, ARC = snapp_twitterdata_merge) # For merged (i.e. bind_rows), removed remove id column for Archived Dataset
 
 # b. DF with T and RT
 twitter_merged <- bind_rows(namelist, .id = "provenance")
@@ -325,17 +326,32 @@ twitter_merged <- twitter_merged %>%
   mutate(UID = id(twitter_merged, drop = FALSE)) %>% 
   mutate(query = gsub("\"", "", query)) # remove quotes from query so that query words can match
 
-sprintf(twitter_merged$text[7060])
+# c. Country code edits
+sprintf(head(unique(twitter_merged$country_code)), 10)
+is.na(twitter_merged$country_code) <- twitter_merged$country_code == ""
+sprintf(head(unique(twitter_merged$country_code), 10))
 
-# c. DF with RT removed
-twitter_merged_noRT <- bind_rows(namelist, .id = "provenance") 
-twitter_merged_noRT <- twitter_merged_noRT %>% 
-  mutate(UID = id(twitter_merged_noRT, drop = FALSE)) %>%
-  mutate(query = gsub("\"", "", query)) %>% 
+# change country code to country name
+for (i in 1:length(twitter_merged$country_code)){
+  if(twitter_merged$country_code[i] != "台灣" & nchar(twitter_merged$country_code[i]) <= 2 & !is.na(twitter_merged$country_code[i])) {
+    twitter_merged$country_code[i] <- countrycode(twitter_merged$country_code[i], origin = "iso2c", destination = "country.name")
+    }
+ }
+
+unique(twitter_merged$country_code)
+
+# d. DF with RT removed
+# twitter_merged_noRT <- bind_rows(namelist, .id = "provenance") 
+twitter_merged_noRT <- twitter_merged %>% 
+  # mutate(UID = id(twitter_merged_noRT, drop = FALSE)) %>%
+  # mutate(query = gsub("\"", "", query)) %>% 
   filter(!str_detect(text, "^RT")) # ^ used to select only RT at start of text. subs with "starts_with()"
                                    #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
 
 sprintf(twitter_merged_noRT$text[7060])
+
+
+is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
 
 ### d. Mutate 'Hits' column with keyword hits from tweet text ####
 
@@ -392,4 +408,3 @@ twitter_merged_noRT <- twitter_merged_noRT %>%
 # f. Write CSV!
 write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
 write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)
-
