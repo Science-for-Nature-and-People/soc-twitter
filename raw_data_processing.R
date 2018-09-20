@@ -390,6 +390,7 @@ for (i in 1:length(twitter_merged$country_code)){
 # names(twitter_merged)
 names(twitter_merged)[names(twitter_merged) == 'country_code'] <- 'country'
 
+
 # d. DF with RT removed
 # twitter_merged_noRT <- bind_rows(namelist, .id = "provenance") 
 twitter_merged_noRT <- twitter_merged %>% 
@@ -451,6 +452,8 @@ twitter_merged_noRT <- twitter_merged_noRT %>%
   # View(sample_n(twitter_merged_noRT,10))
   #View(twitter_merged)
   #View(twitter_merged_noRT)
+
+names(twitter_merged)
 
 # f. Write CSV!
 write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
