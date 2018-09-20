@@ -164,6 +164,8 @@ location <- snapp_twitterdata %>%
   select(starts_with("location"))
 dim(location)
 nrow(unique(location)) # 575 unique locations 
+# note: specify location.displayname is equiv. to Place_name in the API dataset and provides us with more specific info about geog. location. 
+# however, in comparison to country name, location.display name can be much more varied (i.e. 16 hits in "somewhere in Pacific ocean")
 
 # geo: Point location where the Tweet was created.
 geo <- snapp_twitterdata %>% 
@@ -275,6 +277,7 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
          object.favoritesCount,
          retweetCount,
          hashtag_text,
+         location.displayName,
          location.country_code) %>%
   mutate(query = NA) %>%  # to be populated in next step
   set_colnames(c("created_at",
@@ -285,6 +288,7 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
                  "favorite_count",
                  "retweet_count",
                  "hashtags",
+                 "place_name",
                  "country_code",
                  # "id",
                  "query")) 
@@ -338,6 +342,7 @@ twitter_API_merge <- twitter_API %>%
          favorite_count,
          retweet_count,
          hashtags,
+         place_name,
          country_code,
          query)
 
@@ -370,14 +375,17 @@ twitter_merged <- twitter_merged %>%
   mutate(UID = id(twitter_merged, drop = FALSE)) %>% 
   mutate(query = gsub("\"", "", query)) # remove quotes from query so that query words can match
 
-# c. Country code edits
+# c. Country/Place name edits
 sprintf(head(unique(twitter_merged$country_code)), 10)
 is.na(twitter_merged$country_code) <- twitter_merged$country_code == ""
 sprintf(head(unique(twitter_merged$country_code), 10))
 
-# change "" to NA in the country_code column
-is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
+sprintf(head(unique(twitter_merged$place_name)), 10)
+is.na(twitter_merged$place_name) <- twitter_merged$place_name == ""
+sprintf(head(unique(twitter_merged$place_name), 10))
 
+# change "" to NA in the country_code and the place name column
+is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
 # change country code to country name
 for (i in 1:length(twitter_merged$country_code)){
   if(twitter_merged$country_code[i] != "台灣" & nchar(twitter_merged$country_code[i]) <= 2 & !is.na(twitter_merged$country_code[i])) {
@@ -400,6 +408,8 @@ twitter_merged_noRT <- twitter_merged %>%
                                    #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
 
 sprintf(twitter_merged_noRT$text[7060])
+is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
+is.na(twitter_merged_noRT$place_name) <- twitter_merged_noRT$place_name == ""
 
 ### d. Mutate 'Hits' column with keyword hits from tweet text ####
 
@@ -454,6 +464,7 @@ twitter_merged_noRT <- twitter_merged_noRT %>%
   #View(twitter_merged_noRT)
 
 names(twitter_merged)
+
 
 # f. Write CSV!
 write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)

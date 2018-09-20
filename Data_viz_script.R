@@ -136,6 +136,11 @@ tweets_country <- twitter_merged %>%
 
 View(tweets_country)
 
+# Group by place based on the place_name column of the data (much more varied in terms of results)
+tweets_place <- twitter_merged %>% 
+  group_by(place = place_name) %>% 
+  summarise(tweets_count = n())%>% 
+  arrange(- tweets_count) %>% 
+  head(20)
 
-
-
+View(tweets_place)
