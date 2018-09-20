@@ -108,7 +108,7 @@ ggplot(query_count_df_noRT, aes(x=query, y=n))+
   coord_flip()
 
 # time series:
-str(twitter_merged)
+str(twitter_merged) # check the class of "created_at
 # general plot over time of tweets
 ts_plot(twitter_merged)
 ts_plot(twitter_merged_noRT)
