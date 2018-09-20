@@ -8,43 +8,19 @@
 # Contact: scicomp@nceas.ucsb.edu               ##
 ##################################################
 
-#soc-twitter on SNAPP version !!!
-
-## Task ####
-# Find the main influencers regarding soil health on Twitter
-# Look into:
-# Number of retweets per Tweet
-# Most retweeted person
-# Most followers
-##
 
 # Packages/wd ####
 
 # Packages needed:
 library(tidyverse)
-library(jsonlite)
-library(streamR)
 library(devtools)
-library(googledrive)
-library(ndjson)
 library(dplyr)
 library(tidytext)
 library(stringr)
-library(rtweet)
-library(rjson)
-#install.packages("skimr")
-library(skimr)
-#install.packages("janitor")
-library(janitor)
-library(gtools)
 library(magrittr)
 # install.packages("data.table")
 library(data.table)
 library(lubridate)
-#install.packages("ids")
-library(ids)
-
-
 
 ### Input files #####
 
@@ -54,7 +30,6 @@ twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FA
 
 # If you do not have those files in your repository, please run the data processing script:
 # source("snapp_twitter-script2.R")
-  
   
 ### Data viz/Analysis of dataset retweets and favorites #####
 
@@ -76,34 +51,27 @@ View(top_user_noRT)
 
 ### bar plots 
 
-# <--- !!! Add saving the plot to file !!! --->
 # ggsave(p, file = "myplot_name.png", dpi = 300, width=7, height=5)
 
 # w/RTs top 20
-ggplot(head(top_user, 20), aes(screen_name, retweet_count)) + 
+ggplot(head(filter(top_user, top_user$retweet_count >= 5), 20), aes(screen_name, retweet_count)) + 
   geom_bar(stat="identity", fill = 'blue', size=1 )+
   coord_flip()+
   theme_classic()
 
-ggplot(head(top_user, 20), aes(screen_name, fav_count)) + 
-  geom_bar(stat="identity", fill = 'firebrick', size=1 )+
-  geom_bar(stat="identity", fill = 'blue', size=1) +
-  coord_flip() +
-  theme_classic()
-
-ggplot(head(top_user, 20), aes(screen_name, fav_count)) + 
+ggplot(head(filter(top_user, top_user$fav_count >= 5), 20), aes(screen_name, fav_count)) + 
   geom_bar(stat="identity", fill = 'firebrick', size=1) +
   coord_flip()+
   theme_classic()
 
-# <--- ??? Maybe filter out the one < 5 ??? --->
 # W/out RT
-ggplot(head(top_user_noRT,20), aes(screen_name, retweet_count)) + 
+
+ggplot(head(filter(top_user_noRT, top_user_noRT$retweet_count >= 5), 20), aes(screen_name, retweet_count)) + 
   geom_bar(stat="identity", fill='firebrick', size=1)+
   coord_flip()+
   theme_classic()
 
-ggplot(head(top_user_noRT, 20), aes(screen_name, fav_count)) + 
+ggplot(head(filter(top_user_noRT, top_user_noRT$fav_count >= 5), 20), aes(screen_name, fav_count)) + 
   geom_bar(stat="identity", fill = 'blue', size=1 )+
   coord_flip()+
   theme_classic()
@@ -145,9 +113,6 @@ str(twitter_merged)
 ts_plot(twitter_merged)
 ts_plot(twitter_merged_noRT)
 
-# <--- ??? Are 0s NAs or real zeros on those plots ??? --->
-
-
 # Timeseries by query word 
 query_df <- twitter_merged %>% 
   group_by(query = tolower(query))
@@ -164,7 +129,7 @@ ts_plot(query_df_2) #n = the number of tweets on that day
 
 # Group by country
 tweets_country <- twitter_merged %>% 
-  group_by(country = country_code) %>% 
+  group_by(country = country) %>% 
   summarise(tweets_count = n())%>% 
   arrange(- tweets_count) %>% 
   head(20)

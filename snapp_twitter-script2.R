@@ -17,6 +17,9 @@
 # 4. Clean datasets to enable a merge of both df
 # 5. Merge (created a first dataset with all tweets (~130,000 tweets) and a second dataset without RT (~42,000 tweets))
 
+# ARC: archived data derived from json file
+# API: API data 
+
 # Packages/wd ####
 # Packages needed:
 library(tidyverse)
@@ -49,7 +52,7 @@ getwd()
 
 ########### I. READING_DATA #############################
 # 1/ Reading json(ARC)/API twitter archival datasets ####
-# 1. Read in ARC    #####
+# a. Read in ARC    #####
 snapp_twitterdata_raw <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
 
 # create subset to look at
@@ -70,8 +73,7 @@ snapp_twitterdata <- snapp_twitterdata_raw %>%
   filter(!is.na(body))
   # nrow(snapp_twitterdata) #73074
 
-
-# Read in API   ####
+# b. Read in API   ####
 
 #' Run bash script on API files to remove Windows end of line ^M character
 #' Used personal folder to create fixed_datasets. 
@@ -98,8 +100,8 @@ twitter_API <- do.call(rbind,
 str(twitter_API) #check structure. mainly chr or num/int
 class(twitter_API$created_at) # is.character() at the moment - will covert upon merge
 
-#### 2/ Understanding data ########
-# Understanding Archived df: Splitting header categories ####
+#### 2/ Understanding the data ########
+# a. Understanding Archived df (ARC): Splitting header categories ####
 
 # Grouped the archive dataset into its json objects, upon which the initial dataset is nested. 
 # Then run dim() to print to size of each group
@@ -109,44 +111,54 @@ class(twitter_API$created_at) # is.character() at the moment - will covert upon 
 object <- snapp_twitterdata %>% 
   select(starts_with("object"))
 dim(object)
+
 # Actor: the Twitter User -  contains all metadata relevant to that user.
 actor <- snapp_twitterdata %>% 
   select(starts_with("actor"))
 dim(actor)
+
 # generator: the utility used to post the Tweet - contains the utility name ("displayName") and a link ("link") for the source application generating the Tweet.
 generator <- snapp_twitterdata %>% 
   select(starts_with("generator"))
 dim(generator)
+
 # Provider: the provider of the activity. This will contain an objectType ("service"), the name of the provider name, and a link to the provider's website ("link").
 provider <- snapp_twitterdata %>% 
   select(starts_with("provider"))
 dim(provider)
+
 # Tweet entities: the entities object from Twitter's data format which contains lists of urls, mentions and hashtags. 
 twitter_entities <- snapp_twitterdata %>% 
   select(starts_with("twitter_entities"))
 dim(twitter_entities)
+
 # Tweet extended entities: Twitter's native data format containing "media". This will be present for any Tweet where has data present in the "media" field, and will include multiple photos where present in the post.
 twitter_extended_entities <- snapp_twitterdata %>% 
   select(starts_with("twitter_entities"))
 dim(twitter_entities)
+
 # Long_object: tweet long object (also refered to as extended tweet):
 # If a Tweet body exceeds Tweet text length limit due to combination of hidden text and user-entered text, the root-level Tweet body will be truncated (as will its associated entities) and an additive extended_tweet object will be included in the payload and should be used to retrieve the full Tweet body and full set of associated entities.
 long_object <- snapp_twitterdata %>% 
   select(starts_with("long_object"))
 dim(long_object)
+
 # gnip: data info associated with gnip (twitter's API data aggregation supporting service) 
 # mainly codes
 gnip <- snapp_twitterdata %>% 
   select(starts_with("gnip"))
 dim(gnip)
+
 # Info: activity and message details of tweet
 info <- snapp_twitterdata %>% 
   select(starts_with("info"))
 dim(info)
+
 # hashtags: all column names that contain the word hashtag
 hashtags <- snapp_twitterdata %>% 
   select(actor.preferredUsername, body, contains("hashtag"))
 dim(hashtags)
+
 # location: the Twitter "Place" where the tweet was created - objectType ("place"), displayName	(The full name of the place), 
 location <- snapp_twitterdata %>% 
   select(starts_with("location"))
@@ -165,7 +177,7 @@ location_all <- snapp_twitterdata %>%
 dim(location)
 names(location)
 
-#only columns of class character
+#only columns of class 'character'
 # (could look further into this for mapping analysis)
 all_char <- snapp_twitterdata %>% 
   select(which(sapply(., is.character)))
@@ -173,18 +185,17 @@ dim(all_char)
 
 ### URLS - made specific dataset with all url-related column names from Archive, liked tweet and username 
 #Select body and url so that we can determine how the different urls are linked to the tweet. 
-
 urls <- snapp_twitterdata %>%
   select(actor.preferredUsername, body, grep("url", names(snapp_twitterdata), value = TRUE))
-# NOTE: A lot of url columns in snapp_twitter
-# not as many in API
+# NOTE: urls mainly present if in tweet, no column is a direct link the actual tweet
 
-# Look at sum of NA per column in ARC to see what column has the most NAs 
+# Look at sum of NA per column in ARC to see what url column has the most NAs  - can be applied to other json group listed above
 urls <- rbind(urls, as.data.frame(
   lapply(urls[-1:-2], function(x){
     sum(is.na(x))})))
 
-# Find relevant columns from the archives to match to API dataset: #### 
+# b. Find relevant columns from the ARC to match to API dataset: ####
+  # names(twitter_API)
 columns <- as.character(names(snapp_twitterdata))  
 grep(pattern = "Reply", columns, value = TRUE)
 grep(pattern = "key", columns, value = TRUE) # --> no key word
@@ -201,7 +212,7 @@ unique(twitter_API$geo_coords)
     # lapply(snapp_twitterdata[,grep("hashtag", colnames(snapp_twitterdata))],
     #        function(x){length(x)})  # looking at length of each hashtag column
 
-# Understanding Favorites and Retweet Counts #### 
+# c. Understanding Favorites and Retweet Counts #### 
 #In API:
 retweet_API <- select(.data = twitter_API,
                       grep("retweet", names(twitter_API), value = TRUE))
@@ -231,15 +242,10 @@ head(twitter_API$favorite_count)
 head(snapp_twitterdata$object.favoritesCount)
     #best match with favorite_count API --> object.favoritecount
 
-### ARC + API URLS ###
-
-
-# sample_n(urls[1:10], 10)
-
 
 ################### II. Cleaning for merge ####################################
 
-# 2.1 ARC dataset cleaning for merge #####
+# 1/ ARC dataset cleaning for merge #####
 
 # a. Create and clean hashtag column for ARC/json derived data - pull all hashtags from tweets in json file into one column 
 # unite all content of all hashtag.text columns in ARC df. Separated with a `|`
@@ -287,11 +293,10 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
 snapp_twitterdata_merge$user_id <- str_remove(snapp_twitterdata_merge$user_id, "id:twitter.com:")
 # sprintf(head(snapp_twitterdata_merge$user_id)) 
 
-# d. Dates:
+# d. Dates
 # Remove additional zeros in date 
 max(snapp_twitterdata_merge$created_at) # fixed 2013 date issue
 snapp_twitterdata_merge$created_at <- str_remove(snapp_twitterdata_merge$created_at, ".000")
-
 # Convert create_at date to date format
 snapp_twitterdata_merge$created_at <- as_datetime(snapp_twitterdata_merge$created_at)
 class(snapp_twitterdata_merge$created_at)
@@ -311,12 +316,10 @@ is.na(snapp_twitterdata_merge$query) <- snapp_twitterdata_merge$query == "NA"
 head(snapp_twitterdata_merge$query)
 sprintf(snapp_twitterdata_merge$query[70:80])
 
-# f. country_code
+# f. country_code:
 # is.na(snapp_twitterdata_merge$country_code) <- snapp_twitterdata_merge$country_code == NA
 sprintf(snapp_twitterdata_merge$country_code[70:80])
 sprintf(snapp_twitterdata_merge$country_code[1000:1020])
-
-
 
 # Overall structure verification
   # names(snapp_twitterdata_merge)
@@ -372,14 +375,20 @@ sprintf(head(unique(twitter_merged$country_code)), 10)
 is.na(twitter_merged$country_code) <- twitter_merged$country_code == ""
 sprintf(head(unique(twitter_merged$country_code), 10))
 
+# change "" to NA in the country_code column
+is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
+
 # change country code to country name
 for (i in 1:length(twitter_merged$country_code)){
   if(twitter_merged$country_code[i] != "台灣" & nchar(twitter_merged$country_code[i]) <= 2 & !is.na(twitter_merged$country_code[i])) {
     twitter_merged$country_code[i] <- countrycode(twitter_merged$country_code[i], origin = "iso2c", destination = "country.name")
     }
- }
+}
+# unique(twitter_merged$country_code)
 
-unique(twitter_merged$country_code)
+# Rename country column as it is not a code anymore
+# names(twitter_merged)
+names(twitter_merged)[names(twitter_merged) == 'country_code'] <- 'country'
 
 # d. DF with RT removed
 # twitter_merged_noRT <- bind_rows(namelist, .id = "provenance") 
@@ -390,9 +399,6 @@ twitter_merged_noRT <- twitter_merged %>%
                                    #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
 
 sprintf(twitter_merged_noRT$text[7060])
-
-
-is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
 
 ### d. Mutate 'Hits' column with keyword hits from tweet text ####
 
