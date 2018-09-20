@@ -29,7 +29,7 @@ twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE)
 twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
 
 # If you do not have those files in your repository, please run the data processing script:
-# source("snapp_twitter-script2.R")
+# source("raw_data_processing.R")
   
 ### Data viz/Analysis of dataset retweets and favorites #####
 
