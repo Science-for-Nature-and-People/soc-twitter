@@ -57,7 +57,6 @@ snapp_twitterdata_raw <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json
 
 # create subset to look at
 test2 <- head(snapp_twitterdata_raw, 10)
-names(test2)
 
 #' The \code{stream_in} and \code{stream_out} functions implement line-by-line processing
 #' of JSON data over a \code{\link{connection}}, such as a socket, url, file or pipe. JSON
@@ -79,6 +78,7 @@ snapp_twitterdata <- snapp_twitterdata_raw %>%
 #' Used personal folder to create fixed_datasets. 
 
 getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
+
 dir.create(path = "./API_csv", showWarnings = F)
 
 # Copy the files from the shared directory to your repository
@@ -177,7 +177,7 @@ nrow(unique(geo)) # 40 unique geo-coordinated
 location_all <- snapp_twitterdata %>% 
   select(actor.preferredUsername, body, contains("location"))
 dim(location)
-names(location)
+# names(location)
 
 #only columns of class 'character'
 # (could look further into this for mapping analysis)
@@ -199,12 +199,12 @@ urls <- rbind(urls, as.data.frame(
 # b. Find relevant columns from the ARC to match to API dataset: ####
   # names(twitter_API)
 columns <- as.character(names(snapp_twitterdata))  
-grep(pattern = "Reply", columns, value = TRUE)
-grep(pattern = "key", columns, value = TRUE) # --> no key word
-grep(pattern = "status_id", columns, value = TRUE)
-grep("quote|status|id", columns, value = TRUE)
-grep("retweet", columns, value = TRUE)
-grep("favorite", columns, value = TRUE)
+# grep(pattern = "Reply", columns, value = TRUE)
+# grep(pattern = "key", columns, value = TRUE) # --> no key word
+# grep(pattern = "status_id", columns, value = TRUE)
+# grep("quote|status|id", columns, value = TRUE)
+# grep("retweet", columns, value = TRUE)
+# grep("favorite", columns, value = TRUE)
 hashtags_columns <- grep("hashtags", columns, value = TRUE)
 grep("location", columns, value = T)
 unique(snapp_twitterdata$location.country_code)
@@ -219,6 +219,7 @@ unique(twitter_API$geo_coords)
 retweet_API <- select(.data = twitter_API,
                       grep("retweet", names(twitter_API), value = TRUE))
 # which(anyNA(retweet_API))
+twitter_API
 
 favorite_API <- select(.data = twitter_API,
                        grep("favorite", names(twitter_API), value = TRUE))
@@ -384,8 +385,6 @@ sprintf(head(unique(twitter_merged$place_name)), 10)
 is.na(twitter_merged$place_name) <- twitter_merged$place_name == ""
 sprintf(head(unique(twitter_merged$place_name), 10))
 
-# change "" to NA in the country_code and the place name column
-is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
 # change country code to country name
 for (i in 1:length(twitter_merged$country_code)){
   if(twitter_merged$country_code[i] != "台灣" & nchar(twitter_merged$country_code[i]) <= 2 & !is.na(twitter_merged$country_code[i])) {
@@ -398,7 +397,6 @@ for (i in 1:length(twitter_merged$country_code)){
 # names(twitter_merged)
 names(twitter_merged)[names(twitter_merged) == 'country_code'] <- 'country'
 
-
 # d. DF with RT removed
 # twitter_merged_noRT <- bind_rows(namelist, .id = "provenance") 
 twitter_merged_noRT <- twitter_merged %>% 
@@ -406,8 +404,8 @@ twitter_merged_noRT <- twitter_merged %>%
   # mutate(query = gsub("\"", "", query)) %>% 
   filter(!str_detect(text, "^RT")) # ^ used to select only RT at start of text. subs with "starts_with()"
                                    #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
+str(twitter_merged_noRT)
 
-sprintf(twitter_merged_noRT$text[7060])
 is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
 is.na(twitter_merged_noRT$place_name) <- twitter_merged_noRT$place_name == ""
 
@@ -460,11 +458,13 @@ twitter_merged_noRT <- twitter_merged_noRT %>%
 ## View dataset ready for analysis: 
   # View(sample_n(twitter_merged,10))
   # View(sample_n(twitter_merged_noRT,10))
-  #View(twitter_merged)
-  #View(twitter_merged_noRT)
+  # View(sample_n(twitter_merged, 100))
+  # View(sample_n(twitter_merged_noRT, 100))
+  # View(twitter_merged)
+  # View(twitter_merged_noRT)
 
 names(twitter_merged)
-
+str(twitter_merged_noRT)
 
 # f. Write CSV!
 write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)

@@ -33,13 +33,18 @@ twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FA
   
 ### Data viz/Analysis of dataset retweets and favorites #####
 
+# Verify variable types
+str(twitter_merged)
+str(twitter_merged_noRT)
+
 # Retweet_count/Favorite_count grouping - w/RT
 top_user <- twitter_merged %>% 
   group_by(screen_name) %>% 
   summarise(total_tweets = n(), retweet_count = sum(retweet_count), fav_count = sum(favorite_count)) %>% 
   arrange(- total_tweets) %>% 
   head(1000)
-View(top_user)
+head(top_user)
+# View(top_user)
 
 # Retweet_count/Favorite_count grouping - noRT
 top_user_noRT <- twitter_merged_noRT %>% 
@@ -47,7 +52,8 @@ top_user_noRT <- twitter_merged_noRT %>%
   summarise(total_tweets = n(), retweet_count = sum(retweet_count), fav_count = sum(favorite_count)) %>% 
   arrange(- total_tweets) %>% 
   head(1000)
-View(top_user_noRT) 
+head(top_user_noRT)
+# View(top_user_noRT) 
 
 ### bar plots 
 
@@ -109,17 +115,17 @@ ggplot(query_count_df_noRT, aes(x=query, y=n))+
 
 # time series:
 str(twitter_merged) # check the class of "created_at
+
 # general plot over time of tweets
-ts_plot(twitter_merged)
-ts_plot(twitter_merged_noRT)
+
+# ts_plot(twitter_merged)
+# ts_plot(twitter_merged_noRT)
 
 # Timeseries by query word 
 query_df <- twitter_merged %>% 
   group_by(query = tolower(query))
 
-query_df_2[, grep("2017", query_df_2$created_at)]
-
-View(query_df)
+head(query_df)
 
 query_df_2 <- twitter_merged_noRT %>% 
   group_by(query = tolower(query))
@@ -134,7 +140,7 @@ tweets_country <- twitter_merged %>%
   arrange(- tweets_count) %>% 
   head(20)
 
-View(tweets_country)
+tweets_country
 
 # Group by place based on the place_name column of the data (much more varied in terms of results)
 tweets_place <- twitter_merged %>% 
@@ -142,5 +148,11 @@ tweets_place <- twitter_merged %>%
   summarise(tweets_count = n())%>% 
   arrange(- tweets_count) %>% 
   head(20)
+tweets_place_2 <- twitter_merged_noRT %>% 
+  group_by(place = place_name) %>% 
+  summarise(tweets_count = n())%>% 
+  arrange(- tweets_count) %>% 
+  head(20)
 
-View(tweets_place)
+tweets_place
+tweets_place_2
