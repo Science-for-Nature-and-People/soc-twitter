@@ -10,7 +10,7 @@
 
 #soc-twitter on SNAPP version !!!
 
-##Task##
+## Task ####
 # Find the main influencers regarding soil health on Twitter
 # Look into:
 # Number of retweets per Tweet
@@ -44,14 +44,21 @@ library(lubridate)
 #install.packages("ids")
 library(ids)
 
-#Sourcing initial script:
-setwd('/home/sleckman/R/soc-twitter/')  ## change as needed 
-# setwd()
-source("snapp_twitter-script2.R")
 
+
+### Input files #####
+
+## Read csv files from data processing scripts
+twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE)
+twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
+
+# If you do not have those files in your repository, please run the data processing script:
+# source("snapp_twitter-script2.R")
+  
+  
 ### Data viz/Analysis of dataset retweets and favorites #####
-#Retweet_count/Favorite_count grouping - w/RT
 
+# Retweet_count/Favorite_count grouping - w/RT
 top_user <- twitter_merged %>% 
   group_by(screen_name) %>% 
   summarise(total_tweets = n(), retweet_count = sum(retweet_count), fav_count = sum(favorite_count)) %>% 
@@ -68,7 +75,11 @@ top_user_noRT <- twitter_merged_noRT %>%
 View(top_user_noRT) 
 
 ### bar plots 
-# w/RTs
+
+# <--- !!! Add saving the plot to file !!! --->
+# ggsave(p, file = "myplot_name.png", dpi = 300, width=7, height=5)
+
+# w/RTs top 20
 ggplot(head(top_user, 20), aes(screen_name, retweet_count)) + 
   geom_bar(stat="identity", fill = 'blue', size=1 )+
   coord_flip()+
@@ -76,9 +87,16 @@ ggplot(head(top_user, 20), aes(screen_name, retweet_count)) +
 
 ggplot(head(top_user, 20), aes(screen_name, fav_count)) + 
   geom_bar(stat="identity", fill = 'firebrick', size=1 )+
+  geom_bar(stat="identity", fill = 'blue', size=1) +
+  coord_flip() +
+  theme_classic()
+
+ggplot(head(top_user, 20), aes(screen_name, fav_count)) + 
+  geom_bar(stat="identity", fill = 'firebrick', size=1) +
   coord_flip()+
   theme_classic()
 
+# <--- ??? Maybe filter out the one < 5 ??? --->
 # W/out RT
 ggplot(head(top_user_noRT,20), aes(screen_name, retweet_count)) + 
   geom_bar(stat="identity", fill='firebrick', size=1)+
@@ -126,6 +144,9 @@ str(twitter_merged)
 # general plot over time of tweets
 ts_plot(twitter_merged)
 ts_plot(twitter_merged_noRT)
+
+# <--- ??? Are 0s NAs or real zeros on those plots ??? --->
+
 
 # Timeseries by query word 
 query_df <- twitter_merged %>% 
