@@ -11,8 +11,8 @@
 #soc-twitter on SNAPP version !!!
 
 # Purpose of script:
-# 1. read in R archival data from twitter twitter.json {found in: /home/shares/soilcarbon/Twitter/
-# 2. read in R API data from twitter based on Twitter.R script {found in: /home/shares/soilcarbon/Twitter/
+# 1. read in R archival data from twitter twitter.json {found on aurora in: /home/shares/soilcarbon/Twitter/
+# 2. read in R API data from twitter based on Twitter.R script {found on aurora in: /home/shares/soilcarbon/Twitter/
 # 3. Understand both datasets (diff/sim) and gather most valuable information 
 # 4. Clean datasets to enable a merge of both df
 # 5. Merge (created a first dataset with all tweets (~130,000 tweets) and a second dataset without RT (~42,000 tweets))
@@ -47,11 +47,14 @@ library(countrycode)
 # setwd("/home/shares/soilcarbon/Twitter/")
 getwd()
 
-###########I. READING_DATA########################
-# 1/ Reading json(ARC)/API twitter datasets ####
+########### I. READING_DATA #############################
+# 1/ Reading json(ARC)/API twitter archival datasets ####
 # 1. Read in ARC    #####
 snapp_twitterdata_raw <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
-test2 <- head(snapp_twitterdata, 10)
+
+# create subset to look at
+test2 <- head(snapp_twitterdata_raw, 10)
+names(test2)
 
 #' The \code{stream_in} and \code{stream_out} functions implement line-by-line processing
 #' of JSON data over a \code{\link{connection}}, such as a socket, url, file or pipe. JSON
@@ -60,33 +63,34 @@ test2 <- head(snapp_twitterdata, 10)
 #' 
 #' Notes: termed twitter.json as Archived (ARC) dataset in script
 #' (1) Ensure path is linked to the soil-carbon twitter file
-#' (2) VERY LARGE DF: avoid opening - 3480 columns, 96553 obs.
+#' (2) VERY LARGE DF: avoid viewing - 3480 columns, 96553 obs.
 
 ## remove all NA rows  
 snapp_twitterdata <- snapp_twitterdata_raw %>% 
   filter(!is.na(body))
   # nrow(snapp_twitterdata) #73074
-names(test2)
 
-test3 <- head(snapp_twitterdata, 10)
-# View(rbind(test2, test3)) # to verify NA rows are removed
 
 # Read in API   ####
 
-#' Run bash script on API files in /home/shares/soilcarbon/Twitter/rTweet/ before running. 
-#' Used personal folder to retrieve fixed_datasets. substitute wd() to local
-
+#' Run bash script on API files to remove Windows end of line ^M character
+#' Used personal folder to create fixed_datasets. 
 
 getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
 dir.create(path = "./API_csv", showWarnings = F)
+
+# Copy the files from the shared directory to your repository
 file.copy(list.files("/home/shares/soilcarbon/Twitter/rTweet/", "*.csv", full.names=T), "./API_csv/")
 
-system("sh fix_tweet.sh") # unsuccessful at the moment
+# run the bash script to remove EOL
+system("sh fix_tweet.sh") # do not edit with RStudio, used CLI tools such as `vim`
 
-list.files(path=".", pattern="^fixed_", full.names=TRUE)
+# List the fixed files
+list.files(path="./API_csv", pattern="^fixed_", full.names=TRUE)
 
+# read the files in
 twitter_API <- do.call(rbind,
-                       lapply(list.files(path="./",
+                       lapply(list.files(path="./API_csv",
                                          pattern="^fixed_",
                                          full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)}))
 
@@ -94,8 +98,11 @@ twitter_API <- do.call(rbind,
 str(twitter_API) #check structure. mainly chr or num/int
 class(twitter_API$created_at) # is.character() at the moment - will covert upon merge
 
-####2/ Understanding data ########
+#### 2/ Understanding data ########
 # Understanding Archived df: Splitting header categories ####
+
+## <---- !!!! Comment more this section !!! --->
+
 object <- snapp_twitterdata %>% 
   select(starts_with("object"))
 dim(object)
@@ -194,7 +201,7 @@ head(snapp_twitterdata$object.favoritesCount)
 # sample_n(urls[1:10], 10)
 
 
-###################II. Cleaning for merge####################################
+################### II. Cleaning for merge ####################################
 
 # 2.1 ARC dataset cleaning for merge #####
 
@@ -202,13 +209,15 @@ head(snapp_twitterdata$object.favoritesCount)
 # unite all content of all hashtag.text columns in ARC df. Separated with a `|`
 
 snapp_twitterdata <- snapp_twitterdata %>%
-unite("hashtag_text", grep("twitter_entities.hashtags.*text", names(snapp_twitterdata)), sep = "|", remove = F)
+  unite("hashtag_text", grep("twitter_entities.hashtags.*text", names(snapp_twitterdata)), sep = "|", remove = F)
+
 sprintf(snapp_twitterdata$hashtag_text[45])
-#Remove NA, and trailing `|`
+
+# Remove NA, and trailing `|`
 snapp_twitterdata$hashtag_text <- gsub("\\|NA|NA|^\\|", "", snapp_twitterdata$hashtag_text)
 sprintf(snapp_twitterdata$hashtag_text[45])
 
-#verify hashtag edits
+# verify hashtag edits
   # head(snapp_twitterdata_2$hashtag_text))
   # sample_hashtagtext <-sample_n(snapp_twitterdata, 10)
   # View(sample_hashtagtext$hashtag_text)
@@ -237,22 +246,18 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
                  "country_code",
                  # "id",
                  "query")) 
-# %>% separate(id, into=c("id_text", "id_num"), sep="5:") # done to later remove id_text
-
-  # sprintf(names(snapp_twitterdata_merge))
-  # str(snapp_twitterdata_merge$query) # nothin in query
 
 # c. Remove id:twitter.com in user id
-snapp_twitterdata_merge$user_id<- str_remove(snapp_twitterdata_merge$user_id, "id:twitter.com:")
+snapp_twitterdata_merge$user_id <- str_remove(snapp_twitterdata_merge$user_id, "id:twitter.com:")
 # sprintf(head(snapp_twitterdata_merge$user_id)) 
 
 # d. Dates:
 # Remove additional zeros in date 
 max(snapp_twitterdata_merge$created_at) # fixed 2013 date issue
-snapp_twitterdata_merge$created_at<- str_remove(snapp_twitterdata_merge$created_at, ".000")
+snapp_twitterdata_merge$created_at <- str_remove(snapp_twitterdata_merge$created_at, ".000")
 
 # Convert create_at date to date format
-snapp_twitterdata_merge$created_at<- as_datetime(snapp_twitterdata_merge$created_at)
+snapp_twitterdata_merge$created_at <- as_datetime(snapp_twitterdata_merge$created_at)
 class(snapp_twitterdata_merge$created_at)
 
 # e. Query: 
@@ -315,7 +320,7 @@ str(snapp_twitterdata_merge)
   # twitter_API$retweet_count[which(is.na(twitter_API_merge$retweet_count))]
   # class(twitter_API_merge$retweet_count)
 
-##########III. MERGE ###################
+########## III. MERGE ###################
 
 # a. Created a provenance column and a unique id column
 namelist <- list( API = twitter_API_merge, ARC = snapp_twitterdata_merge) # For merged (i.e. bind_rows), removed remove id column for Archived Dataset
