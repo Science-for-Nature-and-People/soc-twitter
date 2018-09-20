@@ -101,36 +101,72 @@ class(twitter_API$created_at) # is.character() at the moment - will covert upon 
 #### 2/ Understanding data ########
 # Understanding Archived df: Splitting header categories ####
 
-## <---- !!!! Comment more this section !!! --->
+# Grouped the archive dataset into its json objects, upon which the initial dataset is nested. 
+# Then run dim() to print to size of each group
+# SEE http://support.gnip.com/sources/twitter/data_format.html for subgroup info
 
+# Object: representing tweet being posted or shared
 object <- snapp_twitterdata %>% 
   select(starts_with("object"))
 dim(object)
+# Actor: the Twitter User -  contains all metadata relevant to that user.
 actor <- snapp_twitterdata %>% 
   select(starts_with("actor"))
 dim(actor)
+# generator: the utility used to post the Tweet - contains the utility name ("displayName") and a link ("link") for the source application generating the Tweet.
 generator <- snapp_twitterdata %>% 
   select(starts_with("generator"))
 dim(generator)
+# Provider: the provider of the activity. This will contain an objectType ("service"), the name of the provider name, and a link to the provider's website ("link").
 provider <- snapp_twitterdata %>% 
   select(starts_with("provider"))
 dim(provider)
-twitter <- snapp_twitterdata %>% 
-  select(starts_with("twitter"))
-dim(twitter)
+# Tweet entities: the entities object from Twitter's data format which contains lists of urls, mentions and hashtags. 
+twitter_entities <- snapp_twitterdata %>% 
+  select(starts_with("twitter_entities"))
+dim(twitter_entities)
+# Tweet extended entities: Twitter's native data format containing "media". This will be present for any Tweet where has data present in the "media" field, and will include multiple photos where present in the post.
+twitter_extended_entities <- snapp_twitterdata %>% 
+  select(starts_with("twitter_entities"))
+dim(twitter_entities)
+# Long_object: tweet long object (also refered to as extended tweet):
+# If a Tweet body exceeds Tweet text length limit due to combination of hidden text and user-entered text, the root-level Tweet body will be truncated (as will its associated entities) and an additive extended_tweet object will be included in the payload and should be used to retrieve the full Tweet body and full set of associated entities.
 long_object <- snapp_twitterdata %>% 
   select(starts_with("long_object"))
 dim(long_object)
+# gnip: data info associated with gnip (twitter's API data aggregation supporting service) 
+# mainly codes
 gnip <- snapp_twitterdata %>% 
   select(starts_with("gnip"))
 dim(gnip)
+# Info: activity and message details of tweet
 info <- snapp_twitterdata %>% 
   select(starts_with("info"))
 dim(info)
+# hashtags: all column names that contain the word hashtag
 hashtags <- snapp_twitterdata %>% 
   select(actor.preferredUsername, body, contains("hashtag"))
 dim(hashtags)
+# location: the Twitter "Place" where the tweet was created - objectType ("place"), displayName	(The full name of the place), 
+location <- snapp_twitterdata %>% 
+  select(starts_with("location"))
+dim(location)
+nrow(unique(location)) # 575 unique locations 
+
+# geo: Point location where the Tweet was created.
+geo <- snapp_twitterdata %>% 
+  select(starts_with("geo"))
+dim(geo)
+nrow(unique(geo)) # 40 unique geo-coordinated
+
+# All location related columns (for object, actor etc)
+location_all <- snapp_twitterdata %>% 
+  select(actor.preferredUsername, body, contains("location"))
+dim(location)
+names(location)
+
 #only columns of class character
+# (could look further into this for mapping analysis)
 all_char <- snapp_twitterdata %>% 
   select(which(sapply(., is.character)))
 dim(all_char)
