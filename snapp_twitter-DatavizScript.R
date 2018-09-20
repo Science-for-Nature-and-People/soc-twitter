@@ -70,22 +70,22 @@ View(top_user_noRT)
 ### bar plots 
 # w/RTs
 ggplot(head(top_user, 20), aes(screen_name, retweet_count)) + 
-  geom_bar(, stat="identity", fill = 'blue', size=1 )+
+  geom_bar(stat="identity", fill = 'blue', size=1 )+
   coord_flip()+
   theme_classic()
 
 ggplot(head(top_user, 20), aes(screen_name, fav_count)) + 
-  geom_bar(, stat="identity", fill = 'firebrick', size=1 )+
+  geom_bar(stat="identity", fill = 'firebrick', size=1 )+
   coord_flip()+
   theme_classic()
 
 # W/out RT
-ggplot(top_user_noRT, aes(screen_name, retweet_count)) + 
+ggplot(head(top_user_noRT,20), aes(screen_name, retweet_count)) + 
   geom_bar(stat="identity", fill='firebrick', size=1)+
   coord_flip()+
   theme_classic()
 
-ggplot(top_user_noRT, aes(screen_name, fav_count)) + 
+ggplot(head(top_user_noRT, 20), aes(screen_name, fav_count)) + 
   geom_bar(stat="identity", fill = 'blue', size=1 )+
   coord_flip()+
   theme_classic()
@@ -121,7 +121,6 @@ ggplot(query_count_df_noRT, aes(x=query, y=n))+
         element_rect())+ 
   coord_flip()
 
-
 # time series:
 str(twitter_merged)
 # general plot over time of tweets
@@ -129,13 +128,13 @@ ts_plot(twitter_merged)
 ts_plot(twitter_merged_noRT)
 
 # Timeseries by query word 
-
 query_df <- twitter_merged %>% 
   group_by(query = tolower(query))
 
 query_df_2[, grep("2017", query_df_2$created_at)]
 
 View(query_df)
+
 query_df_2 <- twitter_merged_noRT %>% 
   group_by(query = tolower(query))
 
@@ -145,7 +144,10 @@ ts_plot(query_df_2) #n = the number of tweets on that day
 # Group by country
 tweets_country <- twitter_merged %>% 
   group_by(country = country_code) %>% 
-  summarise(n())
+  summarise(tweets_count = n())%>% 
+  arrange(- tweets_count) %>% 
+  head(20)
+
 View(tweets_country)
 
 
