@@ -33,30 +33,21 @@ library(tidytext)
 library(stringr)
 library(rtweet)
 library(rjson)
-#install.packages("skimr")
 library(skimr)
-#install.packages("janitor")
 library(janitor)
 library(gtools)
 library(magrittr)
-# install.packages("data.table")
 library(data.table)
 library(lubridate)
-#install.packages("ids")
 library(ids)
-# install.packages("countrycode")
 library(countrycode)
 
-# setwd("/home/shares/soilcarbon/Twitter/")
 getwd()
 
 ########### I. READING_DATA #############################
 # 1/ Reading json(ARC)/API twitter archival datasets ####
 # a. Read in ARC    #####
 snapp_twitterdata_raw <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
-
-# create subset to look at
-test2 <- head(snapp_twitterdata_raw, 10)
 
 #' The \code{stream_in} and \code{stream_out} functions implement line-by-line processing
 #' of JSON data over a \code{\link{connection}}, such as a socket, url, file or pipe. JSON
@@ -78,6 +69,7 @@ snapp_twitterdata <- snapp_twitterdata_raw %>%
 #' Used personal folder to create fixed_datasets. 
 
 getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
+setwd("/home/shares/soilcarbon/Twitter/soc-twitter")
 
 dir.create(path = "./API_csv", showWarnings = F)
 
@@ -373,7 +365,7 @@ namelist <- list( API = twitter_API_merge, ARC = snapp_twitterdata_merge) # For 
 # b. DF with T and RT
 twitter_merged <- bind_rows(namelist, .id = "provenance")
 twitter_merged <- twitter_merged %>%
-  mutate(UID = id(twitter_merged, drop = FALSE)) %>% 
+  mutate(UID = dplyr::id(twitter_merged, drop = FALSE)) %>% 
   mutate(query = gsub("\"", "", query)) # remove quotes from query so that query words can match
 
 # c. Country/Place name edits
@@ -467,5 +459,8 @@ names(twitter_merged)
 str(twitter_merged_noRT)
 
 # f. Write CSV!
-write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
-write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)
+saveRDS(twitter_merged, "/home/shares/soilcarbon/Twitter/twitter_merged")
+saveRDS(twitter_merged_noRT, "/home/shares/soilcarbon/Twitter/twitter_merged_noRT")
+
+# write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
+# write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)
