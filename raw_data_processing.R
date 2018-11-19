@@ -69,7 +69,7 @@ snapp_twitterdata <- snapp_twitterdata_raw %>%
 #' Used personal folder to create fixed_datasets. 
 
 getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
-setwd("/home/shares/soilcarbon/Twitter/soc-twitter")
+setwd("/home/nolasco/soc-twitter")
 
 dir.create(path = "./API_csv", showWarnings = F)
 
@@ -88,6 +88,9 @@ twitter_API <- do.call(rbind,
                                          pattern="^fixed_",
                                          full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)}))
 
+lapply(list.files(path="./API_csv",
+                  pattern="^fixed_",
+                  full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)})
 
 str(twitter_API) #check structure. mainly chr or num/int
 class(twitter_API$created_at) # is.character() at the moment - will covert upon merge
@@ -210,11 +213,15 @@ unique(twitter_API$geo_coords)
 #In API:
 retweet_API <- select(.data = twitter_API,
                       grep("retweet", names(twitter_API), value = TRUE))
+
+
+dim(twitter_API)
 # which(anyNA(retweet_API))
 twitter_API
 
 favorite_API <- select(.data = twitter_API,
                        grep("favorite", names(twitter_API), value = TRUE))
+
 # which(anyNA(favorite_API))
 # max(favorite_API$favorite_count, na.rm = T)
 # max(retweet_API$retweet_count, na.rm = T)
@@ -250,7 +257,10 @@ snapp_twitterdata <- snapp_twitterdata %>%
 
 sprintf(snapp_twitterdata$hashtag_text[45])
 
+snapp_twitterdata$hashtag_text[45]
+
 # Remove NA, and trailing `|`
+gsub("\\|NA|NA|^\\|", "", snapp_twitterdata$hashtag_text)
 snapp_twitterdata$hashtag_text <- gsub("\\|NA|NA|^\\|", "", snapp_twitterdata$hashtag_text)
 sprintf(snapp_twitterdata$hashtag_text[45])
 
@@ -286,6 +296,7 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
                  # "id",
                  "query")) 
 
+
 # c. Remove id:twitter.com in user id
 snapp_twitterdata_merge$user_id <- str_remove(snapp_twitterdata_merge$user_id, "id:twitter.com:")
 # sprintf(head(snapp_twitterdata_merge$user_id)) 
@@ -293,6 +304,7 @@ snapp_twitterdata_merge$user_id <- str_remove(snapp_twitterdata_merge$user_id, "
 # d. Dates
 # Remove additional zeros in date 
 max(snapp_twitterdata_merge$created_at) # fixed 2013 date issue
+
 snapp_twitterdata_merge$created_at <- str_remove(snapp_twitterdata_merge$created_at, ".000")
 # Convert create_at date to date format
 snapp_twitterdata_merge$created_at <- as_datetime(snapp_twitterdata_merge$created_at)
@@ -303,7 +315,8 @@ class(snapp_twitterdata_merge$created_at)
 query_ARC <- str_match(
   snapp_twitterdata_merge$text,
   pattern = regex('soil health|healthy soil|#soilhealth|#SoilHealth|#healthysoil|soil quality|soil fertility|#soilquality|#soilfertility|rangeland health|#rangelandhealth|healthy rangelands|#healthyrangelands',
-                  ignore_case=TRUE)) 
+                  ignore_case=TRUE))
+
 snapp_twitterdata_merge$query <- paste0(query_ARC)           ##, sep = "|", collapse = NULL)
 
 sprintf(snapp_twitterdata_merge$query[70:80]) # Initial print, character NA . if overwritten, will display NA.
@@ -377,6 +390,8 @@ sprintf(head(unique(twitter_merged$place_name)), 10)
 is.na(twitter_merged$place_name) <- twitter_merged$place_name == ""
 sprintf(head(unique(twitter_merged$place_name), 10))
 
+countrycode(twitter_merged$country_code[i], origin = "iso2c", destination = "country.name")
+?countrycode
 # change country code to country name
 for (i in 1:length(twitter_merged$country_code)){
   if(twitter_merged$country_code[i] != "台灣" & nchar(twitter_merged$country_code[i]) <= 2 & !is.na(twitter_merged$country_code[i])) {
@@ -384,6 +399,8 @@ for (i in 1:length(twitter_merged$country_code)){
     }
 }
 # unique(twitter_merged$country_code)
+unique(twitter_merged$country_code)
+?codelist
 
 # Rename country column as it is not a code anymore
 # names(twitter_merged)
@@ -396,6 +413,7 @@ twitter_merged_noRT <- twitter_merged %>%
   # mutate(query = gsub("\"", "", query)) %>% 
   filter(!str_detect(text, "^RT")) # ^ used to select only RT at start of text. subs with "starts_with()"
                                    #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
+
 str(twitter_merged_noRT)
 
 is.na(twitter_merged_noRT$country_code) <- twitter_merged_noRT$country_code == ""
@@ -422,13 +440,13 @@ keywords <- paste0(c("soil health", "healthy soil", "#soilhealth", "#healthysoil
 twitter_merged <- twitter_merged %>%
   mutate(hits = str_extract_all(text, pattern = regex(keywords, ignore_case=TRUE)) %>%  # Extract all the keywords
            map(~charnull_set(.x)) %>%   # Replace character(0) with NAs
-           map_chr(~glue::glue_collapse(.x, sep = ";")) %>%   # collapse the multiple hits
+           map_chr(~glue::collapse(.x, sep = ";")) %>%   # collapse the multiple hits/collapse instead of glue_collapse
            tolower) # all our keywords are lower case
 
 twitter_merged_noRT <- twitter_merged_noRT %>%
   mutate(hits = str_extract_all(text, pattern = regex(keywords, ignore_case=TRUE)) %>%  # Extract all the keywords
            map(~charnull_set(.x)) %>%   # Replace character(0) with NAs
-           map_chr(~glue::glue_collapse(.x, sep = ";")) %>%   # collapse the multiple hits
+           map_chr(~glue::collapse(.x, sep = ";")) %>%   # collapse the multiple hits/collapse instead of glue_collapse
            tolower) # all our keywords are lower case
 
 # e. Confirm UIDs
