@@ -42,7 +42,6 @@ library(lubridate)
 library(ids)
 library(countrycode)
 
-getwd()
 
 ########### I. READING_DATA #############################
 # 1/ Reading json(ARC)/API twitter archival datasets ####
@@ -69,7 +68,7 @@ snapp_twitterdata <- snapp_twitterdata_raw %>%
 #' Used personal folder to create fixed_datasets. 
 
 getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
-setwd("/home/shares/soilcarbon/Twitter/soc-twitter")
+# setwd("/home/shares/soilcarbon/Twitter/soc-twitter")
 
 dir.create(path = "./API_csv", showWarnings = F)
 
@@ -77,16 +76,14 @@ dir.create(path = "./API_csv", showWarnings = F)
 file.copy(list.files("/home/shares/soilcarbon/Twitter/rTweet/", "*.csv", full.names=T), "./API_csv/")
 
 # run the bash script to remove EOL
-system("sh fix_tweet.sh") # do not edit with RStudio, used CLI tools such as `vim`
+system("sh fix_tweet.sh") # !!do not edit with RStudio, used CLI tools such as `vim`
 
 # List the fixed files
-list.files(path="./API_csv", pattern="^fixed_", full.names=TRUE)
+fixed_files <- list.files(path="./API_csv", pattern="^fixed_", full.names=TRUE)
+fixed_files
 
 # read the files in
-twitter_API <- do.call(rbind,
-                       lapply(list.files(path="./API_csv",
-                                         pattern="^fixed_",
-                                         full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)}))
+twitter_API <- do.call(rbind, lapply(fixed_files, function(x) {read.csv(x, stringsAsFactors =FALSE)}))
 
 
 str(twitter_API) #check structure. mainly chr or num/int
@@ -103,6 +100,7 @@ class(twitter_API$created_at) # is.character() at the moment - will covert upon 
 object <- snapp_twitterdata %>% 
   select(starts_with("object"))
 dim(object)
+# [1] 73074  1659
 
 # Actor: the Twitter User -  contains all metadata relevant to that user.
 actor <- snapp_twitterdata %>% 
