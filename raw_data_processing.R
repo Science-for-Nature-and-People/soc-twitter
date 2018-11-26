@@ -42,6 +42,10 @@ library(lubridate)
 library(ids)
 library(countrycode)
 
+##### CONSTANTS ####
+
+dir_fix_tweet <- "./API_csv"
+
 
 ########### I. READING_DATA #############################
 # 1/ Reading json(ARC)/API twitter archival datasets ####
@@ -70,10 +74,16 @@ snapp_twitterdata <- snapp_twitterdata_raw %>%
 getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
 # setwd("/home/shares/soilcarbon/Twitter/soc-twitter")
 
-dir.create(path = "./API_csv", showWarnings = F)
+# Delete files if folder already exists
+if (dir.exists(paths = dir_fix_tweet)){ 
+  unlink(dir_fix_tweet, recursive = TRUE)
+}
+
+# Create folder to store a copy of the tweet extracted from the API 
+dir.create(path = dir_fix_tweet, showWarnings = F)
 
 # Copy the files from the shared directory to your repository
-file.copy(list.files("/home/shares/soilcarbon/Twitter/rTweet/", "*.csv", full.names=T), "./API_csv/")
+file.copy(list.files("/home/shares/soilcarbon/Twitter/rTweet/", "*.csv", full.names=T), dir_fix_tweet)
 
 # run the bash script to remove EOL
 system("sh fix_tweet.sh") # !!do not edit with RStudio, used CLI tools such as `vim`
