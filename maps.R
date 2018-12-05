@@ -9,15 +9,17 @@ library(tidyverse)
 library(sf)
 library(countrycode)
 library(spdplyr)
+library(classInt)
 
 # === Datasets === 
-## uncomment if not loaded into environment
-twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE)
-twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
 
 ## uncomment if not correct working directory
 #setwd('/home/nolasco/soc-twitter')
 #list.files()
+
+## uncomment if not loaded into environment
+twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE)
+twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
 
 # Creating a Country Code column for the datasets 
 twitter_merged['countryCode'] <- countrycode(twitter_merged$country, 'country.name', 'iso3c')
@@ -34,7 +36,6 @@ for (i in 1:length(no_matchCountry)){
   twitter_merged$countryCode[twitter_merged$country == no_matchCountry[i]] <- no_matchCode[i]
   twitter_merged_noRT$countryCode[twitter_merged_noRT$country == no_matchCountry[i]] <- no_matchCode[i]
 }
-
 
 # Creating a count dataframe
 count.RT <- twitter_merged %>%
@@ -86,12 +87,22 @@ tm_shape(count.noRTsp) +
 
 
 ## As we can tell, US has the most number of tweets regarding soil
-# Since US is such a huge outlier, we probably should remove it to see 
+# Since US is such a huge outlier, I'm going to remove it to see 
 tm_shape(count.RT_USsp) +
   tm_polygons('Frequency') + tm_layout(main.title = "With RT (not including US)")
 
 tm_shape(count.noRT_USsp) +
   tm_polygons('Frequency') + tm_layout(main.title = "No RT (not including US)")
 
+# === Changing the frequency level to include US and more info about other states ===
+tm_shape(count.noRTsp) +
+  tm_polygons('Frequency', style = 'fixed', breaks = c(1,2,5,10,100,929)) + tm_layout(main.title = "No RT")
 
-## Ask if we should do state level
+tm_shape(count.RTsp) +
+  tm_polygons('Frequency', style = 'fixed', breaks = c(1,2,5,10,100,929)) + tm_layout(main.title = "RT")
+
+# === Final map ===
+# Because RT and no RT dataset has same frequency count, we just used one map
+
+tm_shape(count.RTsp) +
+  tm_polygons('Frequency', style = 'fixed', breaks = c(1,2,5,10,100,929)) + tm_layout(main.title = "Tweet Frequency per Country")
