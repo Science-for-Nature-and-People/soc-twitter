@@ -52,6 +52,7 @@ top_user_noRT <- twitter_merged_noRT %>%
   summarise(total_tweets = n(), retweet_count = sum(retweet_count), fav_count = sum(favorite_count)) %>% 
   arrange(- total_tweets) %>% 
   head(1000)
+
 head(top_user_noRT)
 # View(top_user_noRT) 
 
@@ -133,6 +134,9 @@ query_df_2 <- twitter_merged_noRT %>%
 ts_plot(query_df)
 ts_plot(query_df_2) #n = the number of tweets on that day 
 
+## Note: Interesting to see that some periods between end of 2017-beginning of 2018 had zero tweets 
+## Also, I'm curious if we can just sum up hashtags and words that are similar (i.e #soilquality and soil quality)
+
 # Group by country
 tweets_country <- twitter_merged %>% 
   group_by(country = country) %>% 
@@ -148,6 +152,7 @@ tweets_place <- twitter_merged %>%
   summarise(tweets_count = n())%>% 
   arrange(- tweets_count) %>% 
   head(20)
+
 tweets_place_2 <- twitter_merged_noRT %>% 
   group_by(place = place_name) %>% 
   summarise(tweets_count = n())%>% 

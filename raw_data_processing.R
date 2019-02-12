@@ -466,9 +466,11 @@ twitter_merged_noRT <- twitter_merged_noRT %>%
 names(twitter_merged)
 str(twitter_merged_noRT)
 
+View(head(twitter_merged, 20))
+
 # f. Write CSV!
 saveRDS(twitter_merged, "/home/shares/soilcarbon/Twitter/twitter_merged")
 saveRDS(twitter_merged_noRT, "/home/shares/soilcarbon/Twitter/twitter_merged_noRT")
 
-# write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
-# write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)
+#write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
+#write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)
