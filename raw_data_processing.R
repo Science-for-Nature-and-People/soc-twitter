@@ -1,14 +1,14 @@
-##################################################
-# Twitter Influencers regarding Soil Health     ##
-#                                               ##
-# Script 1: Data CLeaning/Processing            ##   
-#                                               ##
-# For SNAPP - Soil Organic Carbon Working Group ##
-# Author: Margaux Sleckman                      ##
-# Contact: scicomp@nceas.ucsb.edu               ##
-##################################################
+####################################################
+# Twitter Influencers regarding Soil Health       ##
+#                                                 ##
+# Script 1: Data CLeaning/Processing              ##   
+#                                                 ##
+# For SNAPP - Soil Organic Carbon Working Group   ##
+# Author: Margaux Sleckman and Julien Brun, NCEAS ##
+# Contact: scicomp@nceas.ucsb.edu                 ##
+####################################################
 
-#soc-twitter on SNAPP version !!!
+
 
 # Purpose of script:
 # 1. read in R archival data from twitter twitter.json {found on aurora in: /home/shares/soilcarbon/Twitter/
