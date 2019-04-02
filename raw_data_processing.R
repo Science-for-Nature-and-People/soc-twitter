@@ -8,8 +8,6 @@
 # Contact: scicomp@nceas.ucsb.edu                 ##
 ####################################################
 
-
-
 # Purpose of script:
 # 1. read in R archival data from twitter twitter.json {found on aurora in: /home/shares/soilcarbon/Twitter/
 # 2. read in R API data from twitter based on Twitter.R script {found on aurora in: /home/shares/soilcarbon/Twitter/
@@ -20,8 +18,8 @@
 # ARC: archived data derived from json file
 # API: API data 
 
-# Packages/wd ####
-# Packages needed:
+# Packages ####
+
 library(tidyverse)
 library(jsonlite)
 library(streamR)
@@ -42,15 +40,24 @@ library(lubridate)
 library(ids)
 library(countrycode)
 
+
+
 ##### CONSTANTS ####
 
+# folder containing the data downloaded from the API
 dir_fix_tweet <- "./API_csv"
+
+## Aurora path
+main_path <- "/home/shares/soilcarbon/Twitter"
+
 
 
 ########### I. READING_DATA #############################
+
 # 1/ Reading json(ARC)/API twitter archival datasets ####
+
 # a. Read in ARC    #####
-snapp_twitterdata_raw <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
+snapp_twitterdata_raw <- stream_in(file.path(main_path,"twitter.json"))
 
 #' The \code{stream_in} and \code{stream_out} functions implement line-by-line processing
 #' of JSON data over a \code{\link{connection}}, such as a socket, url, file or pipe. JSON
@@ -66,13 +73,13 @@ snapp_twitterdata <- snapp_twitterdata_raw %>%
   filter(!is.na(body))
   # nrow(snapp_twitterdata) #73074
 
-# b. Read in API   ####
+# b. Read in API data  ####
 
-#' Run bash script on API files to remove Windows end of line ^M character
+#' Run bash script on API files to remove Windows end of line `^M` character
 #' Used personal folder to create fixed_datasets. 
 
 getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
-# setwd("/home/shares/soilcarbon/Twitter/soc-twitter")
+
 
 # Delete files if folder already exists
 if (dir.exists(paths = dir_fix_tweet)){ 
