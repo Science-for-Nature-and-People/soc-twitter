@@ -1,14 +1,12 @@
-##################################################
-# Twitter Influencers regarding Soil Health     ##
-#                                               ##
-# Script 1: Data CLeaning/Processing            ##   
-#                                               ##
-# For SNAPP - Soil Organic Carbon Working Group ##
-# Author: Margaux Sleckman                      ##
-# Contact: scicomp@nceas.ucsb.edu               ##
-##################################################
-
-#soc-twitter on SNAPP version !!!
+####################################################
+# Twitter Influencers regarding Soil Health       ##
+#                                                 ##
+# Script 1: Data CLeaning/Processing              ##   
+#                                                 ##
+# For SNAPP - Soil Organic Carbon Working Group   ##
+# Author: Margaux Sleckman and Julien Brun, NCEAS ##
+# Contact: scicomp@nceas.ucsb.edu                 ##
+####################################################
 
 # Purpose of script:
 # 1. read in R archival data from twitter twitter.json {found on aurora in: /home/shares/soilcarbon/Twitter/
@@ -20,8 +18,8 @@
 # ARC: archived data derived from json file
 # API: API data 
 
-# Packages/wd ####
-# Packages needed:
+# Packages ####
+
 library(tidyverse)
 library(jsonlite)
 library(streamR)
@@ -42,12 +40,24 @@ library(lubridate)
 library(ids)
 library(countrycode)
 
-getwd()
+
+
+##### CONSTANTS ####
+
+# folder containing the data downloaded from the API
+dir_fix_tweet <- "./API_csv"
+
+## Aurora path
+main_path <- "/home/shares/soilcarbon/Twitter"
+
+
 
 ########### I. READING_DATA #############################
+
 # 1/ Reading json(ARC)/API twitter archival datasets ####
+
 # a. Read in ARC    #####
-snapp_twitterdata_raw <- stream_in("/home/shares/soilcarbon/Twitter/twitter.json")
+snapp_twitterdata_raw <- stream_in(file.path(main_path,"twitter.json"))
 
 #' The \code{stream_in} and \code{stream_out} functions implement line-by-line processing
 #' of JSON data over a \code{\link{connection}}, such as a socket, url, file or pipe. JSON
@@ -63,30 +73,34 @@ snapp_twitterdata <- snapp_twitterdata_raw %>%
   filter(!is.na(body))
   # nrow(snapp_twitterdata) #73074
 
-# b. Read in API   ####
+# b. Read in API data  ####
 
-#' Run bash script on API files to remove Windows end of line ^M character
+#' Run bash script on API files to remove Windows end of line `^M` character
 #' Used personal folder to create fixed_datasets. 
 
 getwd() # verify your working directory ensure it is the github repo where fix_tweet.sh is stored
-setwd("/home/nolasco/soc-twitter")
 
-dir.create(path = "./API_csv", showWarnings = F)
+
+# Delete files if folder already exists
+if (dir.exists(paths = dir_fix_tweet)){ 
+  unlink(dir_fix_tweet, recursive = TRUE)
+}
+
+# Create folder to store a copy of the tweet extracted from the API 
+dir.create(path = dir_fix_tweet, showWarnings = F)
 
 # Copy the files from the shared directory to your repository
-file.copy(list.files("/home/shares/soilcarbon/Twitter/rTweet/", "*.csv", full.names=T), "./API_csv/")
+file.copy(list.files("/home/shares/soilcarbon/Twitter/rTweet/", "*.csv", full.names=T), dir_fix_tweet)
 
 # run the bash script to remove EOL
-system("sh fix_tweet.sh") # do not edit with RStudio, used CLI tools such as `vim`
+system("sh fix_tweet.sh") # !!do not edit with RStudio, used CLI tools such as `vim`
 
 # List the fixed files
-list.files(path="./API_csv", pattern="^fixed_", full.names=TRUE)
+fixed_files <- list.files(path="./API_csv", pattern="^fixed_", full.names=TRUE)
+fixed_files
 
 # read the files in
-twitter_API <- do.call(rbind,
-                       lapply(list.files(path="./API_csv",
-                                         pattern="^fixed_",
-                                         full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)}))
+twitter_API <- do.call(rbind, lapply(fixed_files, function(x) {read.csv(x, stringsAsFactors =FALSE)}))
 
 lapply(list.files(path="./API_csv",
                   pattern="^fixed_",
@@ -106,6 +120,7 @@ class(twitter_API$created_at) # is.character() at the moment - will covert upon 
 object <- snapp_twitterdata %>% 
   select(starts_with("object"))
 dim(object)
+# [1] 73074  1659
 
 # Actor: the Twitter User -  contains all metadata relevant to that user.
 actor <- snapp_twitterdata %>% 
@@ -476,9 +491,11 @@ twitter_merged_noRT <- twitter_merged_noRT %>%
 names(twitter_merged)
 str(twitter_merged_noRT)
 
+View(head(twitter_merged, 20))
+
 # f. Write CSV!
 saveRDS(twitter_merged, "/home/shares/soilcarbon/Twitter/twitter_merged")
 saveRDS(twitter_merged_noRT, "/home/shares/soilcarbon/Twitter/twitter_merged_noRT")
 
-# write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
-# write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)
+#write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
+#write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)

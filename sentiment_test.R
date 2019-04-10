@@ -19,6 +19,7 @@ library(dplyr)
 
 ### Parsing through tweets ####
 
+
 # Selecting relevant columns: 
 main_tweet_columns<-data.frame(cbind(twitter.data.full$actor.displayName, twitter.data.full$actor.summary,
                                twitter.data.full$body,
@@ -56,7 +57,6 @@ tweet_counts <- unnest_tweets %>%
   filter(!word %in% c("https","rt","t.co"))
 
 ##Wordcloud  
-library(wordcloud)
 tweet_counts %>% 
   with(wordcloud(word, n, max.words=200, color=brewer.pal(7,"Dark2")))
 
