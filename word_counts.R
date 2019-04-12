@@ -1,4 +1,3 @@
-#### Identifying most influential tweets ###
 library(tidyverse)
 library(tidytext)
 library(wordcloud)
@@ -21,7 +20,6 @@ library(stringr)
 twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
 
 ##remove duplications
-twitter_merged <- distinct(twitter_merged)
 twitter_merged_noRT <- distinct(twitter_merged_noRT)
 
 
