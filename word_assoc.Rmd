@@ -1,0 +1,244 @@
+---
+title: "word_assoc"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(wordcloud)
+library(kableExtra)
+library(knitr)
+
+twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
+twitter_merged_noRT <- distinct(twitter_merged_noRT)
+noRT <- twitter_merged_noRT %>% 
+  arrange(-retweet_count) %>% 
+  filter(screen_name != "Pontifex") #remove the pope..
+
+```
+
+```{r, include=FALSE}
+##functions
+
+#function for creating bigram
+create_bigram <- function(x,filter_by) {
+  
+  
+  filtered <- x %>% 
+    filter(
+      str_detect(tolower(text), filter_by))
+  
+bigrams <- filtered %>% 
+  select(text) %>% 
+  mutate(text = tolower(text)) %>% 
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>% 
+  count(bigram, sort = TRUE)
+
+bigrams_separated <- bigrams %>% 
+separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams_separated %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word1 %in% c("https","rt","t.co","amp")) %>% 
+  filter(!word2 %in% stop_words$word) %>% 
+  filter(!word2 %in% c("https","rt","t.co","amp"))
+
+bigrams_united <- bigrams_filtered %>%
+  unite(bigram, word1, word2, sep = " ")
+}
+
+#function for creating a word network 
+gram_network <- function(data,filter_by) {
+  bigrams_separated <- data %>% 
+    separate(bigram, c("word1", "word2"), sep = " ")
+  
+  bigram_graph <- bigrams_separated %>%
+    filter(n > filter_by) %>%
+    graph_from_data_frame()
+  
+  set.seed(2019)
+  
+  a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+  
+  ggraph(bigram_graph, layout = "fr") +
+    geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                   arrow = a, end_cap = circle(.07, 'inches')) +
+    geom_node_point(color = "lightblue", size = 5) +
+    geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+    theme_void()
+}
+
+##Function for preparing df for a wordcloud | column graph of word counts
+prepare_text <- function(x) {
+  text_words <- x %>% 
+    select(text) %>% 
+    mutate(text = tolower(text)) %>% 
+    unnest_tokens(word, text)
+  
+  text_words %>% 
+    anti_join(stop_words) %>% 
+    count(word, sort=TRUE) %>% 
+    filter(!word %in% c("https","rt","t.co","amp")) %>% #remove words associated with images/links and special characters, (i.e. amp = &)
+    filter(!word %in% c("soil","health", "healthy", "soilhealth")) #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
+}
+```
+  
+    
+```{r, include=FALSE}
+soil_tweets <- twitter_merged_noRT %>% 
+  filter(
+    str_detect(tolower(text), "soil"))
+
+#creat word count
+soil_word_count <- prepare_text(soil_tweets)
+
+soil_word_count %>% 
+  with(wordcloud(word, n, 
+                 min.freq = 100,
+                 max.words=200, 
+                 random.order=FALSE, 
+                 color=brewer.pal(7,"Dark2")))
+
+
+#### rangeland health 
+
+rangeland_tweets <- twitter_merged_noRT %>% 
+  filter(
+    str_detect(tolower(text), "rangeland"))
+
+#creat word count
+rangeland_word_count <- prepare_text(rangeland_tweets) %>% 
+  filter(word != "rangeland")
+
+
+rangeland_word_count %>% 
+  with(wordcloud(word, n, 
+                 min.freq = 2,
+                 max.words=200, 
+                 random.order=FALSE, 
+                 color=brewer.pal(7,"Dark2")))
+
+
+#### forest health 
+
+forest_tweets <- twitter_merged_noRT %>% 
+  filter(
+    str_detect(tolower(text), "forest"))
+
+#creat word count
+forest_word_count <- prepare_text(forest_tweets) %>% 
+  filter(word != "forest")
+
+forest_word_count %>% 
+  with(wordcloud(word, n, 
+                 min.freq = 10,
+                 max.words=200, 
+                 random.order=FALSE, 
+                 color=brewer.pal(7,"Dark2")))
+``` 
+
+### visualizing propotions  
+three categories using created by filtering: "soil" "rangeland" "forest"
+
+```{r,echo=F, fig.width=12}
+#this is a very rough thought as a method for comparing proportion
+forest_prop <- forest_word_count %>% 
+  mutate(forest_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+soil_prop <- soil_word_count %>% 
+  mutate(soil_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+range_prop <- rangeland_word_count %>% 
+  mutate(range_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+total_prop <- merge(merge(forest_prop, soil_prop), range_prop)
+
+#create word list:
+top_soil <- head(soil_prop, 10)
+top_range <- head(range_prop, 10) 
+top_forest <- head(forest_prop, 10)
+
+word_list <- c(paste(top_soil$word), paste(top_forest$word), paste(top_range$word))
+
+kable(list(top_soil,top_range,top_forest))%>%
+kable_styling(latex_options = c("striped", "scale_down"))
+
+```
+
+
+```{r, echo=F, fig.width=12}
+#filter and restructure for visualization
+selected_prop <- total_prop %>% 
+  filter(word %in% word_list) %>% 
+  gather("querry", "proportion", -word)
+
+ggplot(selected_prop, aes(word, proportion)) +
+  geom_col(aes(fill = word)) +
+  facet_wrap(~querry) +
+  coord_flip() +
+  labs(title = "'rangeland' v 'soil' v 'forest'") +
+  theme_bw()
+```
+
+
+
+
+
+### Full dataset (noRT)
+```{r, echo=F, fig.width=12}
+####full dataset####
+noRT_bigram <- create_bigram(noRT, "")
+gram_network(noRT_bigram,100)
+```
+  
+  ***  
+    
+  
+  
+  
+          
+### filtered for "soil health"
+```{r, echo=F, fig.width=12}
+###soil
+soil_bigram <- create_bigram(noRT, "soil health")
+gram_network(soil_bigram, 100)
+```
+  
+  ***  
+  
+### filtered for "rangeland health"
+```{r, echo=F, fig.width=12}
+###rangeland
+range_bigram <- create_bigram(noRT, "rangeland health")
+gram_network(range_bigram, 1)
+```
+  
+  ***  
+  
+### filtered for "forest health"
+```{r, echo=F, fig.width=12}
+###
+forest_bigram <- create_bigram(noRT, "forest health")
+gram_network(forest_bigram, 0)
+```
+
+
+
+
+
+
+
+
+
