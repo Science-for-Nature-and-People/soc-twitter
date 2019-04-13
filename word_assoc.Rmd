@@ -147,7 +147,50 @@ forest_word_count %>%
 ``` 
 
 ### visualizing propotions  
-three categories using created by filtering: "soil" "rangeland" "forest"
+three categories using created by filtering: "soil" "rangeland" "forest"  
+  
+
+
+  These were created by creating a word list based on the top 10 words for each category, then using that word list as a filter for all categories (therefore only words that appeared in all three groupings are compared in this figure) so that we can compare the relative proportion of each word found in each category
+```{r, fig.width=12}
+forest_prop <- forest_word_count %>% 
+  mutate(forest_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+soil_prop <- soil_word_count %>% 
+  mutate(soil_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+range_prop <- rangeland_word_count %>% 
+  mutate(range_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+total_prop <- merge(merge(forest_prop, soil_prop), range_prop)
+
+#create word list:
+top_soil <- head(soil_prop, 10)
+top_range <- head(range_prop, 10) 
+top_forest <- head(forest_prop, 10)
+
+word_list <- c(paste(top_soil$word), paste(top_forest$word), paste(top_range$word))
+
+#filter and restructure for visualization
+selected_prop <- total_prop %>% 
+  filter(word %in% word_list) %>% 
+  gather("querry", "proportion", -word)
+
+ggplot(selected_prop, aes(word, proportion)) +
+  geom_col(aes(fill = word)) +
+  facet_wrap(~querry) +
+  coord_flip() +
+  labs(title = "'rangeland' v 'soil' v 'forest'") +
+  theme_bw()
+```
+
+*** 
+    
+  Top words (by proportion) for each category:  
+  
 
 ```{r,echo=F, fig.width=12}
 #this is a very rough thought as a method for comparing proportion
@@ -172,29 +215,13 @@ top_forest <- head(forest_prop, 10)
 
 word_list <- c(paste(top_soil$word), paste(top_forest$word), paste(top_range$word))
 
-kable(list(top_soil,top_range,top_forest))%>%
+kable(list(top_forest,top_range,top_soil))%>%
 kable_styling(latex_options = c("striped", "scale_down"))
 
 ```
 
-
-```{r, echo=F, fig.width=12}
-#filter and restructure for visualization
-selected_prop <- total_prop %>% 
-  filter(word %in% word_list) %>% 
-  gather("querry", "proportion", -word)
-
-ggplot(selected_prop, aes(word, proportion)) +
-  geom_col(aes(fill = word)) +
-  facet_wrap(~querry) +
-  coord_flip() +
-  labs(title = "'rangeland' v 'soil' v 'forest'") +
-  theme_bw()
-```
-
-
-
-
+***  
+I repeated this process for by filter for *health & \*quality but didnt have time to include in this markdown tonight see the word_counts.R file for all related figures
 
 ### Full dataset (noRT)
 ```{r, echo=F, fig.width=12}
