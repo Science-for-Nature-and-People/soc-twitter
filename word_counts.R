@@ -26,11 +26,20 @@ twitter_merged_noRT <- distinct(twitter_merged_noRT)
 
 
 ##Function for preparing df for a wordcloud | column graph of word counts
+#' Title
+#'
+#' @param x 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 prepare_text <- function(x) {
   text_words <- x %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% 
     unnest_tokens(word, text)
+  
   
   text_words %>% 
     anti_join(stop_words) %>% 
@@ -152,6 +161,7 @@ word_list <- c(paste(top_soil$word), paste(top_forest$word), paste(top_range$wor
 selected_prop <- total_prop %>% 
   filter(word %in% word_list) %>% 
   gather("querry", "proportion", -word)
+##this does not have length 30 as would be expected, some words have 0 overlap withing the different categories.
 
 ggplot(selected_prop, aes(word, proportion)) +
   geom_col(aes(fill = word)) +
@@ -162,12 +172,15 @@ ggplot(selected_prop, aes(word, proportion)) +
 ggsave("word_prop_pngs/word_proportions_all.png")
 
 
+
 ##repeating w/ forest excluded
 total_prop_NOfor <- merge(soil_prop, range_prop)
 word_list_NOfor <- c(paste(top_soil$word), paste(top_range$word))
 selected_prop_NOfor <- total_prop_NOfor %>% 
   filter(word %in% word_list_NOfor) %>% 
   gather("querry", "proportion", -word)
+##this does not have length 20 as would be expected, some words have 0 overlap withing the different categories.
+
 
 ggplot(selected_prop_NOfor, aes(word, proportion)) +
   geom_col(aes(fill = word)) +
@@ -274,6 +287,8 @@ ggplot(selected_health_prop, aes(word, proportion)) +
   coord_flip() +
   theme_bw()
 ggsave("word_prop_pngs/word_props_health.png")
+
+###biodiversity is only common term
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~###
 
 

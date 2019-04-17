@@ -20,8 +20,16 @@ noRT <- twitter_merged_noRT %>%
 
 
 #function for creating bigram
+#' Title
+#'
+#' @param x 
+#' @param filter_by 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 create_bigram <- function(x,filter_by) {
-  
   
   filtered <- x %>% 
     filter(
@@ -49,12 +57,12 @@ bigrams_united <- bigrams_filtered %>%
 
 
 #function for creating a word network 
-gram_network <- function(data,filter_by) {
+gram_network <- function(data,count) {
   bigrams_separated <- data %>% 
     separate(bigram, c("word1", "word2"), sep = " ")
   
   bigram_graph <- bigrams_separated %>%
-    filter(n > filter_by) %>%
+    filter(n > count) %>%
     graph_from_data_frame()
   
   set.seed(2019)
@@ -72,7 +80,7 @@ gram_network <- function(data,filter_by) {
 
 ####full dataset####
 noRT_bigram <- create_bigram(noRT, "")
-gram_network(noRT_bigram,100)
+gram_network(noRT_bigram,200)
 
 ###soil
 soil_bigram <- create_bigram(noRT, "soil health")
