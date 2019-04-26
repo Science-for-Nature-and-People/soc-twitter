@@ -22,6 +22,15 @@ noRT <- twitter_merged_noRT %>%
   arrange(-retweet_count) %>% 
   filter(screen_name != "Pontifex")
 
+#how many partners have tweeted about our search terms?
+partner_hits <- noRT %>% 
+  filter(screen_name %in% partners$Handle)
+unique(partner_hits$screen_name)
+#27 out of 45
+
+
+
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #find top 100 users
@@ -30,8 +39,7 @@ noRT <- twitter_merged_noRT %>%
 top_100_users <- noRT %>% 
   group_by(screen_name) %>% 
   summarise(
-    total_rt = sum(retweet_count)
-  ) %>% 
+    total_rt = sum(retweet_count,na.rm = T)) %>% 
   arrange(-total_rt) %>% 
   head(100)
 
@@ -45,13 +53,14 @@ user_overlap
 
 
 #create list of top users
+#for some reason lookup_user wouldn't work on the top_100_users df so i took the users directly from noRT
 user_list <- noRT %>% 
   filter(screen_name %in% top_100_users$screen_name)
 
 #get user data
 usr_df <- lookup_users(user_list$user_id)
 
-usr_df %>%
+top_users <- usr_df %>%
   select(screen_name, name, location, description, followers_count, friends_count, favourites_count, statuses_count, listed_count, account_created_at)
 
 
@@ -60,14 +69,16 @@ usr_df %>%
 top_100_favs <- noRT %>% 
   group_by(screen_name) %>%
   summarise(
-    total_fav = sum(favorite_count)) %>% #add remove NA
+    total_fav = sum(favorite_count, na.rm = T)) %>% #add remove NA
   arrange(-total_fav) %>% 
   head(100)
 
 
 user_fav_overlap <- top_100_favs$screen_name[top_100_favs$screen_name %in% partners$Handle]
 length(user_fav_overlap)
-# 0 TNC's partners are among the top 100 users by this metric
+# 5 TNC's partners are among the top 100 users by this metric
+user_fav_overlap
+#"USDA_NRCS"    "nature_org"   "USDA"         "nobleresinst" "SoilPartners"
 
 
 fav_list <- noRT %>% 
@@ -75,7 +86,7 @@ fav_list <- noRT %>%
 
 fav_df <- lookup_users(fav_list$user_id)
 
-fav_df %>%
+top_fav_df <- fav_df %>%
   select(screen_name, name, location, description, followers_count, friends_count, favourites_count, statuses_count, listed_count, account_created_at)
 
 
