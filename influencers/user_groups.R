@@ -1,5 +1,5 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#  most influential tweets for different user groups   #
+#               defining user groups                   #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 ## Questions to answer:
@@ -9,9 +9,7 @@
 #~~~~ Id the users who retweeted the most RTed tweets
 #~~~~ perform user search and try to separate them into "groups"
   
-#Are there differences in the content/message of these tweets that make them more appealing to these different groups?
-#~~~~ once users have been 'grouped' figure out which groups favored (RTed) which tweets the most.
-  
+
 
 library(tidyverse)
 library(stringr)
@@ -24,7 +22,8 @@ source("text_analysis_functions.R")
 twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE) %>% 
   distinct()
 twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
-  distinct()
+  distinct() %>% 
+  arrange(-retweet_count)
 
 
 
@@ -42,17 +41,15 @@ RT$is_india[is.na(RT$is_india)] <- 0
 
 
 RT <- RT %>% 
-  filter(!str_detect(tolower(text), "pontifex"), #remove the popes RTs
-         screen_name != "Pontifex") 
+   filter(!str_detect(tolower(text), "pontifex"), #remove the popes RTs
+          screen_name != "Pontifex") 
 
 
 
 
-
-
-
-
-##### STEP 1: identify user groups ####
+########~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#######
+#####      STEP 1: identify user groups       ####
+########~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#######
 
 #ID 'active users' i.e those who have tweeted >32 times this equates to ~every other week over 16 months
 active_users <- RT %>% 
@@ -81,8 +78,9 @@ unique(partner_overlap$screen_name)
 #look up user info from twitter API
 user_info <- lookup_users(unique(user_list$user_id))
 
+########~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#######
 ##### create word list for IDing user groups #### 
-
+########~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#######
 
 #use partner list and associated user group `$Type` to create part of word list
 partner_type <- partners %>% 
@@ -97,15 +95,17 @@ partner_type <- partners %>%
 #function for getting words from each parterns description based on thei group type
 usr_group_words <- function(x) {
   type <- partner_type %>% 
-    filter(Type == x)
+    filter(Type == x) # filter based on group categories of parnters
   
-  usr <- lookup_users(type$handle)
+  usr <- lookup_users(type$handle) #use API to get user info
   
+  # in order to use function `prepare_text` there must be a column called 'text'
   usr_desc <- usr %>% 
   select(description)
+  names(usr_desc) <- "text" 
   
-  names(usr_desc) <- "text"
-  words <- prepare_text(usr_desc)
+  words <- prepare_text(usr_desc) # see source(text_analysis_functions.R) for details
+  
   return(words)
 }
 
@@ -130,12 +130,15 @@ names(search_terms) <- c("rs", "media", "lab", "govt", "nonProfit", "foundation"
 usr_desc <- user_info %>% 
   select(screen_name,description,text)
 
+
 # explore: make wordcloud of descriptions
 #rename descprtion column to text (this is required of the create_wordcloud function - may change this later)
 cloud <- user_info %>% 
   select(description)
 names(cloud) <- "text"
 create_wordcloud(cloud)
+
+
 
 #### build word list
 science_WL <- c('ologist', 'science', 'scientist', 'university', 'data', 'studies', 'research', 'agronomy', 'institute')
@@ -144,61 +147,6 @@ govt_WL <- c("endorse", "nrcs", "usda", "gov", "public")
 business_WL <- c("company" , "business" ,"customer", "entrepreneur")
 media_WL <- c("edit", "journalist")
 environmental_WL <- c("conserv", "sustain", "water", "organic", "climate", "environment")
-
-
-### Id users ###
-
-# choosing a top RT, US specific tweet:
-
-herdyshepherd_tweet <- twitter_merged_noRT %>% 
-  filter(screen_name == "herdyshepherd1") %>% #read through the list of top tweets and selected one that was not related to India
-  arrange(-retweet_count) %>% 
-  head(1)
-
-
-#use this text to look for all the instances of a retweet 
-herdys_RT_users <- twitter_merged %>% 
-  filter(
-    str_detect(text, "TBF eating in an ethically sound manner") #took a quote from the text, as calling paste(herdyshepherd_tweet$text) did not work
-  ) 
-
-#for some reason lookup_user wouldn't work on the _RT_users df so i took the users directly from twitter_merged
-herdy_user_list <- twitter_merged %>% 
-  filter(screen_name %in% herdys_RT_users$screen_name)
-
-#get user info
-herdy_user_info <- lookup_users(unique(herdy_user_list$user_id))
-
-
-#### categorize users 
-herdy_user_info <- herdy_user_info %>% 
-  select(screen_name, description) %>% 
-  mutate(
-    is_scientist = case_when(str_detect(tolower(description), paste(science_WL, collapse = "|" )) ~ 1),
-    is_farmer = case_when(str_detect(tolower(description), paste(farmer_WL, collapse = "|" )) ~ 1),
-    is_govt = case_when(str_detect(tolower(description), paste(govt_WL, collapse = "|" )) ~ 1),
-    is_business = case_when(str_detect(tolower(description), paste(business_WL, collapse = "|" )) ~ 1),
-    is_media = case_when(str_detect(tolower(description), paste(media_WL, collapse = "|" )) ~ 1),
-    is_envnmtal = case_when(str_detect(tolower(description), paste(environmental_WL, collapse = "|" )) ~ 1)
-  )
-
-herdy_user_info[is.na(herdy_user_info)] <- 0
-
-prop_likes <- herdy_user_info %>% 
-  group_by(.[,3:8])
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
