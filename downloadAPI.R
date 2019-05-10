@@ -173,10 +173,10 @@ is_retweet <- function(path){
 
 # Function that downloads tweets from API
 ## csv.path is the path to the directory where all the API csv's are located
-api_csv <- function(csv.path){
+api_csv <- function(token.path, csv.path){
   
   # Create token
-  twitter_token <- readRDS('twitter_token.rds')
+  twitter_token <- readRDS(token.path)
   
   # Search twitter
   q <- c('"soil health"', '"healthy soil"', '#soilhealth', '#healthysoil', 
@@ -203,11 +203,11 @@ api_csv <- function(csv.path){
 }
 
 # Function to do data preprocessing on csv file and merge it to master files 
-merge_master <- function(csv.file){
+merge_master <- function(csv.file, master.file){
   
   # Master files 
-  twitter_merged.master <- read.csv('~/soc-twitter/twitter_mergedPrac.csv', stringsAsFactors = FALSE)
-  twitter_merged_noRT.master <- read.csv('~/soc-twitter/twitter_merged_noRTprac.csv', stringsAsFactors = FALSE)
+  twitter_merged.master <- read.csv(paste(master.file, '/twitter_mergedPrac.csv', sep = ""), stringsAsFactors = FALSE)
+  twitter_merged_noRT.master <- read.csv(paste(master.file, '/twitter_merged_noRTprac.csv', sep = ""), stringsAsFactors = FALSE)
   
   # Reading in csv file 
   twitterAPI_new <- read.csv(csv.file, stringsAsFactors = FALSE)
@@ -224,7 +224,8 @@ merge_master <- function(csv.file){
            hashtags,
            place_name,
            country_code,
-           query)
+           query,
+           is_retweet)
   
   # Changing the type of specific columns
   twitterAPI_new$created_at <- as_datetime(twitterAPI_new$created_at)
@@ -297,8 +298,6 @@ merge_master <- function(csv.file){
   twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
   
   # Re-exporting new merged dataset to master csv
-  write.csv(twitter_merged_new, '/home/nolasco/soc-twitter/twitter_mergedPrac.csv')
-  write.csv(twitter_merged_noRTnew, '/home/nolasco/soc-twitter/twitter_merged_noRTprac.csv')
+  write.csv(twitter_merged_new, paste(master.file, '/twitter_mergedPrac.csv', sep = ""))
+  write.csv(twitter_merged_noRTnew, paste(master.file, '/twitter_merged_noRTprac.csv', sep = ""))
 }
-
-
