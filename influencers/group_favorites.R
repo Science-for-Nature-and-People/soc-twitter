@@ -68,7 +68,7 @@ environmental_WL <- c("conserv", "sustain", "water", "organic", "climate", "envi
 #' This function takes a given tweet, Identifies the users who retweeted it, 
 #' queries the API for details on those users and uses their 'descriptions' to place each user into a 'group' 
 #' (government, environmentalist, media, farmer, scientist, business)  
-#' then returns a dateframe that calculates what proportion of users from each group retweeted that tweet 
+#' then returns a dataframe that shows the proportion of users from each group retweeted that tweet 
 #' --- this is meant to be a proxy for what tweets appeal most to which user groups
 #' 
 #' ~~This function was created to be used along with lapply so that numerous tweets could be analyzed at once~~
@@ -101,8 +101,8 @@ environmental_WL <- c("conserv", "sustain", "water", "organic", "climate", "envi
 #'
 find_group_prop <- function(x, category = "", y = 0) { # default set to not include india related tweets - there is a bug in the regex recognition, that is causing this to fail for when looping through the top 20+ tweets (when india is included)
   
-  #filter according to whether or not we want to include india
-  noRT <- noRT %>% 
+  #filter for is_india & category - as defined by the function arguments
+  noRT_filtered <- noRT %>% 
     filter(is_india == y |
              is_india == 0) %>% 
     filter(
@@ -112,7 +112,9 @@ find_group_prop <- function(x, category = "", y = 0) { # default set to not incl
   #for the given tweet within the specified row (which is variable 'x' in the function), this will find each instance of a retweet - thereby giving us the users who retweeted it
   RT_users <- RT %>% 
     filter(
-      str_detect(text, str_c(word(noRT[x,]$text, 1:3), collapse = ' ')))  #method for filtering instances of retweets
+      str_detect(text,
+                 str_c(                                         
+                   word(noRT[x,]$text, 1:3), collapse = ' ')))  #str_c() combines each word that has been individually selected by word() into a single string. This creates a three word string using the first three words of each tweet. this is enough to uniquely ID instances of a RTs using str_detect
   
   #for some reason lookup_user wouldn't work on the RT_users df so i took the users directly from twitter_merged
   user_list <- RT %>%
@@ -332,6 +334,27 @@ create_wordcloud(scientist_soil)
 
 
 
+
+
+
+############## BUG HERE ##################
+
+foo<- lapply(16, find_group_prop, y = 1)
+
+
+#### This tweet is causing the regex issue
+# Farmers: Fertilizer availability
+
+
+noRT_filtered <- noRT %>% 
+  filter(is_india == 1 |
+           is_india == 0) %>% 
+  arrange(-retweet_count)
+
+#for the given tweet within the specified row (which is variable 'x' in the function), this will find each instance of a retweet - thereby giving us the users who retweeted it
+RT_users <- RT %>% 
+  filter(
+    str_detect(text, str_c(word(noRT_filtered[16,]$text, 1:3), collapse = ' '))) #str_detect doesnt like the out outuput of str_c(word(x, 1:3), collapes = ' ')
 
 
 
