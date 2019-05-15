@@ -1,6 +1,8 @@
 ---
 title: "word_assoc"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -18,10 +20,11 @@ library(wordcloud)
 library(kableExtra)
 library(knitr)
 
-twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
-twitter_merged_noRT <- distinct(twitter_merged_noRT)
-noRT <- twitter_merged_noRT %>% 
-  arrange(-retweet_count) %>% 
+twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>%
+  distinct()
+
+noRT <- twitter_merged_noRT %>%
+  arrange(-retweet_count) %>%
   filter(screen_name != "Pontifex") #remove the pope..
 
 ```
@@ -91,6 +94,7 @@ forest_quality_tweets <- twitter_merged_noRT %>%
 
 
 ``` 
+
 ### Length of dataframes produced by each query term
 it is import to keep in mind for all results (including here, in wordclouds, and bigram plots) that the number of hits for each query term varies dramatically, with "soil" terms being used far more frequently than "rangeland" or "forest" terms. For this reason, it may not be very valuable to perform this sort of analysis while looking at the most influential tweets. Nevertheless, this it seems valuable to get a feel for the different language being used within each category
 ```{r, echo = F}
@@ -104,6 +108,16 @@ ggplot(total_counts, aes(x = query)) +
   theme_bw() +
   coord_flip()
 
+```
+
+#same as above without 'soil'
+```{r}
+count_noSoil <- filter(total_counts, query != "soil")
+
+ggplot(count_noSoil, aes(x = query)) +
+  geom_col(aes(y = counts)) + 
+  theme_bw() +
+  coord_flip()
 ```
 
 ```{r, echo=F}
@@ -170,6 +184,61 @@ ggplot(selected_prop, aes(word, proportion)) +
   theme_bw()
 
 ```
+
+
+Repeated to include 'soil' and 'health' terms
+```{r, echo=F, fig.width=12}
+
+###Forest
+#create word count
+forest_word_count <- prepare_text_full(forest_tweets) %>% 
+  filter(word != "forest")
+#calculate relative proportions of words
+forest_prop <- forest_word_count %>% 
+  mutate(forest_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+
+###soil
+soil_word_count <- prepare_text_full(soil_tweets)
+
+soil_prop <- soil_word_count %>% 
+  mutate(soil_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+
+###forest
+rangeland_word_count <- prepare_text_full(rangeland_tweets) %>% 
+  filter(word != "rangeland")
+
+range_prop <- rangeland_word_count %>% 
+  mutate(range_prop = round(n/sum(n), 4)) %>% 
+  select(-n)
+
+total_prop <- merge(merge(forest_prop, soil_prop), range_prop)
+
+#create word list:
+top_soil <- head(soil_prop, 10)
+top_range <- head(range_prop, 10) 
+top_forest <- head(forest_prop, 10)
+
+word_list <- c(paste(top_soil$word), paste(top_forest$word), paste(top_range$word))
+
+#filter and restructure for visualization
+selected_prop <- total_prop %>% 
+  filter(word %in% word_list) %>% 
+  gather("querry", "proportion", -word)
+
+#plot
+ggplot(selected_prop, aes(word, proportion)) +
+  geom_col(aes(fill = word)) +
+  facet_wrap(~querry) +
+  coord_flip() +
+  labs(title = "'rangeland' v 'soil' v 'forest'") +
+  theme_bw()
+
+```
+
 
 *** 
     

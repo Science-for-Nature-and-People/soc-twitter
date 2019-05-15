@@ -42,6 +42,40 @@ prepare_text <- function(x) {
 }
 
 
+#' Same as prepare_text() but doesnt filter for the top words
+#' 
+#' This takes any data frame that contains a column  called `.$text` 
+#'  containing text strings and returns a new dataframe that lists 
+#'  the words within .$text and their respective counts
+#'  
+#'  the function is set to remove tweet specific stop words 'c("https","rt","t.co","amp")'
+#'  as well as dominant terms used in this analysis c("soil","health", "healthy", "soilhealth")
+#'  this can be changed in the future by adding a new parameter "stopwords" of custom terms
+#'  
+#'  requires: tidytext::
+#'
+#' @param x - a data frame (must containg a variable `text`)
+#'
+#' @return data frame of two rows (word, n) where n is the count of each 
+#'         respective word minus stop words
+#' 
+#'
+#' @examples
+#' tweet <- data.frame(text = "the bird said Tweet tweet")
+#' prepare_text(tweet)
+prepare_text_full <- function(x) {
+  text_words <- x %>% 
+    select(text) %>% 
+    mutate(text = tolower(text)) %>% #make all text lower case
+    unnest_tokens(word, text) #takes each rows' string and separates each word into a new row
+  
+  #new pipeline as R doesnt like going from `unnest_tokens` to anti_join
+  text_words %>% 
+    anti_join(stop_words) %>% #remove common stop words using the tidytext built in stop words
+    count(word, sort=TRUE) %>% 
+    filter(!word %in% c("https","rt","t.co","amp")) #remove words associated with images/links and special characters, (i.e. amp = &)
+}
+
 
 #' an admittedly very specific function that uses the code from `prepare_text`
 #' and creates a word cloud using the resultant word counts
