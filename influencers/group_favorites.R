@@ -80,7 +80,7 @@ environmental_WL <- c("conserv", "sustain", "water", "organic", "climate", "envi
 #' 
 #'
 #' @param x selects the row that will be used for analysis - it was set up this way so that it could be easily used in conjunction with `lapply()` i.e x <- 1:100 will return the top 100 tweets arranged by retweet_count
-#' @param y input either 0 or 1 to either exclude or include india respectively (default set to 0 due to bug in filtering for certain regex characters)
+#' @param y input either 0 or 1 to either exclude or include india respectively 
 #' @param category enter search term to filter noRT by, so that we can perform this easily for diferent categories. default set to no filter
 #'
 #'
@@ -99,7 +99,7 @@ environmental_WL <- c("conserv", "sustain", "water", "organic", "climate", "envi
 #' prop_df <- bind_rows(prop_list, .id = "ID")
 #' 
 #'
-find_group_prop <- function(x, category = "", y = 0) { # default set to not include india related tweets - there is a bug in the regex recognition, that is causing this to fail for when looping through the top 20+ tweets (when india is included)
+find_group_prop <- function(x, category = "", y = 1) { # default set to not include india related tweets - there is a bug in the regex recognition, that is causing this to fail for when looping through the top 20+ tweets (when india is included)
   
   #filter for is_india & category - as defined by the function arguments
   noRT_filtered <- noRT %>% 
@@ -113,8 +113,9 @@ find_group_prop <- function(x, category = "", y = 0) { # default set to not incl
   RT_users <- RT %>% 
     filter(
       str_detect(text,
-                 str_c(                                         
-                   word(noRT[x,]$text, 1:3), collapse = ' ')))  #str_c() combines each word that has been individually selected by word() into a single string. This creates a three word string using the first three words of each tweet. this is enough to uniquely ID instances of a RTs using str_detect
+                 fixed(
+                   str_c(                                         
+                   word(noRT[x,]$text, 1:4), collapse = ' '))))  #str_c() combines each word that has been individually selected by word() into a single string. This creates a four word string using the first three words of each tweet. this is enough to uniquely ID instances of a RTs using str_detect
   
   #for some reason lookup_user wouldn't work on the RT_users df so i took the users directly from twitter_merged
   user_list <- RT %>%
@@ -166,11 +167,12 @@ find_group_prop <- function(x, category = "", y = 0) { # default set to not incl
 #~~~~~~~~~~~~~~~~~~~~~~  Begin Analysis  ~~~~~~~~~~~~~~~~~~~~~#
 ###############################################################
 
+#### ~~~~~~~~~~~  noIndia  ~~~~~~~~~####
 
-####~~~~~~ Top 100 unfiltered ~~~~~####
+####~~~~~~ Top 100 unfiltered  ~~~~~####
 
 #### answering the question, which tweets are most liked by which user group 
-non_india_list <- lapply(1:100, find_group_prop)
+non_india_list <- lapply(1:100, find_group_prop, y = 0)
 non_india_df <- bind_rows(non_india_list, .id = "ID")
 
 ### Box plots comparing the distribution of which user groups retweeted each of the top 100 non-india related tweets
@@ -223,7 +225,7 @@ scientist <- group_favorite %>%
 create_wordcloud(scientist)
 
 #####~~~~~~~~~  top 50 tweets,  'soil' ~~~~~~~~~~~~####
-non_india_soil <- lapply(1:50, find_group_prop, category = "soil")
+non_india_soil <- lapply(1:50, find_group_prop,y = 0, category = "soil")
 soil_df <- bind_rows(non_india_soil, .id = "ID")
 
 boxplot(prop_like ~ group, data = soil_df,
@@ -280,7 +282,7 @@ create_wordcloud(scientist_soil)
 
 #####~~~~~~~~~  top 10 tweets,  'rangeland' ~~~~~~~~~~~~~####
 #after filtering for no_india and "rangeland" only 9 tweets have any RTs (the 10th at least has some favorites so i kept it)
-non_india_range <- lapply(1:10, find_group_prop, category = "rangeland")
+non_india_range <- lapply(1:10, find_group_prop, y = 0, category = "rangeland")
 range_df <- bind_rows(non_india_range, .id = "ID")
 
 boxplot(prop_like ~ group, data = range_df,
@@ -332,29 +334,31 @@ scientist_soil <- group_fav_range %>%
 create_wordcloud(scientist_soil)
 
 
+#### ~~~~~~~~~~~  All tweets  ~~~~~~~~~####
+
+####~~~~~~ Top 100 unfiltered  ~~~~~####
+
+#### answering the question, which tweets are most liked by which user group 
+full_list <- lapply(1:100, find_group_prop)
+full_df <- bind_rows(full_list, .id = "ID")
+
+### Box plots comparing the distribution of which user groups retweeted each of the top 100 non-india related tweets
+boxplot(prop_like ~ group, data = full_df,
+        xlab = "User Group",
+        ylab = "Proportion of RTs", 
+        main = "Proportion of RTs by user group for top 100 tweets")
+
+## filter for which group most liked each tweet from the top 50 most retweeted (not filtered for any category)
+group_favorite <- non_india_df %>% 
+  group_by(ID) %>% 
+  filter(prop_like == max(prop_like) &
+           prop_like > 0) %>% # added this b/c there is at least 1 tweet that has no likes by anyone and therefor has all groups as 'max'
+  ungroup()
 
 
 
 
 
-############## BUG HERE ##################
-
-foo<- lapply(16, find_group_prop, y = 1)
-
-
-#### This tweet is causing the regex issue
-# Farmers: Fertilizer availability
-
-
-noRT_filtered <- noRT %>% 
-  filter(is_india == 1 |
-           is_india == 0) %>% 
-  arrange(-retweet_count)
-
-#for the given tweet within the specified row (which is variable 'x' in the function), this will find each instance of a retweet - thereby giving us the users who retweeted it
-RT_users <- RT %>% 
-  filter(
-    str_detect(text, str_c(word(noRT_filtered[16,]$text, 1:3), collapse = ' '))) #str_detect doesnt like the out outuput of str_c(word(x, 1:3), collapes = ' ')
 
 
 
