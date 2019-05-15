@@ -35,14 +35,16 @@ text_words <- noRT[1278,] %>%
   unnest_tokens(word, text, strip_punct =FALSE) 
 
 
-
+## select @ and # along with the following word that it should be associatd with
 foo <- paste(text_words$word[str_detect(text_words$word, "@|#")], text_words$word[lag(str_detect(text_words$word, "@|#"))], sep="")
 
+#make df to add to word list
 bar <- as.data.frame(foo)
 names(bar) <- "word"
 
 combined <- bind_rows(text_words, bar)
 
+#remove punctuation and stop words
 cleaned <- combined %>% 
   anti_join(stop_words) %>% 
   count(word, sort=TRUE) %>% 
