@@ -115,7 +115,7 @@ find_group_prop <- function(x, category = "", y = 1) { # default set to not incl
       str_detect(text,
                  fixed(
                    str_c(                                         
-                   word(noRT[x,]$text, 1:4), collapse = ' '))))  #str_c() combines each word that has been individually selected by word() into a single string. This creates a four word string using the first three words of each tweet. this is enough to uniquely ID instances of a RTs using str_detect
+                   word(noRT[x,]$text, 1:6), collapse = ' '))))  #str_c() combines each word that has been individually selected by word() into a single string. This creates a six word string using the first six words of each tweet. this should be enough to uniquely ID instances of a RTs using str_detect
   
   #for some reason lookup_user wouldn't work on the RT_users df so i took the users directly from twitter_merged
   user_list <- RT %>%
@@ -151,7 +151,7 @@ find_group_prop <- function(x, category = "", y = 1) { # default set to not incl
     ) %>%
     select(9:14) %>% #select only the newly mutated rows showing proportions
     head(1) %>% #the sums were put into each row -- only need one
-    gather(group, prop_like) %>% # gather into long format
+    gather(group, prop_like) %>% # gather into tidy format
     mutate(
       tweet_og = noRT[x,]$text, #original tweet
       handle_og = noRT[x,]$screen_name, #Screen name of original tweet
@@ -185,7 +185,7 @@ boxplot(prop_like ~ group, data = non_india_df,
 group_favorite <- non_india_df %>% 
   group_by(ID) %>% 
   filter(prop_like == max(prop_like) &
-           prop_like > 0) %>% # added this b/c there is at least 1 tweet that has no likes by anyone and therefor has all groups as 'max'
+           prop_like > 0) %>% # added this b/c there is at least 1 tweet that has no 'likes' by anyone and therefor has all groups as 'max'
   ungroup()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
