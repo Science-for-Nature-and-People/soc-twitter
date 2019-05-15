@@ -6,11 +6,18 @@ library(rtweet)
 library(countrycode)
 library(lubridate)
 
+
 path <- '/home/shares/soilcarbon/Twitter'
 
+
+## Read previous data ----
+
 # Master files 
-twitter_merged.master <- read.csv(paste(path, '/Merged_data/twitter_merged.csv', sep = ""))
-twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_data/twitter_merged_noRT.csv', sep = ""))
+twitter_merged.master <- read.csv(file.path(path, '/Merged_data/twitter_merged.csv'), stringsAsFactors = FALSE)
+twitter_merged_noRT.master <- read.csv(file.path(path, '/Merged_data/twitter_merged_noRT.csv'), stringsAsFactors = FALSE)
+
+
+## Query the Twitter API for the latest data ----
 
 # Create token
 twitter_token <- readRDS('twitter_token.rds')
@@ -23,7 +30,9 @@ q <- c('"soil health"', '"healthy soil"', '#soilhealth', '#healthysoil',
 
 # Searching tweets with query above
 twitterAPI_new.prac <- search_tweets2(q, n = 100000, token=twitter_token, retryonratelimit = T)
-twitterAPI_new <- as.data.frame(twitterAPI_new.prac)
+
+# Make it a data frame
+twitterAPI_new <- as.data.frame(twitterAPI_new.prac, stringsAsFactors = FALSE)  #JB hashtags are a vector, you should collapse with paste it 
 
 # Selecting columns we want
 twitterAPI_new <- twitterAPI_new %>% 
@@ -38,15 +47,26 @@ twitterAPI_new <- twitterAPI_new %>%
                          place_name,
                          country_code,
                          query)
+# Remove row names
+rownames(twitterAPI_new) <- NULL
 
+######### JB
+# We should save the dataframe to csv at this point appending the date of the day to the name.
+######### JB
+
+######### JB
+# We should add a check on potential duplicates with the main data set as we want to run the script weekly
+######### JB
+
+
+## Prepare the data for the merge ----
 
 # Changing the type of specific columns
 twitterAPI_new$created_at <- as_datetime(twitterAPI_new$created_at)
-twitterAPI_new$user_id <- as.character(twitterAPI_new$user_id)
+# twitterAPI_new$user_id <- as.character(twitterAPI_new$user_id)
 
 # Creating provenance columns w/ value as API
-namelist <- list(API = twitterAPI_new) 
-twitterAPI_new <- bind_rows(namelist, .id = "provenance")
+twitterAPI_new <- add_column(twitterAPI_new, provenance = "API", .before = 1)
 
 # Removing quotes from query columns
 twitterAPI_new  <- twitterAPI_new  %>%
@@ -95,19 +115,23 @@ keywords <- paste0(c("soil health", "healthy soil", "#soilhealth", "#healthysoil
 twitterAPI_new <- twitterAPI_new %>%
   mutate(hits = str_extract_all(text, pattern = regex(keywords, ignore_case=TRUE)) %>%  # Extract all the keywords
            map(~charnull_set(.x)) %>%   # Replace character(0) with NAs
-           map_chr(~glue::collapse(.x, sep = ";")) %>%   # collapse the multiple hits/collapse instead of glue_collapse
+           map_chr(~glue::glue_collapse(.x, sep = ";")) %>%   # collapse the multiple hits/collapse instead of glue_collapse
            tolower) # all our keywords are lower case
 
 twitterAPI_new_noRT <- twitterAPI_new_noRT %>%
   mutate(hits = str_extract_all(text, pattern = regex(keywords, ignore_case=TRUE)) %>%  # Extract all the keywords
            map(~charnull_set(.x)) %>%   # Replace character(0) with NAs
-           map_chr(~glue::collapse(.x, sep = ";")) %>%   # collapse the multiple hits/collapse instead of glue_collapse
+           map_chr(~glue::glue_collapse(.x, sep = ";")) %>%   # collapse the multiple hits/collapse instead of glue_collapse
            tolower) # all our keywords are lower case
+
+
+## Merging and exporting data ----
 
 # Merging datasets together using rbind 
 twitter_merged_new <- rbind(twitter_merged.master, twitterAPI_new)
 twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 
 # Re-exporting new merged dataset to master csv
-write.csv(twitter_merged_new, 'twitter_mergedPrac.csv')
-write.csv(twitter_merged_noRTnew, 'twitter_merged_noRTprac.csv')
+write.csv(twitter_merged_new, 'twitter_mergedPrac.csv', row.names = FALSE)
+write.csv(twitter_merged_noRTnew, 'twitter_merged_noRTprac.csv', row.names = FALSE)
+
