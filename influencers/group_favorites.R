@@ -115,14 +115,11 @@ find_group_prop <- function(x, category = "", y = 1) { # default set to not incl
       str_detect(text,
                  fixed(
                    str_c(                                         
-                   word(noRT[x,]$text, 1:6), collapse = ' '))))  #str_c() combines each word that has been individually selected by word() into a single string. This creates a six word string using the first six words of each tweet. this should be enough to uniquely ID instances of a RTs using str_detect
+                   word(noRT_filtered[x,]$text, 1:6), collapse = ' '))))  #str_c() combines each word that has been individually selected by word() into a single string. This creates a six word string using the first six words of each tweet. this should be enough to uniquely ID instances of a RTs using str_detect
   
-  #for some reason lookup_user wouldn't work on the RT_users df so i took the users directly from twitter_merged
-  user_list <- RT %>%
-    filter(screen_name %in% RT_users$screen_name)
   
   #get user info via twitter API
-  user_info <- lookup_users(unique(user_list$user_id))
+  user_info <- lookup_users(unique(RT_users$user_id))
   
   #### categorize users into groups
   #detects any words from relevent word list (hence paste(x,collapse="|"))
@@ -147,16 +144,15 @@ find_group_prop <- function(x, category = "", y = 1) { # default set to not incl
       govt = sum(is_govt)/nrow(.),
       business = sum(is_business)/nrow(.),
       media = sum(is_media)/nrow(.),
-      envnmtal = sum(is_envnmtal)/nrow(.)
-    ) %>%
+      envnmtal = sum(is_envnmtal)/nrow(.)) %>%
     select(9:14) %>% #select only the newly mutated rows showing proportions
     head(1) %>% #the sums were put into each row -- only need one
     gather(group, prop_like) %>% # gather into tidy format
     mutate(
-      tweet_og = noRT[x,]$text, #original tweet
-      handle_og = noRT[x,]$screen_name, #Screen name of original tweet
-      n = noRT[x,]$retweet_count #gives number of users that retweeted the `tweet_og` 
-    )
+      tweet_og = noRT_filtered[x,]$text, #original tweet
+      handle_og = noRT_filtered[x,]$screen_name, #Screen name of original tweet
+      n = nrow(.)) #gives number of users that retweeted the `tweet_og` 
+      
   
   return(prop_likes)
 }
@@ -298,40 +294,40 @@ group_fav_range <- range_df %>%
   ungroup()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-envt_soil <- group_fav_range %>% 
+envt_range<- group_fav_range %>% 
   filter(group == "envnmtal") %>% 
   select(-ID) %>% 
   distinct() %>% 
   mutate(text = tweet_og) # add new column called 'text' to work with the create_wordcloud function
 #
-create_wordcloud(envt_soil)
+create_wordcloud(envt_range)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-govt_soil <- group_fav_range %>% 
+govt_range <- group_fav_range %>% 
   filter(group == "govt") %>% 
   select(-ID) %>% 
   distinct() %>% 
   mutate(text = tweet_og)
 
-create_wordcloud(govt_soil)
+create_wordcloud(govt_range)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-farmer_soil <- group_fav_range %>% 
+farmer_range <- group_fav_range %>% 
   filter(group == "farmer") %>% 
   select(-ID) %>% 
   distinct() %>% 
   mutate(text = tweet_og)
 
-create_wordcloud(farmer_soil)
+create_wordcloud(farmer_range)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-scientist_soil <- group_fav_range %>% 
+scientist_range <- group_fav_range %>% 
   filter(group == "scientist") %>% 
   select(-ID) %>% 
   distinct() %>% 
   mutate(text = tweet_og)
 
-create_wordcloud(scientist_soil)
+create_wordcloud(scientist_range)
 
 
 #### ~~~~~~~~~~~  All tweets  ~~~~~~~~~####
@@ -349,11 +345,182 @@ boxplot(prop_like ~ group, data = full_df,
         main = "Proportion of RTs by user group for top 100 tweets")
 
 ## filter for which group most liked each tweet from the top 50 most retweeted (not filtered for any category)
-group_favorite <- non_india_df %>% 
+group_favorite_full <- full_df %>% 
   group_by(ID) %>% 
   filter(prop_like == max(prop_like) &
            prop_like > 0) %>% # added this b/c there is at least 1 tweet that has no likes by anyone and therefor has all groups as 'max'
   ungroup()
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+envt_full <- group_favorite_full %>% 
+  filter(group == "envnmtal") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og) # add new column called 'text' to work with the create_wordcloud function
+
+create_wordcloud(envt_full)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+govt_full <- group_favorite_full %>% 
+  filter(group == "govt") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(govt_full)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+farmer_full <- group_favorite_full %>% 
+  filter(group == "farmer") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(farmer_full)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+scientist_full <- group_favorite_full %>% 
+  filter(group == "scientist") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(scientist_full)
+
+
+
+
+
+
+
+
+
+
+####~~~~~~ top 50 , 'soil' ~~~~~####
+
+full_soil <- lapply(1:10, find_group_prop, category = "soil")
+full_soil_df <- bind_rows(full_soil, .id = "ID")
+
+boxplot(prop_like ~ group, data = full_soil_df,
+        xlab = "User Group",
+        ylab = "Proportion of RTs", 
+        main = "Proportion of RTs by user group top 50 tweets about 'soil' ")
+
+## filter for which group most liked each tweet from the top 50 most retweeted (not filtered for any category)
+group_fav_soil <- soil_df %>% 
+  group_by(ID) %>% 
+  filter(prop_like == max(prop_like) &
+           prop_like > 0) %>% # added this b/c there is at least 1 tweet that has no likes by anyone and therefor has all groups as 'max'
+  ungroup()
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+envt_soil <- group_fav_soil %>% 
+  filter(group == "envnmtal") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og) # add new column called 'text' to work with the create_wordcloud function
+
+create_wordcloud(envt_soil)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+govt_soil <- group_fav_soil %>% 
+  filter(group == "govt") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(govt_soil)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+farmer_soil <- group_fav_soil %>% 
+  filter(group == "farmer") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(farmer_soil)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+scientist_soil <- group_fav_soil %>% 
+  filter(group == "scientist") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(scientist_soil)
+
+
+
+####~~~~~~ top 50 , 'rangeland' ~~~~~####
+foo <- lapply(1:10, find_group_prop, category = "rangeland")
+bar <- bind_rows(foo, .id = "ID")
+
+full_range <- lapply(1:10, find_group_prop, category = "rangeland")
+full_range_df <- bind_rows(full_range, .id = "ID")
+
+boxplot(prop_like ~ group, data = full_range_df,
+        xlab = "User Group",
+        ylab = "Proportion of RTs", 
+        main = "Proportion of RTs by user group top 10 non-India related tweets about 'rangeland' ")
+
+## filter for which group most liked each tweet from the top 50 most retweeted (not filtered for any category)
+group_fav_range <- full_range_df %>% 
+  group_by(ID) %>% 
+  filter(prop_like == max(prop_like) &
+           prop_like > 0) %>% # added this b/c there is at least 1 tweet that has no likes by anyone and therefor has all groups as 'max'
+  ungroup()
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+envt_range<- group_fav_range %>% 
+  filter(group == "envnmtal") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og) # add new column called 'text' to work with the create_wordcloud function
+#
+create_wordcloud(envt_range)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+govt_range <- group_fav_range %>% 
+  filter(group == "govt") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(govt_range)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+farmer_range <- group_fav_range %>% 
+  filter(group == "farmer") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(farmer_range)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+scientist_range <- group_fav_range %>% 
+  filter(group == "scientist") %>% 
+  select(-ID) %>% 
+  distinct() %>% 
+  mutate(text = tweet_og)
+
+create_wordcloud(scientist_range)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
