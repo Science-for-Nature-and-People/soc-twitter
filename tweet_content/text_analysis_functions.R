@@ -31,11 +31,13 @@ prepare_text <- function(x) {
   text_words <- x %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% #make all text lower case
-    unnest_tokens(word, text) #takes each rows' string and separates each word into a new row
+    unnest_tokens(word, text) %>%  #takes each rows' string and separates each word into a new row
+    mutate(word = sub("'s$", "", word),  # remove possessives
+           word = sub("cards", "card", word))
   
   #new pipeline as R doesnt like going from `unnest_tokens` to anti_join
   text_words %>% 
-    anti_join(stop_words) %>% #remove common stop words using the tidytext built in stop words
+    anti_join(stop_words)  %>% #remove common stop words using the tidytext built in stop words
     count(word, sort=TRUE) %>% 
     filter(!word %in% c("https","rt","t.co","amp")) %>% #remove words associated with images/links and special characters, (i.e. amp = &)
     filter(!word %in% c("soil","health", "healthy", "soilhealth")) #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
@@ -67,7 +69,9 @@ prepare_text_full <- function(x) {
   text_words <- x %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% #make all text lower case
-    unnest_tokens(word, text) #takes each rows' string and separates each word into a new row
+    unnest_tokens(word, text) %>% #takes each rows' string and separates each word into a new row
+    mutate(word = sub("'s$", "", word),
+           word = sub("cards", "card", word))
   
   #new pipeline as R doesnt like going from `unnest_tokens` to anti_join
   text_words %>% 
@@ -99,7 +103,9 @@ create_wordcloud <- function(x, filter_by = "") {
       str_detect(tolower(text), filter_by)) %>% #selects only rows that cointain your term of interest
     select(text) %>% 
     mutate(text = tolower(text)) %>% 
-    unnest_tokens(word, text) #takes each rows' string and separates each word into a new row
+    unnest_tokens(word, text) %>%  #takes each rows' string and separates each word into a new row
+    mutate(word = sub("'s$", "", word),
+           word = sub("cards", "card", word))
   
   filtered <- text_words %>% 
     anti_join(stop_words) %>% 
@@ -149,8 +155,12 @@ create_bigram <- function(x, filter_by = "") {
     separate(bigram, c("word1", "word2"), sep = " ") #separate the bigrams so that stop words can be filtered out
   
   bigrams_filtered <- bigrams_separated %>%
+    mutate(word1 = sub("'s$", "", word1),
+           word1 = sub("cards", "card", word1))
     filter(!word1 %in% stop_words$word) %>%
     filter(!word1 %in% c("https","rt","t.co","amp")) %>% 
+     mutate(word2 = sub("'s$", "", word2),
+            word2 = sub("cards", "card", word2))
     filter(!word2 %in% stop_words$word) %>% 
     filter(!word2 %in% c("https","rt","t.co","amp"))
   
