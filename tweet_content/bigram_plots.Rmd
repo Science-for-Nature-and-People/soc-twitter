@@ -36,7 +36,7 @@ source("text_analysis_functions.R")
 - # of bigrams set to >120
 ```{r, echo=F, fig.width=12}
 ####full dataset####
-noRT_bigram <- create_bigram(noRT, "")
+noRT_bigram <- create_bigram(noRT, "", group = TRUE)
 gram_network(noRT_bigram,120)
 ```
   
@@ -49,7 +49,7 @@ gram_network(noRT_bigram,120)
 ```{r, echo=F, fig.width=12}
 ###soil
 soil_bigram <- create_bigram(noRT, "soil health")
-gram_network(soil_bigram, 100)
+gram_network(soil_bigram, 80)
 ```
   
   ***  

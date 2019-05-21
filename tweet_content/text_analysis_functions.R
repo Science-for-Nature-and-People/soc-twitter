@@ -8,6 +8,68 @@ library(stringr)
 library(igraph)
 library(ggraph)
 
+
+
+
+
+
+
+
+#' word_umbrella combines various terms into a single word 'umbrella' 
+#'
+#' @param data any data frame with a column 'text' that is a text string
+#'
+#' @return replaces a variety of terms with a single 'umbrella' term
+#' 
+#'
+#' @examples
+word_umbrella <- function(data) {
+  
+  
+  #list of terms that fall under a single umbrella
+  soil_health <- c("healthy soil", "soilhealth", "healthysoil", "soil health")
+  soil_qual <- c("soil quality", "soilquality")
+  soil_fert <- c("soil fertility", "soilfertility")
+  regen_ag <- c("regenerative agriculture",	"regenerativeagriculture", "regenerative ag", "regenerative agricultural")
+  conserv_ag <- c("conservation agriculture",	"conservationagriculture",	"conservationag")
+  cover_crop <- c("cover crop",	"cover cropping",	"cover crops",	"covercrop",	"covercropping",	"covercrops")
+  conserv_till <- c("conservation tillage",	"no till",	"reduced till",	"reduced tillage",	"no tillage",	'notill',	"reducedtill",	"reducedtillage",	"notillage",	"conservationtillage",	"conservationtill",	"conservation till")
+  rangeland <- c("rangeland health",	"healthy rangelands",	"rangelandhealth",	"healthyrangelands")
+  health_card <- c("soil health card",	"soil health cards",	"soilhealthcard",	"soilhealthcards")
+  n_modi <- c("narendra modi",	"narendramodi",	"narendra",	"modi") # have to use str_replace vs str_replace_all for this one
+  
+  #replace text
+  umbrella <- data %>% 
+    mutate(
+      text = str_replace_all(tolower(text), str_c(soil_qual, collapse = "|"), "soil_quality") , 
+      text = str_replace_all(tolower(text), str_c(soil_fert, collapse = "|"), "soil_fertility") , 
+      text = str_replace_all(tolower(text), str_c(regen_ag, collapse = "|"), "regenerative_agriculture") , 
+      text = str_replace_all(tolower(text), str_c(conserv_ag, collapse = "|"), "conservation_agriculture") , 
+      text = str_replace_all(tolower(text), str_c(cover_crop, collapse = "|"), "cover_crop") , 
+      text = str_replace_all(tolower(text), str_c(conserv_till, collapse = "|"), "conservation_tillage") , 
+      text = str_replace_all(tolower(text), str_c(rangeland, collapse = "|"), "rangeland_health") , 
+      text = str_replace_all(tolower(text), str_c(health_card, collapse = "|"), "soil_health_card") , 
+      text = str_replace(tolower(text), str_c(n_modi, collapse = "|"), "Narendra_Modi") , 
+      text = str_replace_all(tolower(text), "soil health institute", "soil_health_institute") , 
+      text = str_replace_all(tolower(text), "soil health partnership", "soil_health_partnership") , 
+      text = str_replace_all(tolower(text), "soil organic matter", "soil_organic_matter") , 
+      text = str_replace_all(tolower(text), "soil carbon", "soil_carbon") , 
+      text = str_replace_all(tolower(text), "aggregate stability", "agregate_stability") , 
+      text = str_replace_all(tolower(text), "microbial biomass", "microbial_biomass") , 
+      text = str_replace_all(tolower(text), "crop rotation", "crop_rotation") , 
+      text = str_replace_all(tolower(text), "crop insurance", "crop_insurance") , 
+      text = str_replace_all(tolower(text), "climate change", "climate_change") , 
+      text = str_replace_all(tolower(text), "food security", "food_security"),
+      text = str_replace_all(tolower(text), str_c(soil_health, collapse = "|"), "soil_health") , 
+    )
+  
+  return(umbrella)
+  
+}
+
+
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+
 #' This takes any data frame that contains a column  called `.$text` 
 #'  containing text strings and returns a new dataframe that lists 
 #'  the words within .$text and their respective counts
@@ -18,7 +80,7 @@ library(ggraph)
 #'  
 #'  requires: tidytext::
 #'
-#' @param x - a data frame (must containg a variable `text`)
+#' @param data - a data frame (must containg a variable `text`)
 #'
 #' @return data frame of two rows (word, n) where n is the count of each 
 #'         respective word minus stop words
@@ -27,8 +89,11 @@ library(ggraph)
 #' @examples
 #' tweet <- data.frame(text = "the bird said Tweet tweet")
 #' prepare_text(tweet)
-prepare_text <- function(x) {
-  text_words <- x %>% 
+prepare_text <- function(data) {
+  
+  grouped_terms <- word_umbrella(data)
+  
+  text_words <- grouped_terms %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% #make all text lower case
     unnest_tokens(word, text) %>%  #takes each rows' string and separates each word into a new row
@@ -46,6 +111,8 @@ prepare_text <- function(x) {
 }
 
 
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+
 #' Same as prepare_text() but doesnt filter for the top words
 #' 
 #' This takes any data frame that contains a column  called `.$text` 
@@ -58,7 +125,7 @@ prepare_text <- function(x) {
 #'  
 #'  requires: tidytext::
 #'
-#' @param x - a data frame (must containg a variable `text`)
+#' @param data - a data frame (must containg a variable `text`)
 #'
 #' @return data frame of two rows (word, n) where n is the count of each 
 #'         respective word minus stop words
@@ -67,8 +134,11 @@ prepare_text <- function(x) {
 #' @examples
 #' tweet <- data.frame(text = "the bird said Tweet tweet")
 #' prepare_text(tweet)
-prepare_text_full <- function(x) {
-  text_words <- x %>% 
+prepare_text_full <- function(data) {
+  
+  grouped_terms <- word_umbrella(data)
+  
+  text_words <- grouped_terms %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% #make all text lower case
     unnest_tokens(word, text) %>% #takes each rows' string and separates each word into a new row
@@ -85,12 +155,14 @@ prepare_text_full <- function(x) {
 }
 
 
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+
 #' an admittedly very specific function that uses the code from `prepare_text`
 #' and creates a word cloud using the resultant word counts
 #' 
 #' requires- tidytext:: and stringr::
 #'
-#' @param x - any data from with acolumn `text` containg word strings
+#' @param data - any data from with acolumn `text` containg word strings
 #' @param filter_by search term used that relies on str_detect to only select 
 #'        tweets that contain your term of interest, default set to no filter
 #'
@@ -98,11 +170,11 @@ prepare_text_full <- function(x) {
 #' 
 #'
 #' @examples
-create_wordcloud <- function(x, filter_by = "") {
+create_wordcloud <- function(data, filter_by = "") {
   
-  #english <- x[which(!grepl("[^\x01-\x7F]+", x$text)),] #removes rows non-english characters - would be great if we could figure out a way to simply remove/replace the specific words and not the whole row.....
+  grouped_terms <- word_umbrella(data)
   
-  text_words <- x %>% 
+  text_words <- grouped_terms %>% 
     filter(
       str_detect(tolower(text), filter_by)) %>% #selects only rows that cointain your term of interest
     select(text) %>% 
@@ -128,7 +200,7 @@ create_wordcloud <- function(x, filter_by = "") {
                    color=brewer.pal(7,"Dark2")))
 }
 
-
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 
 
 #' creates a list of bigrams and their counts 
@@ -137,21 +209,25 @@ create_wordcloud <- function(x, filter_by = "") {
 #'requires- tidytext:: and stringr::
 #'
 #'
-#' @param x - a dataframe with a column called: 'text'
+#' @param data - a dataframe with a column called: 'text'
 #' @param filter_by search term to filter by. default set to no filter
 #'
 #' @return list of bigrams and their counts 
 #' 
 #'
 #' @examples
-create_bigram <- function(x, filter_by = "") {
+create_bigram <- function(data, filter_by = "", group=FALSE) {
   
   
-  filtered <- x %>% 
+  filtered <- data %>% 
     filter(
       str_detect(tolower(text), filter_by)) #select only rows that contain search term of interest
   
-  bigrams <- filtered %>% 
+  if (group) {grouped_terms <- word_umbrella(filtered)}
+  else {
+    grouped_terms <- filtered}
+  
+  bigrams <- grouped_terms %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% 
     unnest_tokens(bigram, text, token = "ngrams", n = 2) %>% #creates sigle column of all possible bigrams from text strings
@@ -176,11 +252,12 @@ create_bigram <- function(x, filter_by = "") {
   
   bigrams_united <- bigrams_filtered %>%
     unite(bigram, word1, word2, sep = " ") #rejoin words back into bigrams
+  
 }
 
 
 
-
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 
 
 
