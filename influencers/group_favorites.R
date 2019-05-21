@@ -99,7 +99,7 @@ environmental_WL <- c("conserv", "sustain", "water", "organic", "climate", "envi
 #' prop_df <- bind_rows(prop_list, .id = "ID")
 #' 
 #'
-find_group_prop <- function(x, category = "", y = 1) { # default set to not include india related tweets - there is a bug in the regex recognition, that is causing this to fail for when looping through the top 20+ tweets (when india is included)
+find_group_prop <- function(x, category = "", y = 1) {
   
   #filter for is_india & category - as defined by the function arguments
   noRT_filtered <- noRT %>% 
