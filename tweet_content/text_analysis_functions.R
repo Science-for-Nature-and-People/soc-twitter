@@ -33,7 +33,9 @@ prepare_text <- function(x) {
     mutate(text = tolower(text)) %>% #make all text lower case
     unnest_tokens(word, text) %>%  #takes each rows' string and separates each word into a new row
     mutate(word = sub("'s$", "", word),  # remove possessives
-           word = sub("cards", "card", word))
+           word = sub("cards", "card", word),
+           word = sub("crops", "crop", word),
+           word = sub("improves", "improve", word))
   
   #new pipeline as R doesnt like going from `unnest_tokens` to anti_join
   text_words %>% 
@@ -71,7 +73,9 @@ prepare_text_full <- function(x) {
     mutate(text = tolower(text)) %>% #make all text lower case
     unnest_tokens(word, text) %>% #takes each rows' string and separates each word into a new row
     mutate(word = sub("'s$", "", word),
-           word = sub("cards", "card", word))
+           word = sub("cards", "card", word),
+           word = sub("crops", "crop", word),
+           word = sub("improves", "improve", word))
   
   #new pipeline as R doesnt like going from `unnest_tokens` to anti_join
   text_words %>% 
@@ -105,7 +109,9 @@ create_wordcloud <- function(x, filter_by = "") {
     mutate(text = tolower(text)) %>% 
     unnest_tokens(word, text) %>%  #takes each rows' string and separates each word into a new row
     mutate(word = sub("'s$", "", word),
-           word = sub("cards", "card", word))
+           word = sub("cards", "card", word),
+          word = sub("crops", "crop", word),
+          word = sub("improves", "improve", word))
   
   filtered <- text_words %>% 
     anti_join(stop_words) %>% 
@@ -156,11 +162,15 @@ create_bigram <- function(x, filter_by = "") {
   
   bigrams_filtered <- bigrams_separated %>%
     mutate(word1 = sub("'s$", "", word1),
-           word1 = sub("cards", "card", word1))
+           word1 = sub("cards", "card", word1),
+           word1 = sub("crops", "crop", word1),
+           word1 = sub("improves", "improve", word1)) %>% 
     filter(!word1 %in% stop_words$word) %>%
     filter(!word1 %in% c("https","rt","t.co","amp")) %>% 
      mutate(word2 = sub("'s$", "", word2),
-            word2 = sub("cards", "card", word2))
+            word2 = sub("cards", "card", word2),
+            word2 = sub("crops", "crop", word2),
+            word2 = sub("improves", "improve", word2)) %>% 
     filter(!word2 %in% stop_words$word) %>% 
     filter(!word2 %in% c("https","rt","t.co","amp"))
   
