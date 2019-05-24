@@ -27,10 +27,10 @@ word_umbrella <- function(data) {
   
   
   #list of terms that fall under a single umbrella
-  soil_health <- c("healthy soil", "soilhealth", "healthysoil", "soil health")
+  soil_health <- c("healthy soil", "soilhealth", "healthysoil", "soil health", "#soil#health")
   soil_qual <- c("soil quality", "soilquality")
   soil_fert <- c("soil fertility", "soilfertility")
-  regen_ag <- c("regenerative agriculture",	"regenerativeagriculture", "regenerative ag", "regenerative agricultural")
+  regen_ag <- c("regenerative agriculture",	"regenerativeagriculture", "regenerative ag", "regenerative agricultural", "regenerativeag")
   conserv_ag <- c("conservation agriculture",	"conservationagriculture",	"conservationag")
   cover_crop <- c("cover crop",	"cover cropping",	"cover crops",	"covercrop",	"covercropping",	"covercrops")
   conserv_till <- c("conservation tillage",	"no till",	"reduced till",	"reduced tillage",	"no tillage",	'notill',	"reducedtill",	"reducedtillage",	"notillage",	"conservationtillage",	"conservationtill",	"conservation till")
@@ -89,9 +89,11 @@ word_umbrella <- function(data) {
 #' @examples
 #' tweet <- data.frame(text = "the bird said Tweet tweet")
 #' prepare_text(tweet)
-prepare_text <- function(data) {
+prepare_text <- function(data, group = FALSE) {
   
-  grouped_terms <- word_umbrella(data)
+  if (group) {grouped_terms <- word_umbrella(filtered)}
+  else {
+    grouped_terms <- data}
   
   text_words <- grouped_terms %>% 
     select(text) %>% 
@@ -134,9 +136,11 @@ prepare_text <- function(data) {
 #' @examples
 #' tweet <- data.frame(text = "the bird said Tweet tweet")
 #' prepare_text(tweet)
-prepare_text_full <- function(data) {
+prepare_text_full <- function(data, group = FALSE) {
   
-  grouped_terms <- word_umbrella(data)
+  if (group) {grouped_terms <- word_umbrella(filtered)}
+  else {
+    grouped_terms <- data}
   
   text_words <- grouped_terms %>% 
     select(text) %>% 
@@ -170,13 +174,17 @@ prepare_text_full <- function(data) {
 #' 
 #'
 #' @examples
-create_wordcloud <- function(data, filter_by = "") {
+create_wordcloud <- function(data, filter_by = "", group = FALSE) {
   
-  grouped_terms <- word_umbrella(data)
+  filtered <- data %>% 
+    filter(
+      str_detect(tolower(text), filter_by)) #selects only rows that cointain your term of interest
+  
+  if (group) {grouped_terms <- word_umbrella(filtered)}
+  else {
+    grouped_terms <- filtered}
   
   text_words <- grouped_terms %>% 
-    filter(
-      str_detect(tolower(text), filter_by)) %>% #selects only rows that cointain your term of interest
     select(text) %>% 
     mutate(text = tolower(text)) %>% 
     unnest_tokens(word, text) %>%  #takes each rows' string and separates each word into a new row
@@ -189,7 +197,7 @@ create_wordcloud <- function(data, filter_by = "") {
     anti_join(stop_words) %>% 
     count(word, sort=TRUE) %>% 
     filter(!word %in% c("https","rt","t.co","amp")) %>% #remove words associated with images/links and special characters, (i.e. amp = &)
-    filter(!word %in% c("soil","health", "healthy", "soilhealth"))  #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
+    filter(!word %in% c("soil","health", "soil_health"))  #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
   
   
   filtered %>% 
@@ -218,40 +226,40 @@ create_wordcloud <- function(data, filter_by = "") {
 #' @examples
 create_bigram <- function(data, filter_by = "", group=FALSE) {
   
-  
+  #select only rows that contain search term of interest
   filtered <- data %>% 
     filter(
-      str_detect(tolower(text), filter_by)) #select only rows that contain search term of interest
+      str_detect(tolower(text), filter_by)) 
   
+  #if group = TRUE the group terms into their umbrella term
   if (group) {grouped_terms <- word_umbrella(filtered)}
-  else {
-    grouped_terms <- filtered}
+  else {grouped_terms <- filtered}
   
+ # tokenize into bigrams and count 
   bigrams <- grouped_terms %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% 
-    unnest_tokens(bigram, text, token = "ngrams", n = 2) %>% #creates sigle column of all possible bigrams from text strings
+    unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%  #creates sigle column of all possible bigrams from text strings
+    mutate(bigram = sub("'s$", "", bigram),
+           bigram = sub("cards", "card", bigram),
+           bigram = sub("crops", "crop", bigram),
+           bigram = sub("improves", "improve", bigram)) %>% 
     count(bigram, sort = TRUE) 
   
+  #separate the bigrams so that stop words can be filtered out
   bigrams_separated <- bigrams %>% 
-    separate(bigram, c("word1", "word2"), sep = " ") #separate the bigrams so that stop words can be filtered out
+    separate(bigram, c("word1", "word2"), sep = " ") 
   
+  #remove stopwords
   bigrams_filtered <- bigrams_separated %>%
-    mutate(word1 = sub("'s$", "", word1),
-           word1 = sub("cards", "card", word1),
-           word1 = sub("crops", "crop", word1),
-           word1 = sub("improves", "improve", word1)) %>% 
     filter(!word1 %in% stop_words$word) %>%
     filter(!word1 %in% c("https","rt","t.co","amp")) %>% 
-     mutate(word2 = sub("'s$", "", word2),
-            word2 = sub("cards", "card", word2),
-            word2 = sub("crops", "crop", word2),
-            word2 = sub("improves", "improve", word2)) %>% 
     filter(!word2 %in% stop_words$word) %>% 
     filter(!word2 %in% c("https","rt","t.co","amp"))
   
+  #rejoin words back into bigrams
   bigrams_united <- bigrams_filtered %>%
-    unite(bigram, word1, word2, sep = " ") #rejoin words back into bigrams
+    unite(bigram, word1, word2, sep = " ") 
   
 }
 
