@@ -7,7 +7,7 @@ library(tidytext)
 library(stringr)
 library(igraph)
 library(ggraph)
-
+library(SnowballC)
 
 
 
@@ -27,7 +27,7 @@ word_umbrella <- function(data) {
   
   
   #list of terms that fall under a single umbrella
-  soil_health <- c("healthy soil", "soilhealth", "healthysoil", "soil health", "#soil#health")
+  soil_health <- c("healthy soil", "soilhealth", "healthysoil", "soil health")
   soil_qual <- c("soil quality", "soilquality")
   soil_fert <- c("soil fertility", "soilfertility")
   regen_ag <- c("regenerative agriculture",	"regenerativeagriculture", "regenerative ag", "regenerative agricultural", "regenerativeag")
@@ -89,74 +89,32 @@ word_umbrella <- function(data) {
 #' @examples
 #' tweet <- data.frame(text = "the bird said Tweet tweet")
 #' prepare_text(tweet)
-prepare_text <- function(data, group = FALSE) {
+prepare_text <- function(data, group = FALSE, stem = FALSE) {
   
-  if (group) {grouped_terms <- word_umbrella(filtered)}
+  if (group) {terms <- word_umbrella(data)}
   else {
-    grouped_terms <- data}
+    terms <- data}
   
-  text_words <- grouped_terms %>% 
+  reg_words <- "([^A-Za-z_\u0900-\u097F\\d#@']|'(?![A-Za-z_\u0900-\u097F\\d#@]))" # regex expresions that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ and #
+  text_words <- terms %>% 
     select(text) %>% 
-    mutate(text = tolower(text)) %>% #make all text lower case
-    unnest_tokens(word, text) %>%  #takes each rows' string and separates each word into a new row
-    mutate(word = sub("'s$", "", word),  # remove possessives
-           word = sub("cards", "card", word),
-           word = sub("crops", "crop", word),
-           word = sub("improves", "improve", word))
+    mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remvove anything associated with hyperlinks
+    mutate(text = tolower(text)) %>% 
+    unnest_tokens(word, text, token = "regex", pattern = reg_words) %>%
+    filter(!word %in% stop_words$word)
   
-  #new pipeline as R doesnt like going from `unnest_tokens` to anti_join
+  
+  if (stem) {
+    text_words <- text_words %>% 
+      mutate(word = wordStem(word, language="english"))
+  }
+  
+  
   text_words %>% 
-    anti_join(stop_words)  %>% #remove common stop words using the tidytext built in stop words
     count(word, sort=TRUE) %>% 
-    filter(!word %in% c("https","rt","t.co","amp")) %>% #remove words associated with images/links and special characters, (i.e. amp = &)
     filter(!word %in% c("soil","health", "healthy", "soilhealth")) #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
 }
 
-
-####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
-
-#' Same as prepare_text() but doesnt filter for the top words
-#' 
-#' This takes any data frame that contains a column  called `.$text` 
-#'  containing text strings and returns a new dataframe that lists 
-#'  the words within .$text and their respective counts
-#'  
-#'  the function is set to remove tweet specific stop words 'c("https","rt","t.co","amp")'
-#'  as well as dominant terms used in this analysis c("soil","health", "healthy", "soilhealth")
-#'  this can be changed in the future by adding a new parameter "stopwords" of custom terms
-#'  
-#'  requires: tidytext::
-#'
-#' @param data - a data frame (must containg a variable `text`)
-#'
-#' @return data frame of two rows (word, n) where n is the count of each 
-#'         respective word minus stop words
-#' 
-#'
-#' @examples
-#' tweet <- data.frame(text = "the bird said Tweet tweet")
-#' prepare_text(tweet)
-prepare_text_full <- function(data, group = FALSE) {
-  
-  if (group) {grouped_terms <- word_umbrella(filtered)}
-  else {
-    grouped_terms <- data}
-  
-  text_words <- grouped_terms %>% 
-    select(text) %>% 
-    mutate(text = tolower(text)) %>% #make all text lower case
-    unnest_tokens(word, text) %>% #takes each rows' string and separates each word into a new row
-    mutate(word = sub("'s$", "", word),
-           word = sub("cards", "card", word),
-           word = sub("crops", "crop", word),
-           word = sub("improves", "improve", word))
-  
-  #new pipeline as R doesnt like going from `unnest_tokens` to anti_join
-  text_words %>% 
-    anti_join(stop_words) %>% #remove common stop words using the tidytext built in stop words
-    count(word, sort=TRUE) %>% 
-    filter(!word %in% c("https","rt","t.co","amp")) #remove words associated with images/links and special characters, (i.e. amp = &)
-}
 
 
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
@@ -174,7 +132,7 @@ prepare_text_full <- function(data, group = FALSE) {
 #' 
 #'
 #' @examples
-create_wordcloud <- function(data, filter_by = "", group = FALSE) {
+create_wordcloud <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   
   filtered <- data %>% 
     filter(
@@ -187,11 +145,12 @@ create_wordcloud <- function(data, filter_by = "", group = FALSE) {
   text_words <- grouped_terms %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% 
-    unnest_tokens(word, text) %>%  #takes each rows' string and separates each word into a new row
-    mutate(word = sub("'s$", "", word),
-           word = sub("cards", "card", word),
-          word = sub("crops", "crop", word),
-          word = sub("improves", "improve", word))
+    unnest_tokens(word, text)   #takes each rows' string and separates each word into a new row
+
+  if (stem) {
+    text_words <- text_words %>% 
+      mutate(word = wordStem(word, language="english"))
+  }
   
   filtered <- text_words %>% 
     anti_join(stop_words) %>% 
@@ -212,7 +171,7 @@ create_wordcloud <- function(data, filter_by = "", group = FALSE) {
 
 
 #' creates a list of bigrams and their counts 
-#' the function is set to remove tweet specific stop words 'c("https","rt","t.co","amp")'
+#' 
 #'
 #'requires- tidytext:: and stringr::
 #'
@@ -224,7 +183,7 @@ create_wordcloud <- function(data, filter_by = "", group = FALSE) {
 #' 
 #'
 #' @examples
-create_bigram <- function(data, filter_by = "", group=FALSE) {
+create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   
   #select only rows that contain search term of interest
   filtered <- data %>% 
@@ -232,34 +191,30 @@ create_bigram <- function(data, filter_by = "", group=FALSE) {
       str_detect(tolower(text), filter_by)) 
   
   #if group = TRUE the group terms into their umbrella term
-  if (group) {grouped_terms <- word_umbrella(filtered)}
-  else {grouped_terms <- filtered}
+  if (group) {terms <- word_umbrella(filtered)}
+  else {terms <- filtered}
   
- # tokenize into bigrams and count 
-  bigrams <- grouped_terms %>% 
-    select(text) %>% 
-    mutate(text = tolower(text)) %>% 
-    unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%  #creates sigle column of all possible bigrams from text strings
-    mutate(bigram = sub("'s$", "", bigram),
-           bigram = sub("cards", "card", bigram),
-           bigram = sub("crops", "crop", bigram),
-           bigram = sub("improves", "improve", bigram)) %>% 
+  
+  reg_words <- "([^A-Za-z_\u0900-\u097F\\d#@']|'(?![A-Za-z_\u0900-\u097F\\d#@]))" # regex expresions that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ and #
+  
+  bigrams_separated <- terms %>%
+    select(text, user_id) %>% 
+    mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>%
+    unnest_tokens(word, text, token = "regex", pattern = reg_words) %>%
+    mutate(next_word = lead(word)) %>%
+    filter(!word %in% stop_words$word, # remove stop words
+           !next_word %in% stop_words$word) 
+  
+  if (stem) {
+    bigrams_separated<- bigrams_separated %>% 
+      mutate(word = wordStem(word, language="english"),
+             next_word = wordStem(next_word, language="english"))
+  } 
+  
+  bigrams_united <- bigrams_separated %>% 
+    unite(bigram, word, next_word, sep = ' ') %>%
+    select(bigram)  %>% 
     count(bigram, sort = TRUE) 
-  
-  #separate the bigrams so that stop words can be filtered out
-  bigrams_separated <- bigrams %>% 
-    separate(bigram, c("word1", "word2"), sep = " ") 
-  
-  #remove stopwords
-  bigrams_filtered <- bigrams_separated %>%
-    filter(!word1 %in% stop_words$word) %>%
-    filter(!word1 %in% c("https","rt","t.co","amp")) %>% 
-    filter(!word2 %in% stop_words$word) %>% 
-    filter(!word2 %in% c("https","rt","t.co","amp"))
-  
-  #rejoin words back into bigrams
-  bigrams_united <- bigrams_filtered %>%
-    unite(bigram, word1, word2, sep = " ") 
   
 }
 
@@ -300,13 +255,6 @@ gram_network <- function(data, limit) {
     geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
     theme_void() #aesthetic
 }
-
-
-
-
-
-
-
 
 
 

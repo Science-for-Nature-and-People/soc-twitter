@@ -44,7 +44,7 @@ source("text_analysis_functions.R")
 
 ## full data - w/ RT
 ```{r, echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged, "", group = T)
+create_wordcloud(twitter_merged, "", group = T, stem = T)
 ```
 
 ***  
@@ -52,27 +52,27 @@ create_wordcloud(twitter_merged, "", group = T)
 
 # full noRT df
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged_noRT, "")
+create_wordcloud(twitter_merged_noRT, "", group = T, stem = T)
 ```
   
   
 #### filter by: "soil"
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged_noRT, "soil")
+create_wordcloud(twitter_merged_noRT, "soil", group = T, stem = T)
 ```  
   
     
 #### filter by: "soil health"
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged_noRT, "soil health", group = TRUE)
+create_wordcloud(twitter_merged_noRT, "soil health", group = T, stem = T)
 ```  
 
 #### filter by: "soil quality"
 ```{r,echo=F,warning=F,message=F}
 
 #creat word count
-soil_quality_wc <- prepare_text(soil_quality_tweets) %>% 
-  filter(word != "quality")
+soil_quality_wc <- prepare_text(soil_quality_tweets, group = T, stem = T) %>% 
+  filter(word != "soil_qual")
 
 soil_quality_wc %>% 
   with(wordcloud(word, n, 
@@ -90,7 +90,7 @@ rangeland_tweets <- twitter_merged_noRT %>%
     str_detect(tolower(text), "rangeland"))
 
 #creat word count
-rangeland_wc <- prepare_text(rangeland_tweets) %>% 
+rangeland_wc <- prepare_text(rangeland_tweets, group = T, stem = T) %>% 
   filter(word != "rangeland")
 
 
@@ -100,6 +100,8 @@ rangeland_wc %>%
                  max.words=200, 
                  random.order=FALSE, 
                  color=brewer.pal(7,"Dark2")))
+
+
 ```  
   
     
