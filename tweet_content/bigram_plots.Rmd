@@ -36,8 +36,8 @@ source("text_analysis_functions.R")
 - # of bigrams set to >120
 ```{r, echo=F, fig.width=12}
 ####full dataset####
-noRT_bigram <- create_bigram(noRT, "", group = TRUE) # `group = T` groups terms into umbrella terms
-gram_network(noRT_bigram,110)
+noRT_bigram <- create_bigram(noRT, "", group = TRUE, stem = TRUE) # `group = T` groups terms into umbrella terms
+gram_network(noRT_bigram,120)
 ```
   
   ***  
@@ -48,7 +48,7 @@ gram_network(noRT_bigram,110)
 - # of bigrams set to >100
 ```{r, echo=F, fig.width=12}
 ###soil
-soil_bigram <- create_bigram(noRT, "soil health")
+soil_bigram <- create_bigram(noRT, "soil health", group = T, stem = T)
 gram_network(soil_bigram, 80)
 ```
   
@@ -58,7 +58,7 @@ gram_network(soil_bigram, 80)
 - # of bigrams set to >1
 ```{r, echo=F, fig.width=12}
 ###rangeland
-range_bigram <- create_bigram(noRT, "rangeland health")
+range_bigram <- create_bigram(noRT, "rangeland health", group = T, stem = T)
 gram_network(range_bigram, 1)
 ```
   
@@ -68,7 +68,7 @@ gram_network(range_bigram, 1)
 - not very informative 
 ```{r,include=F, echo=F, fig.width=12}
 ###forest
-forest_bigram <- create_bigram(noRT, "forest health")
+forest_bigram <- create_bigram(noRT, "forest health", group = T, stem = T)
 gram_network(forest_bigram, 0)
 ```
   
@@ -85,7 +85,7 @@ gram_network(forest_bigram, 0)
 - # of bigrams set to >2
 ```{r, echo=F, fig.width=12}
 ###soil
-soil_100_bigram <- create_bigram(top_100_RT, "soil")
+soil_100_bigram <- create_bigram(top_100_RT, "soil", group = T, stem = T)
 gram_network(soil_100_bigram, 2)
 ```
   
@@ -105,6 +105,6 @@ gram_network(soil_100_bigram, 2)
 - # of bigrams set to >0
 ```{r,include=F, echo=F, fig.width=12}
 ###forest
-forest_100_bigram <- create_bigram(top_100_RT, "forest")
+forest_100_bigram <- create_bigram(top_100_RT, "forest", group = T, stem = T)
 gram_network(forest_100_bigram, 0)
 ```

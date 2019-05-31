@@ -111,8 +111,7 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
   
   
   text_words %>% 
-    count(word, sort=TRUE) %>% 
-    filter(!word %in% c("soil","health", "healthy", "soilhealth")) #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
+    count(word, sort=TRUE) #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
 }
 
 
