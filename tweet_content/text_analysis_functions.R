@@ -259,5 +259,26 @@ gram_network <- function(data, limit) {
 
 
 
+#' translate hindi
+#' 
+#' IMPORTNANT: must have the the translation df called `trans` in you environment
+#'
+#' @param data df with a `text` column that contain tweets 
+#'
+#' @return translated tweets
+#' @export
+#'
+#' @examples
+translate_hindi <- function(data) {
+  
+  for(i in 1:nrow(trans)) {
+    data <- data %>%
+      mutate(
+        text = str_replace_all(data$text, pattern = trans$hindi[i], replacement = trans$en[i]))
+  }
+  
+  return(data)
+}
+
 
 
