@@ -438,7 +438,7 @@ range_health_count <- rangeland_health_wc %>%
 
 
 
-kable(list(forest_health_count, range_health_count ,soil_health_count))%>%
+kable(list(forest_health_count, range_health_count , ag_health_count))%>%
 kable_styling(latex_options = c("striped", "scale_down"))
 ```
 ***
