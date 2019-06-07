@@ -26,3 +26,5 @@ API_csv
 *.knit.md
 .Rproj.user
 twitter_colab.Rproj
+grouping_test.R
+practice.R
