@@ -26,19 +26,65 @@ top_100_RT <- twitter_merged_noRT %>%
   arrange(-retweet_count) %>% 
   head(100)
 
-noRT_trans <- translate_hindi(noRT)
 
+
+
+
+
+```
+
+Translation
+```{r}
+
+#filter for hindi characters
+hindi_tweets <- noRT %>% 
+  filter(
+  str_detect(text, "[\u0900-\u097F]+"))
+
+
+#create word list
+hindi_terms <- prepare_text(hindi_tweets) %>% 
+  filter(
+    str_detect(word, "[\u0900-\u097F]+"))
+
+
+hindi_trans <- read_csv("hindi-translated.csv")
+
+
+
+
+
+#### Join translated text to original hindi ####
+
+X1 <- 1:nrow(hindi_terms)
+hindi_terms$X1 <- X1
+
+translations <- left_join(hindi_terms, hindi_trans, by = 'X1')
+
+# select only hindi and english, and clean the translation
+trans <- translations %>% 
+  select(-n, -X1) %>% 
+  mutate(word.y = str_replace_all(word.y, '"', ""))
+#rename columns
+names(trans) <- c("hindi","en")
+
+
+noRT_trans <- translate_hindi(noRT)
 
 ```
 
 
 ### Full dataset (noRT)
-- # of bigrams set to >120
+- bigrams set to >120
 ```{r, echo=F, fig.width=12}
 ####full dataset####
 noRT_bigram <- create_bigram(noRT, "", group = TRUE, stem = TRUE) # `group = T` groups terms into umbrella terms
 gram_network(noRT_bigram,120)
 
+```
+  
+  #### translated
+```{r,echo=F, fig.width=12}
 bigram_trans <- create_bigram(noRT_trans, "", group = TRUE, stem = TRUE)
 gram_network(bigram_trans,120)
 ```
@@ -48,19 +94,22 @@ gram_network(bigram_trans,120)
   
           
 ### filtered for "soil health"
-- # of bigrams set to >100
+- bigrams set to >100
 ```{r, echo=F, fig.width=12}
 ###soil
 soil_bigram <- create_bigram(noRT, "soil health", group = T, stem = T)
 gram_network(soil_bigram, 80)
 
 
+
+```
+  
+#### translated
+```{r,echo=F, fig.width=12}
 #### same thing for translated
-noRT_trans <- translate_hindi(noRT)
 soil_bigram_translated <- create_bigram(noRT_trans, "soil health", group = T, stem = T)
 gram_network(soil_bigram_translated, 80)
 ```
-
   
   ***  
   
