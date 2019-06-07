@@ -68,11 +68,11 @@ create_wordcloud(twitter_merged_noRT, "soil health", group = T, stem = T)
 ```  
 
 #### filter by: "soil quality"
-```{r,echo=F,warning=F,message=F}
+```{r,echo=F,warning=F,message=F,error=T}
 
 #creat word count
 soil_quality_wc <- prepare_text(soil_quality_tweets, group = T, stem = T) %>% 
-  filter(word != "soil_qual")
+  filter(!word %in% c("soil_qual",'soil_health_card'))
 
 soil_quality_wc %>% 
   with(wordcloud(word, n, 
