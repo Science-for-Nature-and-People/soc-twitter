@@ -10,7 +10,7 @@ library(jsonlite)
 library(streamR)
 library(httr)
 
-path <- '/home/nolasco/soc-twitter' # LOCATION OF MASTER FILES
+path <- '/home/shares/soilcarbon/Twitter/' # LOCATION OF MASTER FILES
 
 ## Read previous data ----
 
@@ -76,8 +76,9 @@ write.csv(twitterAPI_new, file.name)
 ## Prepare the data for the merge ----
 
 # Changing the type of specific columns
+twitter_merged.master$created_at <- as_datetime(twitter_merged.master$created_at)
+twitter_merged_noRT.master$created_at <- as_datetime(twitter_merged_noRT.master$created_at)
 twitterAPI_new$created_at <- as_datetime(twitterAPI_new$created_at)
-# twitterAPI_new$user_id <- as.character(twitterAPI_new$user_id)
 
 # Creating provenance columns w/ value as API
 twitterAPI_new <- add_column(twitterAPI_new, provenance = "API", .before = 1)  
@@ -152,5 +153,5 @@ twitter_merged_new <- rbind(twitter_merged.master, twitterAPI_new)
 twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 
 # Re-exporting new merged dataset to master csv
-write.csv(twitter_merged_new, paste(path, '/Merged_v2/', 'twitter_mergedPrac.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
-write.csv(twitter_merged_noRTnew, paste(path, '/Merged_v2/', 'twitter_merged_noRTprac.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+write.csv(twitter_merged_new, paste(path, '/Merged_v2/', 'twitter_merged_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+write.csv(twitter_merged_noRTnew, paste(path, '/Merged_v2/', 'twitter_merged_noRT_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
