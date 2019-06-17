@@ -36,6 +36,8 @@ word_umbrella <- function(data) {
   conserv_till <- c("conservation tillage",	"no till",	"reduced till",	"reduced tillage",	"no tillage",	'notill',	"reducedtill",	"reducedtillage",	"notillage",	"conservationtillage",	"conservationtill",	"conservation till")
   rangeland <- c("rangeland health",	"healthy rangelands",	"rangelandhealth",	"healthyrangelands")
   health_card <- c("soil health card",	"soil health cards",	"soilhealthcard",	"soilhealthcards")
+  healthy_people <- c('human health', 'healthy people')
+  organic_ag <- c('organic agriculture', 'organic ag','sustainable ag','sustainable agriculture')
   n_modi <- c("narendra modi",	"narendramodi",	"narendra",	"modi") # have to use str_replace vs str_replace_all for this one
   
   #replace text
@@ -49,8 +51,11 @@ word_umbrella <- function(data) {
       text = str_replace_all(tolower(text), str_c(conserv_till, collapse = "|"), "conservation_tillage") , 
       text = str_replace_all(tolower(text), str_c(rangeland, collapse = "|"), "rangeland_health") , 
       text = str_replace_all(tolower(text), str_c(health_card, collapse = "|"), "soil_health_card") , 
+      text = str_replace_all(tolower(text), str_c(healthy_people, collapse = "|"), "healthy_people") , 
+      text = str_replace_all(tolower(text), str_c(organic_ag, collapse = "|"), "organic_ag") , 
       text = str_replace(tolower(text), str_c(n_modi, collapse = "|"), "Narendra_Modi") , 
       text = str_replace_all(tolower(text), "soil health institute", "soil_health_institute") , 
+      text = str_replace_all(tolower(text), "forest health", "forest_health") , 
       text = str_replace_all(tolower(text), "soil health partnership", "soil_health_partnership") , 
       text = str_replace_all(tolower(text), "soil organic matter", "soil_organic_matter") , 
       text = str_replace_all(tolower(text), "soil carbon", "soil_carbon") , 
@@ -194,7 +199,7 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   else {terms <- filtered}
   
   
-  reg_words <- "([^A-Za-z_\u0900-\u097F\\d#@']|'(?![A-Za-z_\u0900-\u097F\\d#@]))" # regex expresions that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ and #
+  reg_words <- "([^A-Za-z_\u0900-\u097F\\d@']|'(?![A-Za-z_\u0900-\u097F\\d@]))" # regex expresions that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ 
   
   bigrams_separated <- terms %>%
     select(text, user_id) %>% 
@@ -238,21 +243,29 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
 #'
 #' @examples
 gram_network <- function(data, limit) {
-  bigram_graph <- data %>% 
-    separate(bigram, c("word1", "word2"), sep = " ") %>% #separates bigrams into two columns
-    filter(n > limit) %>%
-    igraph::graph_from_data_frame() #generates a an igraph graph (resembiling a table) showing direction of terms
-  
   set.seed(2019) # ensures consistency in output
   
   a <- grid::arrow(type = "closed", length = unit(.15, "inches"))  #adds arrows connecting each "node" (word in this case)
   
-  ggraph::ggraph(bigram_graph, layout = "fr") +
+  bigrams <- data %>% 
+    separate(bigram, c("word1", "word2"), sep = " ") %>% #separates bigrams into two columns
+    filter(n > limit)
+  
+  counts <- bigrams %>% 
+    gather(item, word, word1, word2) %>% 
+    group_by(word) %>% 
+    summarise(n = sum(n))
+  #generates a an igraph graph (resembiling a table) showing direction of terms
+  
+  bigrams %>% 
+    igraph::graph_from_data_frame(vertices = counts) %>% 
+    ggraph::ggraph(layout = "fr") +
     geom_edge_link(aes(edge_alpha = n), show.legend = T,
                    arrow = a, end_cap = circle(.07, 'inches')) + #defines how the edges are visualized
-    geom_node_point(color = "lightblue", size = 5) +
-    geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
-    theme_void() #aesthetic
+    geom_node_point(color = "lightblue", aes(size = n)) +
+    scale_size(range = c(2,8)) +
+    geom_node_text(aes(label = name), repel = T) +
+    theme_void() 
 }
 
 
