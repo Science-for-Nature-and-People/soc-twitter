@@ -1,6 +1,14 @@
 library(rtweet)
 library(tidyverse)
 
+######~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######
+## short script for IDing which users from our dataset have gotten the most retweets (i.e are 'top users') ##
+## and checking to see which of TNC's partners are among those 'top users'                                ##
+######~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######
+
+### results (as of 05/2019 - may change when new data is processed):
+### - 27 out of 45 partners showed up in our data set
+### - 4 partners are among the top 100 users based on # of RTs
 
 create_token(
   app = "monper_twitter_app",
@@ -21,6 +29,7 @@ partners <- read_csv("twitter-institutions.csv")
 noRT <- twitter_merged_noRT %>% 
   arrange(-retweet_count) %>% 
   filter(screen_name != "Pontifex")
+
 
 #how many partners have tweeted about our search terms?
 partner_hits <- noRT %>% 
@@ -69,7 +78,7 @@ top_users <- usr_df %>%
 top_100_favs <- noRT %>% 
   group_by(screen_name) %>%
   summarise(
-    total_fav = sum(favorite_count, na.rm = T)) %>% #add remove NA
+    total_fav = sum(favorite_count, na.rm = T)) %>% 
   arrange(-total_fav) %>% 
   head(100)
 

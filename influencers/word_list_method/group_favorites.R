@@ -3,8 +3,9 @@
 ##################################
 
 
-### This script builds a function [ find_group_prop() ] that can quickly identify the proportion of which user groups retweeted any given tweet, this is to aid in my attempt at answering:
-#~~ Are there differences in the content/message of these tweets that make them more appealing to these different groups?
+### This script:
+#   1) builds a function [ find_group_prop() ] that can quickly identify the proportion of which user groups retweeted any given tweet, 
+#   2) creates wordclouds showing the content of tweets that appeal most to each specific user group, seperated by 'category' (soil, rangeland, forest)
 
 
 library(tidyverse)
@@ -34,9 +35,7 @@ RT <- twitter_merged %>%
 RT$is_india[is.na(RT$is_india)] <- 0
 
 
-RT <- RT %>% 
-  filter(!str_detect(tolower(text), "pontifex"), #remove the popes RTs
-         screen_name != "Pontifex") 
+
 
 ### repeate for noRT
 noRT <- twitter_merged_noRT %>% 
