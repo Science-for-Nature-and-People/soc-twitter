@@ -20,7 +20,11 @@ The following scripts can be used for:
 
 **!!! This script needs to be edited from the command line and _NOT_ from R, as it is dealing with hidden characters**
  
-- Some data exploration: 
+- Some inititial data exploration: 
   - [Data_viz_script.R](Data_viz_script.R): Data visualization and exploration
   - [Sentiment_test.R](sentiment_test.R): Used to explore text mining options with Archived/json data. Reproducible for the larger merged dataset.
 
+More specific exploration and visualizations can be found in the following folders (see their respective README's for more detailed information about specific analyses):
+- [tweet_content]() various way of visualizing the content of tweets by different categories
+- [influencers]() attempts to identify what type of content appeals to different user groups
+-each of these ^ rely on the functions within [text_analysis_functions.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/text_analysis_functions.R)
