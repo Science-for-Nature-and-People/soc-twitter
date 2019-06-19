@@ -26,7 +26,7 @@ hindi_terms <- prepare_text(hindi_tweets) %>%
   filter(
     str_detect(word, "[\u0900-\u097F]+")) # filter out non-hindi words
 
-
+#write.csv(hindi_terms, "hindi_terms.csv")
 
 #### read in translation from Steve ####
 
