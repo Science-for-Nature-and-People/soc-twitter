@@ -26,5 +26,12 @@ API_csv
 *.knit.md
 .Rproj.user
 twitter_colab.Rproj
+<<<<<<< HEAD
+grouping_test.R
+practice.R
+hindi_tweets.txt
+user_descriptions.csv
+=======
 practice.R
 grouping_test.R
+>>>>>>> 82f2b6ea813065d494d0049ace285c7a9204caeb
