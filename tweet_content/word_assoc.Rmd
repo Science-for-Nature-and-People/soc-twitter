@@ -45,7 +45,7 @@ source("text_analysis_functions.R")
 
     
 ```{r, include=FALSE}
-### reating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
+### creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
 
 #### soil
 soil_tweets <- noRT %>% 
@@ -152,7 +152,7 @@ kable(total_counts)
 ## create count of querry hits
 
 #split hits into seperate columns
-hit_split <- colsplit(noRT$hits, ';', c('a','b','c','d','e'))
+hit_split <- colsplit(noRT$hits, ';', c('a','b','c','d','e')) #no more than 5 querry hits on a single tweet
 
 #bind into single row
 hit_long <- data.frame(hit = c(hit_split$a,hit_split$b,hit_split$c,hit_split$d,hit_split$e))

@@ -1,4 +1,6 @@
-#### develop function for translating hindi terms #####
+#### first (failed) attempt at translating text
+# approach was to isolate each hindi word and then to translate each of them individually, then replace each hindi word with its english translation
+# this failed, likely b/c hindi has some modifier characters that got dropped during issolation, so when we replaced the terms, the results was lots of gibberish 
 
 library(tidyverse)
 library(stringr)
