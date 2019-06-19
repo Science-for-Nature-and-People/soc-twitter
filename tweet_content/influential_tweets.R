@@ -1,3 +1,11 @@
+#############################
+## old code where i developed some of the text analysis functions while trying to visualize the tweet content
+## the mature version of this code is within the word_assoc folder in various .Rmd files
+
+
+
+
+
 #### identifying top tweets ####
 # question: filter by category first or select 'top' first?
 # how to filter 'top':

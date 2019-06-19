@@ -7,6 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+##### This markdown visualizes the common flow of words in tweets by using bigram counts. These visualizations are separated into: the full noRT dataset, tweets about soil, forest, and rangeland health, and then repeats this for the top 100 tweets based on their RT count
 
 ```{r, include=FALSE}
 library(tidyverse)
@@ -14,51 +15,61 @@ library(tidytext)
 library(stringr)
 library(ggraph)
 library(igraph)
+source("text_analysis_functions.R")
 
 
-twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
-twitter_merged_noRT <- distinct(twitter_merged_noRT)
+# load data
+noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
+  distinct()
 
-noRT <- twitter_merged_noRT %>% 
-  filter(screen_name != "Pontifex") #remove the pope..
 
-top_100_RT <- twitter_merged_noRT %>% 
+#select top 100 tweets based on their RT count
+top_100_RT <- noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
 
 
 
-source("text_analysis_functions.R")
+
+
+
 ```
 
 
 ### Full dataset (noRT)
-- # of bigrams set to >120
+- bigrams set to >120
 ```{r, echo=F, fig.width=12}
 ####full dataset####
-noRT_bigram <- create_bigram(noRT, "")
+noRT_bigram <- create_bigram(noRT, "", group = TRUE, stem = TRUE) # `group = T` groups terms into umbrella terms
 gram_network(noRT_bigram,120)
+
 ```
-  
+The 30 -> 40 is in reference to some tweets that were going around in the UK saying that the UK is in dangered of depleting its soil fertility in 30-40 years.  
+The 'frustrat 4 tips' is a bunch of tweets sourced from a 'Heresay Social/Facebook' link with 4 tips on improving soil fertility -- not sure why these didn't get flagged as RTs as they are all the same tweets from around the same time
+ 
   ***  
     
   
           
 ### filtered for "soil health"
-- # of bigrams set to >100
+- bigrams set to >100
 ```{r, echo=F, fig.width=12}
 ###soil
-soil_bigram <- create_bigram(noRT, "soil health")
+soil_bigram <- create_bigram(noRT, "soil health", group = T, stem = T)
 gram_network(soil_bigram, 100)
+
+
+
 ```
   
+
   ***  
   
 ### filtered for "rangeland health"
-- # of bigrams set to >1
+- bigrams set to >1
 ```{r, echo=F, fig.width=12}
 ###rangeland
-range_bigram <- create_bigram(noRT, "rangeland health")
+range_bigram <- create_bigram(noRT, "rangeland health", group = T, stem = T)
 gram_network(range_bigram, 1)
 ```
   
@@ -68,7 +79,7 @@ gram_network(range_bigram, 1)
 - not very informative 
 ```{r,include=F, echo=F, fig.width=12}
 ###forest
-forest_bigram <- create_bigram(noRT, "forest health")
+forest_bigram <- create_bigram(noRT, "forest health", group = T, stem = T)
 gram_network(forest_bigram, 0)
 ```
   
@@ -80,12 +91,18 @@ gram_network(forest_bigram, 0)
 
 ## top 100 RT  
   
+- bigrams set to >2
+```{r, echo=F, fig.width=12}
+###full (top100)
+top_100_bigram <- create_bigram(top_100_RT, group = T, stem = T)
+gram_network(top_100_bigram, 2)
+```
   
 ### filtered for "soil"
-- # of bigrams set to >2
+- bigrams set to >2
 ```{r, echo=F, fig.width=12}
 ###soil
-soil_100_bigram <- create_bigram(top_100_RT, "soil")
+soil_100_bigram <- create_bigram(top_100_RT, "soil", group = T, stem = T)
 gram_network(soil_100_bigram, 2)
 ```
   
@@ -102,9 +119,9 @@ gram_network(soil_100_bigram, 2)
   ***  
   
 ### filtered for "forest"
-- # of bigrams set to >0
+- no hits
 ```{r,include=F, echo=F, fig.width=12}
 ###forest
-forest_100_bigram <- create_bigram(top_100_RT, "forest")
-gram_network(forest_100_bigram, 0)
+# forest_100_bigram <- create_bigram(top_100_RT, "forest", group = T, stem = T)
+# gram_network(forest_100_bigram, 0)
 ```
