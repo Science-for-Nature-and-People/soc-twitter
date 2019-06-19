@@ -96,27 +96,30 @@ word_umbrella <- function(data) {
 #' prepare_text(tweet)
 prepare_text <- function(data, group = FALSE, stem = FALSE) {
   
+  # if group is set to TRUE, then run the word_umbrella function
   if (group) {terms <- word_umbrella(data)}
   else {
     terms <- data}
+  # define regex that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ and #
+  reg_words <- "([^A-Za-z_\u0900-\u097F\\d#@']|'(?![A-Za-z_\u0900-\u097F\\d#@]))" 
   
-  reg_words <- "([^A-Za-z_\u0900-\u097F\\d#@']|'(?![A-Za-z_\u0900-\u097F\\d#@]))" # regex expresions that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ and #
+  # create tokens
   text_words <- terms %>% 
     select(text) %>% 
     mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remvove anything associated with hyperlinks
-    mutate(text = tolower(text)) %>% 
-    unnest_tokens(word, text, token = "regex", pattern = reg_words) %>%
-    filter(!word %in% stop_words$word)
+    mutate(text = tolower(text)) %>% #make all lower case
+    unnest_tokens(word, text, token = "regex", pattern = reg_words) %>% # unnest words based on the regex defined above
+    filter(!word %in% stop_words$word) # remove stop words
   
-  
+  # if stem is TRUE, then stem words
   if (stem) {
     text_words <- text_words %>% 
       mutate(word = wordStem(word, language="english"))
   }
   
-  
+  #get word counts and arrange in decending order
   text_words %>% 
-    count(word, sort=TRUE) #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
+    count(word, sort=TRUE) 
 }
 
 
@@ -138,31 +141,36 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
 #' @examples
 create_wordcloud <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   
+  #filter data
   filtered <- data %>% 
     filter(
       str_detect(tolower(text), filter_by)) #selects only rows that cointain your term of interest
   
+  # if group is TRUE then apply the word_umbrella function
   if (group) {grouped_terms <- word_umbrella(filtered)}
   else {
     grouped_terms <- filtered}
   
+  #unnest tokens
   text_words <- grouped_terms %>% 
     select(text) %>% 
     mutate(text = tolower(text)) %>% 
     unnest_tokens(word, text)   #takes each rows' string and separates each word into a new row
 
+  #stem words is stem = TRUE
   if (stem) {
     text_words <- text_words %>% 
       mutate(word = wordStem(word, language="english"))
   }
   
+  #filter stop words and words whose weights are biased b/c of the querry
   filtered <- text_words %>% 
     anti_join(stop_words) %>% 
     count(word, sort=TRUE) %>% 
     filter(!word %in% c("https","rt","t.co","amp")) %>% #remove words associated with images/links and special characters, (i.e. amp = &)
     filter(!word %in% c("soil","health", "soil_health"))  #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
   
-  
+  #create generic word cloud
   filtered %>% 
     with(wordcloud(word, n, 
                    min.freq = 1,
@@ -203,18 +211,20 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   
   bigrams_separated <- terms %>%
     select(text, user_id) %>% 
-    mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>%
+    mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remove anything associated with a hyperlink
     unnest_tokens(word, text, token = "regex", pattern = reg_words) %>%
-    mutate(next_word = lead(word)) %>%
+    mutate(next_word = lead(word)) %>% #creates a new column that has the next word for each respective row (this creates the bigrams)
     filter(!word %in% stop_words$word, # remove stop words
            !next_word %in% stop_words$word) 
   
+  #stem
   if (stem) {
     bigrams_separated<- bigrams_separated %>% 
       mutate(word = wordStem(word, language="english"),
              next_word = wordStem(next_word, language="english"))
   } 
   
+  #combine the two columns into a single bigram term, then count
   bigrams_united <- bigrams_separated %>% 
     unite(bigram, word, next_word, sep = ' ') %>%
     select(bigram)  %>% 
@@ -245,18 +255,21 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
 gram_network <- function(data, limit) {
   set.seed(2019) # ensures consistency in output
   
-  a <- grid::arrow(type = "closed", length = unit(.15, "inches"))  #adds arrows connecting each "node" (word in this case)
+  # defining the arrow asthetics
+  a <- grid::arrow(type = "closed", length = unit(.15, "inches"))  
   
+  #filter bigrams based on their counts
   bigrams <- data %>% 
     separate(bigram, c("word1", "word2"), sep = " ") %>% #separates bigrams into two columns
     filter(n > limit)
   
+  #count each word so we can size the nodes based on their count
   counts <- bigrams %>% 
     gather(item, word, word1, word2) %>% 
     group_by(word) %>% 
     summarise(n = sum(n))
-  #generates a an igraph graph (resembiling a table) showing direction of terms
   
+  #generates a an igraph graph (resembiling a table) showing direction of terms (see roxygen notes for link to where i got this code)
   bigrams %>% 
     igraph::graph_from_data_frame(vertices = counts) %>% 
     ggraph::ggraph(layout = "fr") +
