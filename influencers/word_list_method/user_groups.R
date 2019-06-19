@@ -17,7 +17,7 @@ library(rtweet)
 library(wordcloud)
 library(tidytext)
 
-source("text_analysis_functions.R")
+source("../text_analysis_functions.R")
 
 twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE) %>% 
   distinct()

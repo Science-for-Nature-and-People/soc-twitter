@@ -39,7 +39,7 @@ noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>%
 ```{r, include=FALSE}
 ##functions
 
-source("text_analysis_functions.R")
+source("../text_analysis_functions.R")
 ```
   
 

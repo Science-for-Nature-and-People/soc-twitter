@@ -39,7 +39,7 @@ top_100_RT <- twitter_merged_noRT %>%
 
 
 ```{r, include=F}
-source("text_analysis_functions.R")
+source("../text_analysis_functions.R")
 ```
 
 ## full data - w/ RT

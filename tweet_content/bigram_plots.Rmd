@@ -15,7 +15,7 @@ library(tidytext)
 library(stringr)
 library(ggraph)
 library(igraph)
-source("text_analysis_functions.R")
+source("../text_analysis_functions.R")
 
 
 # load data
