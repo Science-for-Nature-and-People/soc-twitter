@@ -283,6 +283,23 @@ gram_network <- function(data, limit) {
 
 
 
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##                  flag india                             ##
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
+flag_india <- function(data) {
+  
+  results <- data %>% 
+    mutate(
+      is_india = case_when(
+        str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar") ~ 1,
+        str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1,
+        str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1))
+  
+  #replace na w/ 0 to indicate non-india related tweets
+  results$is_india[is.na(results$is_india)] <- 0
+  
+  return(results)
+}
 
 
