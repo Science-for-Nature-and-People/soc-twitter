@@ -21,6 +21,7 @@ library(magrittr)
 # install.packages("data.table")
 library(data.table)
 library(lubridate)
+library(rtweet)
 
 ### Input files #####
 

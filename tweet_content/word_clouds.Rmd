@@ -1,0 +1,189 @@
+---
+title: "wordcloud"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+This documument shows wordclouds separated by three sections: 
+- all data (with RT), 
+- full RT dataset, 
+- top100 RT dataset.  
+
+These later two also have wordclouds filtered by the different categeries:
+- "soil", "rangeland", "forest"
+- "soil health", "rangeland health", "forest health"
+- "soil quality", "rangeland quality", "forest quality"
+  
+  
+```{r, include=F}
+library(tidyverse)
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(wordcloud)
+
+twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
+  distinct()
+twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE) %>% 
+  distinct()
+
+top_100_RT <- twitter_merged_noRT %>% 
+  arrange(-retweet_count) %>% 
+  head(100)
+```
+
+
+
+```{r, include=F}
+source("text_analysis_functions.R")
+```
+
+## full data - w/ RT
+```{r, echo=F,warning=F,message=F}
+create_wordcloud(twitter_merged, "", group = T, stem = T)
+```
+
+***  
+***  
+
+# full noRT df
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(twitter_merged_noRT, "", group = T, stem = T)
+```
+  
+  
+#### filter by: "soil"
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(twitter_merged_noRT, "soil", group = T, stem = T)
+```  
+  
+    
+#### filter by: "soil health"
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(twitter_merged_noRT, "soil health", group = T, stem = T)
+```  
+
+#### filter by: "soil quality"
+```{r,echo=F,warning=F,message=F,error=T}
+
+#creat word count
+soil_quality_wc <- prepare_text(soil_quality_tweets, group = T, stem = T) %>% 
+  filter(!word %in% c("soil_qual",'soil_health_card'))
+
+soil_quality_wc %>% 
+  with(wordcloud(word, n, 
+                 min.freq = 2,
+                 max.words=200, 
+                 random.order=FALSE, 
+                 color=brewer.pal(7,"Dark2")))
+```  
+
+  
+#### filter by: "rangeland"
+```{r,echo=F,warning=F,message=F}
+rangeland_tweets <- twitter_merged_noRT %>% 
+  filter(
+    str_detect(tolower(text), "rangeland"))
+
+#creat word count
+rangeland_wc <- prepare_text(rangeland_tweets, group = T, stem = T) %>% 
+  filter(word != "rangeland")
+
+
+rangeland_wc %>% 
+  with(wordcloud(word, n, 
+                 min.freq = 2,
+                 max.words=200, 
+                 random.order=FALSE, 
+                 color=brewer.pal(7,"Dark2")))
+
+
+```  
+  
+    
+#### filter by: "rangeland health"
+```{r,echo=F,warning=F,message=F}
+rangeland_health_tweets <- twitter_merged_noRT %>% 
+  filter(
+    str_detect(tolower(text), "rangeland health"))
+
+#creat word count
+rangeland_health_wc <- prepare_text(rangeland_health_tweets) %>% 
+  filter(word != "rangeland")
+
+
+rangeland_health_wc %>% 
+  with(wordcloud(word, n, 
+                 min.freq = 2,
+                 max.words=200, 
+                 random.order=FALSE, 
+                 color=brewer.pal(7,"Dark2")))
+```  
+ 
+   
+#### filter by: "rangeland"
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(twitter_merged_noRT, "rangeland quality")
+```  
+ 
+  
+#### filter by: "forest"
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(twitter_merged_noRT, "forest")
+```
+
+#### filter by: "forest health"
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(twitter_merged_noRT, "forest health")
+```
+
+#### filter by: "forest quality"
+-no hits
+```{r,echo=F,warning=F,message=F}
+#create_wordcloud(twitter_merged_noRT, "forest quality")
+```
+
+***
+***
+  
+  
+# top 100 RT
+### full (no filter)
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(top_100_RT, "")
+```
+  
+  
+#### filter by: "soil"
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(top_100_RT, "soil")
+```
+  
+#### filter by: "soil health"
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(top_100_RT, "soil health")
+```
+ 
+  
+#### filter by: "rangeland"
+no hits on "rangeland" within top_100
+```{r,echo=F}
+#create_wordcloud(top_100_RT, "rangeland")
+```
+  
+      
+#### filter by: "forest"
+```{r, echo=F,warning=F,message=F}
+create_wordcloud(top_100_RT, "forest")
+```
+
+
+
+
+
+
+
