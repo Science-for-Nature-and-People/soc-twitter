@@ -22,7 +22,7 @@ hindi <- noRT %>%
   select(text)
 
 # write this^ to a txt file to send to Steve for google translation
- write(paste(hindi$text, collapse = "||"), "hindi_tweets.txt")
+ write(paste(hindi$text, collapse = " || "), "hindi_tweets.txt")
 
 
 
@@ -34,7 +34,7 @@ hindi <- noRT %>%
 
 
 ## next try readLines()
-translation <- readLines("hindi_tweets_translated.txt")
+translation <- readLines("translated_new.txt")
 
 #This give us a charcter value that isn't correctly separated. must recombine and then separate:
 
