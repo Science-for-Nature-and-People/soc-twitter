@@ -92,7 +92,7 @@ id_count <- id %>%
 
 
 
-id_count$count <- as.integer(id_count$count)
+
 
 
 ######### create LDA parameters ###########
@@ -111,6 +111,8 @@ for(i in 1:nrow(training_data)) {
   doc <- as.matrix(doc)
   
   doc <- unname(doc) 
+  
+  storage.mode(doc) <- 'integer' 
        
   doc_list[[i]] <- doc
   
