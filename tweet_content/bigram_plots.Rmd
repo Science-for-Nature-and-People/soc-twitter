@@ -7,7 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-##### This markdown visualizes the common flow of words in tweets by using bigram counts. These visualizations are separated into: the full noRT dataset, tweets about soil, forest, and rangeland health, and then repeats this for the top 100 tweets based on their RT count
+##### This markdown visualizes the common flow of words in tweets by using bigram counts. These visualizations are separated into: the full noRT dataset, tweets about soil, forest, and rangeland health, and then repeats this for the top 100 tweets (based on their RT count)
 
 ```{r, include=FALSE}
 library(tidyverse)
@@ -38,6 +38,7 @@ top_100_RT <- noRT %>%
 
 ### Full dataset (noRT)
 - bigrams set to >120
+- 
 ```{r, echo=F, fig.width=12}
 ####full dataset####
 noRT_bigram <- create_bigram(noRT, "", group = TRUE, stem = TRUE) # `group = T` groups terms into umbrella terms
