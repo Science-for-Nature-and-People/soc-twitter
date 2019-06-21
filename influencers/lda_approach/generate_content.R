@@ -78,7 +78,3 @@ all_content <- bind_rows(full_content)
 
 
 
-
-
-
-
