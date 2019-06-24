@@ -19,7 +19,7 @@ source("../text_analysis_functions.R")
 
 
 # load data
-noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) %>%
   distinct()
 
 

@@ -26,7 +26,7 @@ library(grid)
 
 theme_set(theme_pubr())
 
-noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>%
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) %>%
   distinct()
 
 
@@ -147,12 +147,12 @@ kable(total_counts)
  ***
 
 
-## looking at the relative hits on querry terms (i.e those originally used to querry the API)
+## looking at the relative hits on query terms (i.e those originally used to querry the API)
 ```{r, echo=F}
 ## create count of querry hits
 
 #split hits into seperate columns
-hit_split <- colsplit(noRT$hits, ';', c('a','b','c','d','e')) #no more than 5 querry hits on a single tweet
+hit_split <- colsplit(noRT$hits, ';', c('a','b','c','d','e','f','g'))
 
 #bind into single row
 hit_long <- data.frame(hit = c(hit_split$a,hit_split$b,hit_split$c,hit_split$d,hit_split$e))
@@ -172,15 +172,172 @@ hit_sum$hit <- factor(hit_sum$hit, levels = hit_sum$hit[order(hit_sum$count)])
 ggplot(hit_sum, aes(hit, count)) +
   geom_col(aes(fill = hit)) +
   geom_text(aes(label = count), nudge_y = 750) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,20000)) + 
+  scale_y_continuous(expand = c(0,0), limits = c(0,35000)) + 
   coord_flip() +
-  labs(title = "number of hits on each querry term") +
+  labs(title = "number of hits on each query term") +
   theme_bw() +
   theme(legend.position="none") 
 
 
 ```
 
+### compare if/how content changes when a tweet contains each group of query terms
+```{r, echo = F}
+#### Generate dataframes
+
+## soil health
+
+#filter terms that are all related to 'soil healt'
+soil_health_terms <- c('soil health','#soilhealth','healthy soil','#healthysoil')
+
+soil_health_query <- noRT %>% 
+  filter(
+    str_detect(tolower(text), paste(soil_health_terms, collapse = "|"))
+  )
+
+health_terms_wc <- prepare_text(soil_health_query, group = T, stem = T)
+
+## soil quality
+
+#terms 
+soil_quality_terms <- c('soil quality','#soilquality')
+
+soil_quality_query <- noRT %>% 
+  filter(
+    str_detect(tolower(text), paste(soil_quality_terms, collapse = "|"))
+  )
+
+quality_terms_wc <- prepare_text(soil_quality_query, group = T, stem = T)
+
+
+## soil fertility
+
+#terms 
+soil_fertil_terms <- c('soil fertility','#soilfertility')
+
+soil_fertil_query <- noRT %>% 
+  filter(
+    str_detect(tolower(text), paste(soil_fertil_terms, collapse = "|"))
+  )
+
+fertility_terms_wc <- prepare_text(soil_fertil_query, group = T, stem = T)
+
+
+## soil quality
+
+#terms 
+rangeland_terms <- c('rangeland health','#rangelandhealth','healthy rangelands','#healthyrangelands')
+
+
+rangeland_query <- noRT %>% 
+  filter(
+    str_detect(tolower(text), paste(rangeland_terms, collapse = "|"))
+  )
+
+range_terms_wc <- prepare_text(rangeland_query, group = T, stem = T)
+
+
+```
+#### caclculate percentages based relative to word counts of top 20
+```{r, echo = F, fig.height=10, fig.width=12}
+#join word lists to get relative counts of each all the terms found within each df
+total_count <- full_join(range_terms_wc, fertility_terms_wc, by = "word")
+
+total_count <- full_join(quality_terms_wc, total_count, by = 'word')
+
+total_count <- full_join(health_terms_wc, total_count, by = 'word')
+
+names(total_count) <- c('word','health','quality','range','fertility')
+
+
+## create word list of top words from each - this will then be used as a filter from the larger total list above
+top_range <- head(range_terms_wc, 20)
+top_qual <- head(quality_terms_wc, 20)
+top_fertil <- head(fertility_terms_wc, 20)
+top_health <- head(health_terms_wc, 20)
+
+
+word_list <- c(paste(top_qual$word), paste(top_range$word), paste(top_fertil$word), paste(top_health$word))
+
+
+
+#filter and remove any words that do not cooccur
+selected_words <- total_count %>% 
+  filter(word %in% word_list) %>%
+  na.omit() 
+
+selected_words$word <- factor(selected_words$word, levels = selected_words$word[order(selected_words$health)])
+
+
+
+# caclculate percentages based relative to word counts of top 20
+selected_pct <- selected_words %>% 
+  mutate(quality = round((quality/sum(.$quality))*100,2),
+         range = round((range/sum(.$range))*100,2),
+         fertility = round((fertility/sum(.$fertility))*100,2),
+         health = round((health/sum(.$health))*100,2)) %>% 
+  gather("query", "percent", -word)
+
+
+
+comparison <- ggplot(selected_pct, aes(word, percent)) +
+  geom_col(aes(fill = word)) +
+  facet_wrap(~query) +
+  coord_flip() +
+  labs(title = "comparison of co-occuring words") +
+  theme(legend.position = "none")
+comparison
+```
+#### caclculate percentages based relative to total word counts of each category
+
+```{r, echo=F, fig.height=10, fig.width=12}
+sum_health <- sum(health_terms_wc$n)
+sum_fertil <- sum(fertility_terms_wc$n)
+sum_range <- sum(range_terms_wc$n)
+sum_qual <- sum(quality_terms_wc$n)
+# caclculate percentages based relative to word counts of top 20
+selected_pct_full <- selected_words %>% 
+  mutate(quality = round((quality/sum_qual)*100,2),
+         range = round((range/sum_range)*100,2),
+         fertility = round((fertility/sum_fertil)*100,2),
+         health = round((health/sum_health)*100,2)) %>% 
+  gather("query", "percent", -word)
+
+
+
+comparison_full <- ggplot(selected_pct_full, aes(word, percent)) +
+  geom_col(aes(fill = word)) +
+  facet_wrap(~query) +
+  coord_flip() +
+  labs(title = "comparison of co-occuring words") +
+  theme(legend.position = "none")
+comparison
+```
+##### same comparison, but visually comparing based on word counts of 'range'
+```{r, echo=F, fig.height=10, fig.width=12}
+
+selected_words$word <- factor(selected_words$word, levels = selected_words$word[order(selected_words$range)])
+
+
+
+# caclculate percentages based relative to word counts of top 20
+selected_pct <- selected_words %>% 
+  mutate(quality = round((quality/sum(.$quality))*100,2),
+         range = round((range/sum(.$range))*100,2),
+         fertility = round((fertility/sum(.$fertility))*100,2),
+         health = round((health/sum(.$health))*100,2)) %>% 
+  gather("query", "percent", -word)
+
+
+
+comparison <- ggplot(selected_pct, aes(word, percent)) +
+  geom_col(aes(fill = word)) +
+  facet_wrap(~query) +
+  coord_flip() +
+  labs(title = "comparison of co-occuring words") +
+  theme(legend.position = "none")
+comparison
+```
 
 
 # visualizing propotions  
