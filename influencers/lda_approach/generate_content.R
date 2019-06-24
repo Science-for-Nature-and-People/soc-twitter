@@ -3,7 +3,7 @@ library(tidyverse)
 library(stringr)
 library(rtweet)
 
-twitter_merged <- read_csv("twitter_merged.csv")
+twitter_merged <- read_csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv")
 
 
 ## generate list of users
@@ -18,14 +18,15 @@ users$ID <- seq(1,nrow(users),1)
 #get user info
 
 #create empty vector to populate 
-user_info <- vector("list", nrow(users))
+n <- nrow(users)
+user_info <- list()
 
 #retrieve user timeline data while navigating the rate limit
-for (i in seq_along(user_info)) {
+for (i in 1:nrow(users)) {
   user_info[[i]] <- get_timeline(users$screen_name[i], n = 100)
   
   ## assuming full rate limit at start, wait for fresh reset every 160 users - this is slightly conservative as we could theoritically go to 180, but the API sometime returns >100 tweets so we want to be careful
-  if (i %% 160L == 0L) {
+  if (i %% 170L == 0L) {
     rl <- rate_limit("get_timeline")
     Sys.sleep(as.numeric(rl$reset, "secs"))
   }
@@ -33,11 +34,13 @@ for (i in seq_along(user_info)) {
   cat(i, " ")
 }
 
+
+
 ## merge into single data frame (do_call_rbind will preserve users data)
-user_info <- do_call_rbind(user_info)
+user_info_df <- do_call_rbind(user_info)
 
 #select desired content
-user_content <- user_info %>% 
+user_content <- user_info_df %>% 
   select(screen_name, text, description)
 
 # add IDs
