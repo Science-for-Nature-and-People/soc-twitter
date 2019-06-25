@@ -24,7 +24,7 @@ library(reshape2)
 library(gridExtra)
 library(grid)
 
-theme_set(theme_pubr())
+theme_set(theme_bw())
 
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) %>%
   distinct()
@@ -285,11 +285,12 @@ comparison <- ggplot(selected_pct, aes(word, percent)) +
   facet_wrap(~query) +
   coord_flip() +
   labs(title = "comparison of co-occuring words") +
-  theme(legend.position = "none")
+  theme_bw() +
+    theme(legend.position = "none") 
 comparison
 ```
 #### caclculate percentages based relative to total word counts of each category
-
+no change in trend, only in percentages
 ```{r, echo=F, fig.height=10, fig.width=12}
 sum_health <- sum(health_terms_wc$n)
 sum_fertil <- sum(fertility_terms_wc$n)
@@ -311,7 +312,7 @@ comparison_full <- ggplot(selected_pct_full, aes(word, percent)) +
   coord_flip() +
   labs(title = "comparison of co-occuring words") +
   theme(legend.position = "none")
-comparison
+comparison_full
 ```
 ##### same comparison, but visually comparing based on word counts of 'range'
 ```{r, echo=F, fig.height=10, fig.width=12}
@@ -330,13 +331,13 @@ selected_pct <- selected_words %>%
 
 
 
-comparison <- ggplot(selected_pct, aes(word, percent)) +
+comparison_range <- ggplot(selected_pct, aes(word, percent)) +
   geom_col(aes(fill = word)) +
   facet_wrap(~query) +
   coord_flip() +
   labs(title = "comparison of co-occuring words") +
   theme(legend.position = "none")
-comparison
+comparison_range
 ```
 
 
@@ -775,7 +776,7 @@ ggplot(select_pct, aes(word, percent)) +
 
 
 ## comparing "soil health", "rangeland health", "forest health"
-note: only common 'top' word was biodiversity 
+
 ```{r, echo=F,fig.width=12}
 #### rangeland health 
 
