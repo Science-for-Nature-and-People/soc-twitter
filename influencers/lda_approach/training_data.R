@@ -1,153 +1,101 @@
-tweet <- data.frame(text = "the bird said Tweet tweeted no till")
-prepare_text(tweet, group = TRUE, stem = TRUE)
+#############################################
+#### wrangling data into format for sLDA ####
+#############################################
+
+# This code creates training data for the sLDA and has 3 parts:
+#~ 1. combines our API scraped user content with our manually IDed groupings
+#~ 2. format the data to plug into the sLDA model, there are 3 requirements:
+#~    a. document list that, for each document, has tokenized words and their counts
+#~    b. vocab list tat is referenced within the list of documents ^
+#~    c. ratings for each documents
+#~ 3. The last step shows an example of running the model and predicting
 
 
 
-#### wrangling data into format for sLDA
+library(tidyverse)
+library(tidytext)
+library(lda)
+source("format_LDA_functions.R")  #functions for creating/formating all the requisit data to be input into the sLDA model
 
 
-test <- na.omit(all_content)
+
+################# Step 1: combine data ################
+
+## get users + their content that was created in the generate_content.R script
+user_content <- read_csv('training_content.csv') %>% 
+  select(-X1) %>% 
+  na.omit()
 
 
 
-test_groups <- data.frame(screen_name = c('ecogreenlawn', 'nspugh', 'UMNmanure'), 
-                          is_science = c(NA, 1, NA), 
-                          is_media = c(1,1,NA), 
-                          is_politics = c(NA,NA,1))
+test_groups <- read_csv("manual_grouping_data/known_groups.csv") %>% 
+   select(-X1)
 
 
-# join content to manuallly coded groups
-training_groups <- left_join(test_groups, test, by = 'screen_name')
+# join content to manuallly coded groups to get content for know groups so we can begin training
+training_groups <- left_join(test_groups, user_content, by = 'screen_name')
 
 
-#gather to accomodate repeats and remove NA's
+#gather to accomodate users in multiple groups and to remove NA's
 group_gathered <- training_groups %>% 
   gather('group', 'type', -content, -screen_name) %>% 
   filter(!is.na(type)) %>% 
   select(-type) 
 
-#reclassify groups into numbers
-group_id <- group_gathered %>% 
-  mutate(group = case_when(!str_detect(group, 'is_media') ~ -1,
-                              str_detect(group, 'is_media') ~ 1)) 
 
 
-
-### subset training data ###
-
-## remove cases where a user is both 'media' and 'not media'
-#~ first seperate into is and is not
-is_media <- filter(group_id, group == 1)
-not_media <- filter(group_id, group == -1)
+################# Step 2: format data ################
 
 
-# anti_join to remove cases of overlap
-not_media <- anti_join(not_media, is_media, by = 'screen_name')
+## identify groups (in this example is_media vs isNOT_media) and bootstrap groups to be of equal length
+## this function also creates 
+media_training_data <- LDA_training_data(group_gathered, 'is_media')
 
-
-# now make sure lengths of each are the same
-if(nrow(is_media) > nrow(not_media)){
+## create tokens for ALL user content
+media_training_tokens <- create_training_tokens(media_training_data)
   
-  not_media_equal <- sample_n(not_media, nrow(is_media), replace = TRUE)
-  training_data <- bind_rows(is_media, not_media_equal)
-  
-} else if(nrow(is_media) < nrow(not_media)){
-  
-  is_media_equal <- sample_n(not_media, nrow(is_media), replace = TRUE)
-  training_data <- bind_rows(is_media_equal, not_media)
-  
-} else {
-  
-  training_data <- bind_rows(is_media, not_media)
-  
-  }
-## add ID to each observation to filter by later
-training_data$doc_ID <- seq(1, nrow(training_data), 1)
-
-## create tokens for the training data
-training_tokens <- training_data %>% 
-  mutate(content = str_replace_all(content, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remvove anything associated with hyperlinks
-  mutate(content = tolower(content)) %>% 
-  unnest_tokens(word, content) %>% 
-  filter(!word %in% stop_words$word)
-
-       
-
-## create vocab list
-#get unique words and ID them for reference
-vocab <- data.frame(word = unique(training_tokens$word), 
-                    word_ID = seq(1,length(unique(training_tokens$word)),1))
+## create vocab list of all unique words
+vocab_vector <- create_vocab_list(media_training_tokens)
 
 
-id <- left_join(training_tokens, vocab, by = 'word')
+## create document 
+doc_list <- create_document_list(media_training_tokens)
 
-
-#get counts of each word for each user
-id_count <- id %>% 
-  group_by(doc_ID, word_ID) %>% 
-  summarise(
-    count = n()
-  ) %>% 
-  ungroup()
-
-
-
-
-
-
-######### create LDA parameters ###########
-
-
-## create document list for use in LDA
-
-doc_list <- vector('list', nrow(training_data))
-for(i in 1:nrow(training_data)) {
-
-  doc <- id_count %>% 
-    filter(doc_ID == 1) %>% 
-    select(-doc_ID) %>% 
-    transpose()
-  
-  doc <- as.matrix(doc)
-  
-  doc <- unname(doc) 
-  
-  storage.mode(doc) <- 'integer' 
-       
-  doc_list[[i]] <- doc
-  
-}
-
-## create vocab vector for use in LDA 
-vocab_vector <- as.character(vocab$word)
 
 # set ratings
-ratings <- as.numeric(training_data$group)
-
-storage.mode(doc_list) <- "integer"
+ratings <- as.numeric(media_training_data$group)
 
 
-###### run ###########
 
+
+
+
+################# Step 3: run model ################
+
+# set K number of topics
+# 
 num.topics <- 2
 
-## Initialize the params
+## Initialize the parameters (not really sure what this does -- copied from: demo(sLDA))
 params <- sample(c(-1, 1), num.topics, replace=TRUE)
 
+## run model
+## havn't tried tweaking the iterations, alpha, lamda, etc.... yet
 result <- slda.em(documents=doc_list,
                   K=num.topics,
                   vocab=vocab_vector,
                   num.e.iterations=10,
                   num.m.iterations=4,
                   alpha=1.0, eta=0.1,
-                  ratings,
+                  ratings/100,
                   params,
                   variance=0.25,
                   lambda=1.0,
                   logistic=FALSE,
                   method="sLDA")
 
-## Make a pretty picture.
+
+## Make a pretty picture (taken straight from demo(sLDA))
 require("ggplot2")
 Topics <- apply(top.topic.words(result$topics, 5, by.score=TRUE),
                 2, paste, collapse=" ")
@@ -158,6 +106,41 @@ coefs <- coefs[order(coefs$Estimate),]
 qplot(Topics, Estimate, colour=Estimate, size=abs(t.value), data=coefs) +
   geom_errorbar(width=0.5, aes(ymin=Estimate-Std..Error,
                                ymax=Estimate+Std..Error)) + coord_flip()
+
+
+
+
+
+### predict ####
+
+# format all documents so that we can run the model on it to predict
+group_gathered$doc_ID <- seq(1, nrow(group_gathered), 1)
+all_tokens <- create_training_tokens(group_gathered)
+all_docs <- create_document_list(all_tokens)
+
+predictions <- slda.predict(all_docs,
+                                 result$topics, 
+                                  result$model,
+                                  alpha = 1.0,
+                                  eta=0.1)
+
+
+#plot
+qplot(predictions,
+             fill=factor(ratings),
+             xlab = "predicted rating",
+             ylab = "density",
+             alpha=I(0.5),
+             geom="density") +
+               geom_vline(aes(xintercept=0)) +
+               theme(legend.position = "none")
+
+
+
+
+
+
+
 
 
 
