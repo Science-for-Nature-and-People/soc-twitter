@@ -11,11 +11,14 @@ library(SnowballC)
 
 
 
-
-
-
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+##                    word_unbrella                            ##
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 
 #' word_umbrella combines various terms into a single word 'umbrella' 
+#' this function has so far only ben embedded into other functions like `prepare_text()` and `create_bigram()`
+#' 
+#' requires tidyverse:: & stringr::
 #'
 #' @param data any data frame with a column 'text' that is a text string
 #'
@@ -23,6 +26,12 @@ library(SnowballC)
 #' 
 #'
 #' @examples
+#' 
+#' data <- data.frame(text = 'regenerativeag that includes no till and cover crops lead to #healthysoil)
+#' 
+#' word_umbrella(data)
+#' # 1 regenerative_agriculture that includes conservation_tillage and cover_crops lead to #soil_health
+#' 
 word_umbrella <- function(data) {
   
   
@@ -37,7 +46,7 @@ word_umbrella <- function(data) {
   rangeland <- c("rangeland health",	"healthy rangelands",	"rangelandhealth",	"healthyrangelands")
   health_card <- c("soil health card",	"soil health cards",	"soilhealthcard",	"soilhealthcards")
   healthy_people <- c('human health', 'healthy people')
-  organic_ag <- c('organic agriculture', 'organic ag','sustainable ag','sustainable agriculture')
+  organic_ag <- c('organic agriculture', 'organic ag','sustainable ag','sustainable agriculture','organic farming','organic farm')
   n_modi <- c("narendra modi",	"narendramodi",	"narendra",	"modi") # have to use str_replace vs str_replace_all for this one
   
   #replace text
@@ -72,28 +81,48 @@ word_umbrella <- function(data) {
   
 }
 
-
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+##                   prepare_text                              ##
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 
-#' This takes any data frame that contains a column  called `.$text` 
+#' This takes any data frame that contains a column  called `text` 
 #'  containing text strings and returns a new dataframe that lists 
 #'  the words within .$text and their respective counts
 #'  
 #'  the function is set to remove tweet specific stop words 'c("https","rt","t.co","amp")'
-#'  as well as dominant terms used in this analysis c("soil","health", "healthy", "soilhealth")
-#'  this can be changed in the future by adding a new parameter "stopwords" of custom terms
+#'  
 #'  
 #'  requires: tidytext::
 #'
 #' @param data - a data frame (must containg a variable `text`)
+#' @param group - T/F to employ the word_umbrella function
+#' @param stem - T/F to stem words
 #'
 #' @return data frame of two rows (word, n) where n is the count of each 
 #'         respective word minus stop words
 #' 
 #'
 #' @examples
-#' tweet <- data.frame(text = "the bird said Tweet tweet")
+#' tweet <- data.frame(text = "the bird said Tweet tweeted no till")
 #' prepare_text(tweet)
+#' 
+#'   word      n
+#'   <chr>   <int>
+#' 1 bird        1
+#' 2 till        1
+#' 3 tweet       1
+#' 4 tweeted     1
+#'  
+#'  
+#'  prepare_text(tweet, group = TRUE, stem = TRUE)
+#'     word                    n
+#'    <chr>                 <int>
+#'  1 tweet                   2
+#'  2 bird                    1
+#'  3 conservation_tillag     1
+#' 
+#' 
+#' 
 prepare_text <- function(data, group = FALSE, stem = FALSE) {
   
   # if group is set to TRUE, then run the word_umbrella function
@@ -123,7 +152,8 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
 }
 
 
-
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+##                    create_wordcloud                         ##
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 
 #' an admittedly very specific function that uses the code from `prepare_text`
@@ -134,6 +164,8 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
 #' @param data - any data from with acolumn `text` containg word strings
 #' @param filter_by search term used that relies on str_detect to only select 
 #'        tweets that contain your term of interest, default set to no filter
+#' @param group - T/F to employ the word_umbrella function
+#' @param stem - T/F to stem words
 #'
 #' @return - a wordcloud based on the dataframe and search term
 #' 
@@ -174,18 +206,20 @@ create_wordcloud <- function(data, filter_by = "", group = FALSE, stem = FALSE) 
   filtered %>% 
     with(wordcloud(word, n, 
                    min.freq = 1,
-                   max.words=200, 
+                   max.words=100, 
                    random.order=FALSE, 
                    color=brewer.pal(7,"Dark2")))
 }
 
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+##                    create_bigram                            ##
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 
 
 #' creates a list of bigrams and their counts 
 #' 
 #'
-#'requires- tidytext:: and stringr::
+#'requires- tidyverse:: tidytext:: and stringr::
 #'
 #'
 #' @param data - a dataframe with a column called: 'text'
@@ -235,11 +269,15 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
 
 
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
+##                     gram_network                            ##
+####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 
 
 
 #' returns a network graph that shows the directionality of how terms are arranged using arrows
 #' and colors the arrows based on the relative occurance of those terms together (darker = higher count)
+#' 
+#' requires: tidyverse, igraph, ggraph
 #' 
 #' see: https://www.tidytextmining.com/ngrams.html for for information
 #'
@@ -252,6 +290,10 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
 #' 
 #'
 #' @examples
+#' 
+#' foo <- create_bigram(noRT)
+#' gram_network(foo, 120)
+#' 
 gram_network <- function(data, limit) {
   set.seed(2019) # ensures consistency in output
   
@@ -271,18 +313,43 @@ gram_network <- function(data, limit) {
   
   #generates a an igraph graph (resembiling a table) showing direction of terms (see roxygen notes for link to where i got this code)
   bigrams %>% 
-    igraph::graph_from_data_frame(vertices = counts) %>% 
+    igraph::graph_from_data_frame(vertices = counts) %>% # use word count to scale nodes
     ggraph::ggraph(layout = "fr") +
-    geom_edge_link(aes(edge_alpha = n), show.legend = T,
+    geom_edge_link(aes(edge_alpha = n), show.legend = T, 
                    arrow = a, end_cap = circle(.07, 'inches')) + #defines how the edges are visualized
-    geom_node_point(color = "lightblue", aes(size = n)) +
-    scale_size(range = c(2,8)) +
-    geom_node_text(aes(label = name), repel = T) +
+    geom_node_point(color = "lightblue", aes(size = n)) + # aes for nodes, (says the color and to scale by word count)
+    scale_size(range = c(1,10)) + # range of sizes for nodes
+    geom_node_text(aes(label = name), repel = T) + # show word ot each node and repel (i.e avoid overlap/clutter)
     theme_void() 
 }
 
 
 
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##                  flag india                             ##
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
+#' flag tweets from india
+#'
+#' @param data tweet data
+#'
+#' @return new column 'is_india' that has 1's and 0's indicating that a tweet is or is not from/related to India
+#' 
+#'
+#' @examples
+flag_india <- function(data) {
+  
+  results <- data %>% 
+    mutate(
+      is_india = case_when(
+        str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar") ~ 1,
+        str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1,
+        str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1))
+  
+  #replace na w/ 0 to indicate non-india related tweets
+  results$is_india[is.na(results$is_india)] <- 0
+  
+  return(results)
+}
 
 

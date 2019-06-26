@@ -29,15 +29,7 @@ twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FA
 
 
 ##### creating a column to flag tweets from or about India ####
-RT <- twitter_merged %>% 
-  mutate(
-    is_india = case_when(
-      str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar") ~ 1,
-      str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1,
-      str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1))
-
-#replace na w/ 0
-RT$is_india[is.na(RT$is_india)] <- 0
+RT <- flag_india(twitter_merged)
 
 
 RT <- RT %>% 

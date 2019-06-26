@@ -26,12 +26,10 @@ library(tidytext)
 library(stringr)
 library(wordcloud)
 
-twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
-  distinct()
-twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE) %>% 
-  distinct()
+twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+twitter_merged <- read.csv('/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv', stringsAsFactors = FALSE)
 
-top_100_RT <- twitter_merged_noRT %>% 
+top_100_noRT <- twitter_merged_noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
 ```
@@ -144,7 +142,7 @@ create_wordcloud(twitter_merged_noRT, "forest health")
 #### filter by: "forest quality"
 -no hits
 ```{r,echo=F,warning=F,message=F}
-#create_wordcloud(twitter_merged_noRT, "forest quality")
+create_wordcloud(twitter_merged_noRT, "forest quality")
 ```
 
 ***
@@ -154,31 +152,31 @@ create_wordcloud(twitter_merged_noRT, "forest health")
 # top 100 RT
 ### full (no filter)
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(top_100_RT, "")
+create_wordcloud(top_100_noRT, "")
 ```
   
   
 #### filter by: "soil"
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(top_100_RT, "soil")
+create_wordcloud(top_100_noRT, "soil")
 ```
   
 #### filter by: "soil health"
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(top_100_RT, "soil health")
+create_wordcloud(top_100_noRT, "soil health")
 ```
  
   
 #### filter by: "rangeland"
 no hits on "rangeland" within top_100
 ```{r,echo=F}
-#create_wordcloud(top_100_RT, "rangeland")
+create_wordcloud(top_100_noRT, "rangeland")
 ```
   
       
 #### filter by: "forest"
 ```{r, echo=F,warning=F,message=F}
-create_wordcloud(top_100_RT, "forest")
+create_wordcloud(top_100_noRT, "forest")
 ```
 
 
