@@ -20,7 +20,7 @@ The three .Rmd files in this folder are a first attempt at visuallzing the conte
       
 * [word_clouds](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/tweet_content/word_clouds.Rmd) creates wordclouds for the tweets within these same ^ categories 
 
- 
+ ***
  
 The code in each of these .Rmd's relies on functions that are stored and documented in [text_analysis_functions.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/text_analysis_functions.R)
   - the functions in here are:
