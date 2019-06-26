@@ -7,7 +7,6 @@
 #~ 2. compiles their past 100 tweets + their user descriptions
 #~ 3. combines all that content into a single cell which will be treated as a single document when input into the sLDA model
 
-# Note: the final variable (all_content) is also used in the training_data.R script
 
 library(tidyverse)
 library(stringr)
