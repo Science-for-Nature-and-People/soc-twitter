@@ -22,4 +22,11 @@ The three .Rmd files in this folder are a first attempt at visuallzing the conte
 
  
  
-The code in each of these .Rmd's relies on functions that are stored and documented in [text_analysis_functions.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/tweet_content/text_analysis_functions.R)
+The code in each of these .Rmd's relies on functions that are stored and documented in [text_analysis_functions.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/text_analysis_functions.R)
+  - the functions in here are:
+    - word_umbrella() - combines various terms into a single word 'umbrella' (this function is nested and used conditionally within other functions
+    - prepare_text() - tokenizes text and provides counts of each word
+    - create_wordcloud() - simple function for creating a generic wordcloud
+    - create_bigram() - creates a list of bigrams and their counts
+    - gram_network() - used in a workflow with create_bigram() to create a network graph of bigrams
+    - flag_india() - simple function that creates a new column identying a tweet as being from/related to India
