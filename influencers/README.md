@@ -4,8 +4,12 @@ The **word_list_method** folder contains the code for the first attempt at answe
   1) view the user descriptions of users from known groups to create a world list of terms that could be used to categorize users into different groups based on the respective user descriptions. The code for this is in [user_groups.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/influencers/word_list_method/user_groups.R)
   2) use the twitter API to ID all the users who retweeted each tweet, then categorize these users based by applying the world list (created above) to their descriptions. see function: (find_group_prop.R)
   3) Could then calculate which group was most influenced by each tweet and create word clouds (or other visualizations) of the type of content that apealed most to each group. see: [group_favorites.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/influencers/word_list_method/group_favorites.R)
+    - **once a good grouping method is found, this will be a good workflow for answering the question**
   
-  This approach did not do a great job at accurately identifying all users as the short length of descriptions are insuficient for characterizing users.    
+  This approach did not do a great job at accurately identifying all users as the short length and wide variety of content within descriptions are insuficient for characterizing users.    
   
+  ***
     
-The next approach will involve using supervised topical modeling (after mannually identifying ~400 users) and will rely on both user descriptions as well as past tweets to categorize users.
+The **LDA_approach** folder uses supervised topical modeling (after mannually identifying ~400 users) that relies on both user's descriptions, as well as their past 100 tweets to attempt to classify them into groups.  
+
+See the [LDA_approach](https://github.com/Science-for-Nature-and-People/soc-twitter/tree/master/influencers/lda_approach) README for for detail
