@@ -46,7 +46,7 @@ word_umbrella <- function(data) {
   rangeland <- c("rangeland health",	"healthy rangelands",	"rangelandhealth",	"healthyrangelands")
   health_card <- c("soil health card",	"soil health cards",	"soilhealthcard",	"soilhealthcards")
   healthy_people <- c('human health', 'healthy people')
-  organic_ag <- c('organic agriculture', 'organic ag','sustainable ag','sustainable agriculture')
+  organic_ag <- c('organic agriculture', 'organic ag','sustainable ag','sustainable agriculture','organic farming','organic farm')
   n_modi <- c("narendra modi",	"narendramodi",	"narendra",	"modi") # have to use str_replace vs str_replace_all for this one
   
   #replace text
@@ -206,7 +206,7 @@ create_wordcloud <- function(data, filter_by = "", group = FALSE, stem = FALSE) 
   filtered %>% 
     with(wordcloud(word, n, 
                    min.freq = 1,
-                   max.words=200, 
+                   max.words=100, 
                    random.order=FALSE, 
                    color=brewer.pal(7,"Dark2")))
 }
@@ -313,13 +313,13 @@ gram_network <- function(data, limit) {
   
   #generates a an igraph graph (resembiling a table) showing direction of terms (see roxygen notes for link to where i got this code)
   bigrams %>% 
-    igraph::graph_from_data_frame(vertices = counts) %>% 
+    igraph::graph_from_data_frame(vertices = counts) %>% # use word count to scale nodes
     ggraph::ggraph(layout = "fr") +
-    geom_edge_link(aes(edge_alpha = n), show.legend = T,
+    geom_edge_link(aes(edge_alpha = n), show.legend = T, 
                    arrow = a, end_cap = circle(.07, 'inches')) + #defines how the edges are visualized
-    geom_node_point(color = "lightblue", aes(size = n)) +
-    scale_size(range = c(2,8)) +
-    geom_node_text(aes(label = name), repel = T) +
+    geom_node_point(color = "lightblue", aes(size = n)) + # aes for nodes, (says the color and to scale by word count)
+    scale_size(range = c(1,10)) + # range of sizes for nodes
+    geom_node_text(aes(label = name), repel = T) + # show word ot each node and repel (i.e avoid overlap/clutter)
     theme_void() 
 }
 
