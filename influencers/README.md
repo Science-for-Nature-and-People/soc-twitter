@@ -12,4 +12,4 @@ The **word_list_method** folder contains the code for the first attempt at answe
     
 The **LDA_approach** folder uses supervised topical modeling (after mannually identifying ~400 users) that relies on both user's descriptions, as well as their past 100 tweets to attempt to classify them into groups.  
 
-See the [LDA_approach](https://github.com/Science-for-Nature-and-People/soc-twitter/tree/master/influencers/lda_approach) README for for detail
+See the [LDA_approach](https://github.com/Science-for-Nature-and-People/soc-twitter/tree/master/influencers/lda_approach) README for for details
