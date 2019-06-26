@@ -23,9 +23,9 @@ source("format_LDA_functions.R")  #functions for creating/formating all the requ
 
 ## get users + their content that was created in the generate_content.R script
 user_content <- read_csv('training_content.csv') %>% 
-  select(-X1) %>% 
-  na.omit()
+  select(-X1)
 
+##
 
 
 test_groups <- read_csv("manual_grouping_data/known_groups.csv") %>% 
@@ -33,7 +33,8 @@ test_groups <- read_csv("manual_grouping_data/known_groups.csv") %>%
 
 
 # join content to manuallly coded groups to get content for know groups so we can begin training
-training_groups <- left_join(test_groups, user_content, by = 'screen_name')
+training_groups <- left_join(test_groups, user_content, by = 'screen_name')  %>% 
+  filter(!is.na(content))
 
 
 #gather to accomodate users in multiple groups and to remove NA's
@@ -42,14 +43,20 @@ group_gathered <- training_groups %>%
   filter(!is.na(type)) %>% 
   select(-type) 
 
+##withhold 20% of known 'is_media' to test against later
+group_witheld <- group_gathered %>% 
+  filter(group == 'is_media') %>% 
+  sample_n(9)
 
+# remove these ^ from rest of group
+test_media <- anti_join(group_gathered, group_witheld)
 
 ################# Step 2: format data ################
 
 
 ## identify groups (in this example is_media vs isNOT_media) and bootstrap groups to be of equal length
 ## this function also creates 
-media_training_data <- LDA_training_data(group_gathered, 'is_media')
+media_training_data <- LDA_training_data(test_media, 'is_media')
 
 ## create tokens for ALL user content
 media_training_tokens <- create_training_tokens(media_training_data)
@@ -84,8 +91,8 @@ params <- sample(c(-1, 1), num.topics, replace=TRUE)
 result <- slda.em(documents=doc_list,
                   K=num.topics,
                   vocab=vocab_vector,
-                  num.e.iterations=10,
-                  num.m.iterations=4,
+                  num.e.iterations=100,
+                  num.m.iterations=40,
                   alpha=1.0, eta=0.1,
                   ratings/100,
                   params,
@@ -96,7 +103,6 @@ result <- slda.em(documents=doc_list,
 
 
 ## Make a pretty picture (taken straight from demo(sLDA))
-require("ggplot2")
 Topics <- apply(top.topic.words(result$topics, 5, by.score=TRUE),
                 2, paste, collapse=" ")
 coefs <- data.frame(coef(summary(result$model)))
@@ -109,13 +115,13 @@ qplot(Topics, Estimate, colour=Estimate, size=abs(t.value), data=coefs) +
 
 
 
-
-
 ### predict ####
 
+
+## test against withheld known media users
 # format all documents so that we can run the model on it to predict
-group_gathered$doc_ID <- seq(1, nrow(group_gathered), 1)
-all_tokens <- create_training_tokens(group_gathered)
+group_witheld$doc_ID <- seq(1, nrow(group_witheld), 1)
+all_tokens <- create_training_tokens(group_witheld)
 all_docs <- create_document_list(all_tokens)
 
 predictions <- slda.predict(all_docs,
@@ -125,16 +131,113 @@ predictions <- slda.predict(all_docs,
                                   eta=0.1)
 
 
-#plot
-qplot(predictions,
-             fill=factor(ratings),
-             xlab = "predicted rating",
-             ylab = "density",
-             alpha=I(0.5),
-             geom="density") +
-               geom_vline(aes(xintercept=0)) +
-               theme(legend.position = "none")
+### test against known farmers
+group_farmer <- group_gathered %>% 
+  filter(group == 'is_farmer')
 
+group_farmer$doc_ID <- seq(1, nrow(group_farmer), 1)
+farmer_tokens <- create_training_tokens(group_farmer)
+farmer_docs <- create_document_list(farmer_tokens)
+
+predictions_farmer <- slda.predict(farmer_docs,
+                            result$topics, 
+                            result$model,
+                            alpha = 1.0,
+                            eta=0.1)
+
+
+######## conclusion: FAILED ##########
+
+
+
+
+
+
+####### Try again with is_political  #########
+
+group_witheld <- group_gathered %>% 
+  filter(group == 'is_political') %>% 
+  sample_n(4)
+
+# remove these ^ from rest of group
+test_political <- anti_join(group_gathered, group_witheld)
+
+
+
+political_training_data <- LDA_training_data(test_political, 'is_political')
+
+## create tokens for ALL user content
+political_training_tokens <- create_training_tokens(political_training_data)
+
+## create vocab list of all unique words
+vocab_vector <- create_vocab_list(political_training_tokens)
+
+
+## create document 
+doc_list <- create_document_list(political_training_tokens)
+
+
+# set ratings
+ratings <- as.numeric(political_training_data$group)
+
+
+
+
+
+
+################# Step 3: run model ################
+
+# set K number of topics
+# 
+num.topics <- 2
+
+## Initialize the parameters (not really sure what this does -- copied from: demo(sLDA))
+params <- sample(c(-1, 1), num.topics, replace=TRUE)
+
+## run model
+## havn't tried tweaking the iterations, alpha, lamda, etc.... yet
+result_political <- slda.em(documents=doc_list,
+                  K=num.topics,
+                  vocab=vocab_vector,
+                  num.e.iterations=100,
+                  num.m.iterations=40,
+                  alpha=1.0, eta=.1,
+                  ratings/100,
+                  params,
+                  variance=0.25,
+                  lambda=1.0,
+                  logistic=TRUE,
+                  method="sLDA")
+
+
+
+
+
+group_witheld$doc_ID <- seq(1, nrow(group_witheld), 1)
+all_tokens <- create_training_tokens(group_witheld)
+politic_docs <- create_document_list(all_tokens)
+
+predictions_political <- slda.predict(politic_docs,
+                            result_political$topics, 
+                            result_political$model,
+                            alpha = 1.0,
+                            eta=0.1)
+
+#now test against farmers
+
+
+group_farmer <- group_gathered %>% 
+  filter(group == 'is_farmer')
+
+group_farmer$doc_ID <- seq(1, nrow(group_farmer), 1)
+farmer_tokens <- create_training_tokens(group_farmer)
+farmer_docs <- create_document_list(farmer_tokens)
+
+predictions_farmer <- slda.predict(farmer_docs,
+                                   result$topics, 
+                                   result$model,
+                                   alpha = 1.0,
+                                   eta=0.1)
 
 
 

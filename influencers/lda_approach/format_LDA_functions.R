@@ -43,29 +43,34 @@ LDA_training_data <- function(data, group_name){
   not_group <- anti_join(not_group, is_group, by = 'screen_name')
   
   
-  # now make sure lengths of each are the same 
-  # if they are not, randomly sample users from the smaller group and duplicate their content
-  if(nrow(is_group) > nrow(not_group)){
-    
-    #calculate the different in length between the data
-    difference <- nrow(is_group) - nrow(not_group)
-    # sample from not_group to generate extra data
-    not_group_equal <- sample_n(not_group, difference, replace = TRUE)
-    # recombine
-    training_data <- bind_rows(is_group, not_group, not_group_equal)
-    
-  } else if(nrow(is_group) < nrow(not_group)){
-    
-    difference <- nrow(not_group) - nrow(is_group)
-    
-    is_group_equal <- sample_n(not_group, difference, replace = TRUE)
-    training_data <- bind_rows(is_group_equal, is_group, not_group)
-    
-  } else {
-    
-    training_data <- bind_rows(is_group, not_group)
-    
-  }
+  
+# 
+#   # now make sure lengths of each are the same
+#   # if they are not, randomly sample users from the smaller group and duplicate their content
+#   if(nrow(is_group) > nrow(not_group)){
+# 
+#     #calculate the different in length between the data
+#     difference <- nrow(is_group) - nrow(not_group)
+#     # sample from not_group to generate extra data
+#     not_group_equal <- sample_n(not_group, difference, replace = TRUE)
+#     # recombine
+#     training_data <- bind_rows(is_group, not_group, not_group_equal)
+# 
+#   } else if(nrow(is_group) < nrow(not_group)){
+# 
+#     difference <- nrow(not_group) - nrow(is_group)
+# 
+#     is_group_equal <- sample_n(not_group, difference, replace = TRUE)
+#     training_data <- bind_rows(is_group_equal, is_group, not_group)
+# 
+#   } else {
+# 
+#     training_data <- bind_rows(is_group, not_group)
+# 
+#   }
+  
+  training_data <- bind_rows(is_group, not_group)
+  
   ## add ID to each observation to filter by later - this will essentially become the document ID
   training_data$doc_ID <- seq(1, nrow(training_data), 1)
   
@@ -93,9 +98,9 @@ LDA_training_data <- function(data, group_name){
 #' for use with training data see training_data.R lines 24:60
 #' 
 #' for use with all content / for formating data for predictions see line 122
-create_training_tokens <- function(data){
+create_training_tokens <- function(training_data){
   ## create tokens for the training data
-  training_tokens <- data %>% 
+  training_tokens <- training_data %>% 
     mutate(content = str_replace_all(content, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remvove anything associated with hyperlinks
     mutate(content = tolower(content)) %>% 
     unnest_tokens(word, content) %>% 
