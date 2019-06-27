@@ -17,9 +17,9 @@ library(tidytext)
 source("../text_analysis_functions.R") # for word cloud creator
 source("find_group_prop.R")
 
-twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE) %>%
+twitter_merged <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv", stringsAsFactors = FALSE) %>%
   distinct()
-twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>%
+twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) %>%
   distinct() %>%
   arrange(-retweet_count)
 

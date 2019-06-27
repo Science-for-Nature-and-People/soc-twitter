@@ -11,7 +11,7 @@
 #~ 3. The last step shows 2 examples of running the model and predicting (one for is_media, one for is_political)
 #~     - at a first glance, it appears that this sLDA model will not work to predict users 
 #~     - may want to try tweaking some of the model parameters before disregarding this approach though
-#~     - at the very least, this code is a solid foundating for formating data to suit sLDA
+#~     - at the very least, this code is a solid foundation for formating data to suit sLDA
 
 
 ## Note: see demo(sLDA) for demo of how the LDA package creator uses the sLDA functions
@@ -94,7 +94,7 @@ ratings <- as.numeric(media_training_data$group)
 
 # set K number of topics
 # play with these to see how it may affect the outcome
-num.topics <- 2
+num.topics <- 8
 
 ## Initialize the parameters (not really sure what this does -- copied from: demo(sLDA))
 params <- sample(c(-1, 1), num.topics, replace=TRUE)
@@ -103,7 +103,7 @@ params <- sample(c(-1, 1), num.topics, replace=TRUE)
 ## havn't tried tweaking the iterations, alpha, lamda, etc.... yet
 result <- slda.em(documents=doc_list,
                   K= num.topics,
-                  vocab=vocab_vector,
+                  vocab= vocab_vector,
                   num.e.iterations=10,
                   num.m.iterations=4,
                   alpha=1.0, eta=0.1,
@@ -168,8 +168,9 @@ predictions_farmer <- slda.predict(farmer_docs,
 
 
 
-
+##############################################
 ####### Try again with is_political  #########
+##############################################
 
 group_witheld <- group_gathered %>% 
   filter(group == 'is_political') %>% 
@@ -201,7 +202,6 @@ ratings <- as.numeric(political_training_data$group)
 
 
 
-################# Step 3: run model ################
 
 # set K number of topics
 # 

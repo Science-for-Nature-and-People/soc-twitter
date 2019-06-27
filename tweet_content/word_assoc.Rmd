@@ -26,8 +26,7 @@ library(grid)
 
 theme_set(theme_bw())
 
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) %>%
-  distinct()
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
 
 
 # noRT <- noRT %>%
@@ -119,11 +118,17 @@ total_counts <- data.frame(c("soil", "rangeland","forest","soil health","rangela
 
 names(total_counts) <- c("query", "counts")
 
+#refactoring to order in visualization
 total_counts$query <- factor(total_counts$query, levels = total_counts$query[order(total_counts$counts)])
+
 
 ggplot(total_counts, aes(x = query, y = counts)) +
   geom_col(aes(fill = query)) + 
   geom_text(aes(label = counts), nudge_y = 3000) +
+  labs(
+    title = "number of hits on each search term",
+    y = 'search term'
+  ) +
   theme_bw() +
   theme(legend.position="none") +
   coord_flip()
@@ -134,11 +139,16 @@ ggplot(total_counts, aes(x = query, y = counts)) +
 ```{r, echo = F}
 count_noSoil <- filter(total_counts, str_detect(query, "soil", negate = T))
 
+#refactoring to order in visualization
 count_noSoil$query <- factor(count_noSoil$query, levels = count_noSoil$query[order(count_noSoil$counts)])
 
 ggplot(count_noSoil, aes(x = query, y = counts)) +
   geom_col(aes(fill = query)) + 
   geom_text(aes(label = counts), nudge_y = 100) +
+    labs(
+    title = "number of hits on each search term (excluding 'soil' terms)",
+    y = 'search term'
+  ) +
   theme_bw() +
   theme(legend.position="none") +
   coord_flip()
@@ -159,7 +169,7 @@ hit_split <- colsplit(noRT$hits, ';', c('a','b','c','d','e','f','g'))
 #bind into single row
 hit_long <- data.frame(hit = c(hit_split$a,hit_split$b,hit_split$c,hit_split$d,hit_split$e))
 
-#summarise
+# summarise count of query words
 hit_sum <- hit_long %>% 
   group_by(hit) %>% 
   summarise(
@@ -176,7 +186,7 @@ ggplot(hit_sum, aes(hit, count)) +
   geom_text(aes(label = count), nudge_y = 1750) +
   scale_y_continuous(expand = c(0,0), limits = c(0,37500)) + 
   coord_flip() +
-  labs(title = "number of hits on each query term") +
+  labs(title = "number of hits on each query") +
   theme_bw() +
   theme(legend.position="none") 
 
@@ -265,7 +275,7 @@ top_qual <- head(quality_terms_wc, 20)
 top_fertil <- head(fertility_terms_wc, 20)
 top_health <- head(health_terms_wc, 20)
 
-
+# join all top words from each category into a word list
 word_list <- c(paste(top_qual$word), paste(top_range$word), paste(top_fertil$word), paste(top_health$word))
 
 
@@ -274,6 +284,8 @@ word_list <- c(paste(top_qual$word), paste(top_range$word), paste(top_fertil$wor
 selected_words <- total_count %>% 
   filter(word %in% word_list) %>%
   na.omit() 
+
+
 
 selected_words$word <- factor(selected_words$word, levels = selected_words$word[order(selected_words$health)])
 
@@ -292,9 +304,10 @@ selected_pct$query <- factor(selected_pct$query, levels = c('soil_health','soil_
 
 comparison <- ggplot(selected_pct, aes(word, percent)) +
   geom_col(aes(fill = word)) +
+  geom_text(aes(label = percent), nudge_y = 2) +
   facet_wrap(~query) +
   coord_flip() +
-  labs(title = "comparison of co-occuring words") +
+  labs(title = "comparison of co-occuring words between query groups") +
   theme_bw() +
     theme(legend.position = "none") 
 comparison
@@ -310,16 +323,18 @@ sum_range <- sum(range_terms_wc$n)
 sum_qual <- sum(quality_terms_wc$n)
 # caclculate percentages based relative to word counts of top 20
 selected_pct_full <- selected_words %>% 
-  mutate(quality = round((quality/sum_qual)*100,2),
-         range = round((range/sum_range)*100,2),
-         fertility = round((fertility/sum_fertil)*100,2),
-         health = round((health/sum_health)*100,2)) %>% 
+  mutate(soil_quality = round((quality/sum_qual)*100,2),
+         rangeland = round((range/sum_range)*100,2),
+         soil_fertility = round((fertility/sum_fertil)*100,2),
+         soil_health = round((health/sum_health)*100,2)) %>% 
+  select(-quality, -range, -fertility, -health) %>% 
   gather("query", "percent", -word)
 
 selected_pct_full$query <- factor(selected_pct_full$query, levels = c('soil_health','soil_quality','soil_fertility','rangeland'))
 
 comparison_full <- ggplot(selected_pct_full, aes(word, percent)) +
   geom_col(aes(fill = word)) +
+  geom_text(aes(label = percent), nudge_y = .25) +
   facet_wrap(~query) +
   coord_flip() +
   labs(title = "comparison of co-occuring words") +
@@ -374,7 +389,7 @@ soil_word_count <- prepare_text(soil_tweets, group = TRUE, stem = TRUE)
 
 
 
-#exlude terms with 'soil' in them which significantly outwiegh the other terms
+# exlude terms with 'soil' in them which significantly outwiegh the other terms
 top_10_no_soil <- soil_word_count %>% 
   filter(
     str_detect(word, 'soil', negate = T)
@@ -421,6 +436,7 @@ with_soil <- ggplot(top_10_soil, aes(word, pct)) +
   
 ## combine the above graphs into a single figure  
 soil_figure <- ggarrange(no_soil, with_soil, ncol = 2)
+
 #title and notes for combined figure
 annotate_figure(soil_figure,
   top = text_grob("Top 10 terms associated with 'soil'", color = "cadetblue", face = "bold", size = 14),

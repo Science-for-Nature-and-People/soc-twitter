@@ -129,6 +129,7 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
   if (group) {terms <- word_umbrella(data)}
   else {
     terms <- data}
+  
   # define regex that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ and #
   reg_words <- "([^A-Za-z_\u0900-\u097F\\d#@']|'(?![A-Za-z_\u0900-\u097F\\d#@]))" 
   
@@ -330,6 +331,8 @@ gram_network <- function(data, limit) {
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 #' flag tweets from india
+#' 
+#' This list was created iteratively based manually checking to see if the function accurately flagged tweets related to India -- this may need to be updated..
 #'
 #' @param data tweet data
 #'

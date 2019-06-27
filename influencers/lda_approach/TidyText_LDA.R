@@ -33,7 +33,7 @@ user_text_full <- timelines %>%
 
 
 
-
+# create tokens
 text_words <- user_text_full %>% 
   select(screen_name, full_text) %>% 
   mutate(full_text = tolower(full_text)) %>% #make all lower case
@@ -41,19 +41,22 @@ text_words <- user_text_full %>%
   unnest_tokens(word, full_text) %>% # unnest words based on the regex defined above
   filter(!word %in% stop_words$word) 
 
+# count words then filter for only common words (50 is arbitrary and is a direct pull from the tidytext example)
 word_count <- text_words %>% 
   group_by(word) %>% 
   mutate(wc = n()) %>% 
   ungroup() %>% 
   filter(wc > 50)
 
+# format words for use in LDA
 dtm <- word_count %>% 
   count(screen_name, word) %>% 
   cast_dtm(screen_name, word, n)
   
+#run model
 lda <- LDA(dtm, k = 5)
 
- 
+ # visualize -  direct copt from tidytext
 viz <- lda %>%
    tidy() %>%
    group_by(topic) %>%
@@ -66,6 +69,7 @@ viz <- lda %>%
    coord_flip()
 viz
 
+# Another visualitation copied from the example
  lda %>%
   tidy(matrix = "gamma") %>%
   ggplot(aes(factor(topic), gamma)) +

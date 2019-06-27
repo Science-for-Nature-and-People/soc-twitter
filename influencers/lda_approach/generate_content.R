@@ -21,8 +21,7 @@ twitter_merged <- read_csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_me
 ## generate list of unique users
 users <- twitter_merged %>% 
   select(screen_name) %>% 
-  unique() %>% 
-  group_by(screen_name) 
+  unique()
 
 # Add IDs to users for future referencing
 users$ID <- seq(1,nrow(users),1)
@@ -40,7 +39,7 @@ for (i in 1:nrow(users)) {
   
   ## assuming full rate limit at start, wait for fresh reset every 160 users - this is slightly conservative as we could theoritically go to 180, but the API sometime returns >100 tweets so we want to be careful
   if (i %% 170L == 0L) {
-    rl <- rate_limit("get_timeline")
+    rl <- rtweet::rate_limit("get_timeline")
     Sys.sleep(as.numeric(rl$reset, "secs"))
   }
   ## print update message
