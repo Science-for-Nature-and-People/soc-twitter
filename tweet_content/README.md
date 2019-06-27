@@ -8,11 +8,12 @@ The three .Rmd files in this folder are a first attempt at visuallzing the conte
       - soil 
       - forest 
       - rangeland health
+      - regenerative agriculture
    - then repeats this for the top 100 tweets based on their RT count
      
      
      
-* [word_assoc](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/tweet_content/word_assoc.Rmd) looks at the most common words that are associated with our different categories of interest. i.e.:
+* [word_assoc](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/tweet_content/word_assoc.Rmd) histograms of word counts for the words associated with the different API query terms, as well as the most common words associated with our different categories of interest. i.e.:
   - soil, soil health, soil quality
   - rangeland, rangeland health, rangeland quality
   - forest, forest health, forest quality 
