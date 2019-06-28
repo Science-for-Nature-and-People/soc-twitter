@@ -18,7 +18,7 @@ library(wordcloud)
 library(kableExtra)
 library(knitr)
 
-twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
+twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged_noRT.csv", stringsAsFactors = FALSE)
 twitter_merged_noRT <- distinct(twitter_merged_noRT)
 noRT <- twitter_merged_noRT %>% 
   arrange(-retweet_count) %>% 

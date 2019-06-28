@@ -1,0 +1,1113 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={bigram\_plots},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{bigram\_plots}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{}
+    \preauthor{}\postauthor{}
+    \date{}
+    \predate{}\postdate{}
+  
+
+\begin{document}
+\maketitle
+
+\hypertarget{full-dataset-nort}{%
+\subsubsection{Full dataset (noRT)}\label{full-dataset-nort}}
+
+\begin{itemize}
+\item ~
+  \hypertarget{of-bigrams-set-to-120}{%
+  \section{of bigrams set to
+  \textgreater{}120}\label{of-bigrams-set-to-120}}
+
+  \includegraphics{bigram_plots_files/figure-latex/unnamed-chunk-2-1.pdf}
+
+  \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\end{itemize}
+
+\hypertarget{filtered-for-soil-health}{%
+\subsubsection{filtered for ``soil
+health''}\label{filtered-for-soil-health}}
+
+\begin{itemize}
+\item ~
+  \hypertarget{of-bigrams-set-to-100}{%
+  \section{of bigrams set to
+  \textgreater{}100}\label{of-bigrams-set-to-100}}
+\end{itemize}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'का' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'का' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'का' in 'mbcsToSbcs': dot substituted for <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'का' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'का' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'का' in 'mbcsToSbcs': dot substituted for <be>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कर' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कर' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कर' in 'mbcsToSbcs': dot substituted for <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कर' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कर' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कर' in 'mbcsToSbcs': dot substituted for <b0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कि' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कि' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कि' in 'mbcsToSbcs': dot substituted for <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कि' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कि' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कि' in 'mbcsToSbcs': dot substituted for <bf>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <bf>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <a4>
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <a8>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कितने' in 'mbcsToSbcs': dot substituted for
+## <87>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'के' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'के' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'के' in 'mbcsToSbcs': dot substituted for <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'के' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'के' in 'mbcsToSbcs': dot substituted for <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'के' in 'mbcsToSbcs': dot substituted for <87>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <a8>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <be>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'नाम' in 'mbcsToSbcs': dot substituted for
+## <ae>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <ac>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <a6>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'बदल' in 'mbcsToSbcs': dot substituted for
+## <b2>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'है' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'है' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'है' in 'mbcsToSbcs': dot substituted for <b9>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'है' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'है' in 'mbcsToSbcs': dot substituted for <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'है' in 'mbcsToSbcs': dot substituted for <88>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <b8>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <a4>
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'सकते' in 'mbcsToSbcs': dot substituted for
+## <87>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <bf>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <af>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किया' in 'mbcsToSbcs': dot substituted for
+## <be>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <be>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <b0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <8d>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'कार्ड' in 'mbcsToSbcs': dot substituted for
+## <a1>
+\end{verbatim}
+
+\includegraphics{bigram_plots_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\hypertarget{filtered-for-rangeland-health}{%
+\subsubsection{filtered for ``rangeland
+health''}\label{filtered-for-rangeland-health}}
+
+\begin{itemize}
+\item ~
+  \hypertarget{of-bigrams-set-to-1}{%
+  \section{of bigrams set to
+  \textgreater{}1}\label{of-bigrams-set-to-1}}
+
+  \includegraphics{bigram_plots_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+  \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\end{itemize}
+
+\hypertarget{filtered-for-forest-health}{%
+\subsubsection{filtered for ``forest
+health''}\label{filtered-for-forest-health}}
+
+\begin{itemize}
+\tightlist
+\item
+  not very informative
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\hypertarget{top-100-rt}{%
+\subsection{top 100 RT}\label{top-100-rt}}
+
+\hypertarget{filtered-for-soil}{%
+\subsubsection{filtered for ``soil''}\label{filtered-for-soil}}
+
+\begin{itemize}
+\item ~
+  \hypertarget{of-bigrams-set-to-2}{%
+  \section{of bigrams set to
+  \textgreater{}2}\label{of-bigrams-set-to-2}}
+\end{itemize}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <b0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <8b>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <a1>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'करोड़' in 'mbcsToSbcs': dot substituted for
+## <bc>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <95>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <bf>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <b8>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <be>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <a8>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <8b>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'किसानों' in 'mbcsToSbcs': dot substituted for
+## <82>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'से' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'से' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'से' in 'mbcsToSbcs': dot substituted for <b8>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'से' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'से' in 'mbcsToSbcs': dot substituted for <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'से' in 'mbcsToSbcs': dot substituted for <87>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'ने' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'ने' in 'mbcsToSbcs': dot substituted for <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'ने' in 'mbcsToSbcs': dot substituted for <a8>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'ने' in 'mbcsToSbcs': dot substituted for <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'ने' in 'mbcsToSbcs': dot substituted for <a5>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'ने' in 'mbcsToSbcs': dot substituted for <87>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <85>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <a7>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <bf>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <e0>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <a4>
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : conversion failure on 'अधिक' in 'mbcsToSbcs': dot substituted for
+## <95>
+\end{verbatim}
+
+\includegraphics{bigram_plots_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\hypertarget{filtered-for-rangeland}{%
+\subsubsection{filtered for
+``rangeland''}\label{filtered-for-rangeland}}
+
+\begin{itemize}
+\item
+  no hits
+
+  \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\end{itemize}
+
+\hypertarget{filtered-for-forest}{%
+\subsubsection{filtered for ``forest''}\label{filtered-for-forest}}
+
+\begin{itemize}
+\item ~
+  \hypertarget{of-bigrams-set-to-0}{%
+  \section{of bigrams set to
+  \textgreater{}0}\label{of-bigrams-set-to-0}}
+\end{itemize}
+
+
+\end{document}

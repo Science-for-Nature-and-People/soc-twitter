@@ -26,9 +26,9 @@ library(tidytext)
 library(stringr)
 library(wordcloud)
 
-twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
+twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
   distinct()
-twitter_merged <- read.csv("twitter_merged.csv", stringsAsFactors = FALSE) %>% 
+twitter_merged <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged.csv", stringsAsFactors = FALSE) %>% 
   distinct()
 
 top_100_RT <- twitter_merged_noRT %>% 

@@ -1,6 +1,8 @@
 ---
 title: "bigram_plots"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -16,7 +18,7 @@ library(ggraph)
 library(igraph)
 
 
-twitter_merged_noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE)
+twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged_noRT.csv", stringsAsFactors = FALSE)
 twitter_merged_noRT <- distinct(twitter_merged_noRT)
 
 noRT <- twitter_merged_noRT %>% 
