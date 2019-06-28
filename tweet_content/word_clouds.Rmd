@@ -26,12 +26,17 @@ library(tidytext)
 library(stringr)
 library(wordcloud)
 
+<<<<<<< HEAD
 twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
   distinct()
 twitter_merged <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged.csv", stringsAsFactors = FALSE) %>% 
   distinct()
+=======
+twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+twitter_merged <- read.csv('/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv', stringsAsFactors = FALSE)
+>>>>>>> 399dfbf26cafb036aef21d25500561e8e82b3ea1
 
-top_100_RT <- twitter_merged_noRT %>% 
+top_100_noRT <- twitter_merged_noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
 ```
@@ -39,12 +44,12 @@ top_100_RT <- twitter_merged_noRT %>%
 
 
 ```{r, include=F}
-source("text_analysis_functions.R")
+source("../text_analysis_functions.R")
 ```
 
 ## full data - w/ RT
 ```{r, echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged, "")
+create_wordcloud(twitter_merged, "", group = T, stem = T)
 ```
 
 ***  
@@ -52,45 +57,27 @@ create_wordcloud(twitter_merged, "")
 
 # full noRT df
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged_noRT, "")
+create_wordcloud(twitter_merged_noRT, "", group = T, stem = T)
 ```
   
   
 #### filter by: "soil"
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged_noRT, "soil")
+create_wordcloud(twitter_merged_noRT, "soil", group = T, stem = T)
 ```  
   
     
 #### filter by: "soil health"
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged_noRT, "soil health")
+create_wordcloud(twitter_merged_noRT, "soil health", group = T, stem = T)
 ```  
 
 #### filter by: "soil quality"
-```{r,echo=F,warning=F,message=F}
-#function for preparing text for word cloud -- need this when because create_wordcloud() doesnt allow word removal like is needed when creating "soil quality" wordcloud
-prepare_text <- function(x) {
-  text_words <- x %>% 
-    select(text) %>% 
-    mutate(text = tolower(text)) %>% 
-    unnest_tokens(word, text)
-  
-  
-  text_words %>% 
-    anti_join(stop_words) %>% 
-    count(word, sort=TRUE) %>% 
-    filter(!word %in% c("https","rt","t.co","amp")) %>% #remove words associated with images/links and special characters, (i.e. amp = &)
-    filter(!word %in% c("soil","health", "healthy", "soilhealth")) #These terms consistently come out as top words perhaps as an atrifact of the initial querry, so i remove them here
-}
-
-soil_quality_tweets <- twitter_merged_noRT %>% 
-  filter(
-    str_detect(tolower(text), "soil quality")) 
+```{r,echo=F,warning=F,message=F,error=T}
 
 #creat word count
-soil_quality_wc <- prepare_text(soil_quality_tweets) %>% 
-  filter(word != "quality")
+soil_quality_wc <- prepare_text(soil_quality_tweets, group = T, stem = T) %>% 
+  filter(!word %in% c("soil_qual",'soil_health_card'))
 
 soil_quality_wc %>% 
   with(wordcloud(word, n, 
@@ -108,7 +95,7 @@ rangeland_tweets <- twitter_merged_noRT %>%
     str_detect(tolower(text), "rangeland"))
 
 #creat word count
-rangeland_wc <- prepare_text(rangeland_tweets) %>% 
+rangeland_wc <- prepare_text(rangeland_tweets, group = T, stem = T) %>% 
   filter(word != "rangeland")
 
 
@@ -118,6 +105,8 @@ rangeland_wc %>%
                  max.words=200, 
                  random.order=FALSE, 
                  color=brewer.pal(7,"Dark2")))
+
+
 ```  
   
     
@@ -160,7 +149,7 @@ create_wordcloud(twitter_merged_noRT, "forest health")
 #### filter by: "forest quality"
 -no hits
 ```{r,echo=F,warning=F,message=F}
-#create_wordcloud(twitter_merged_noRT, "forest quality")
+create_wordcloud(twitter_merged_noRT, "forest quality")
 ```
 
 ***
@@ -170,31 +159,31 @@ create_wordcloud(twitter_merged_noRT, "forest health")
 # top 100 RT
 ### full (no filter)
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(top_100_RT, "")
+create_wordcloud(top_100_noRT, "")
 ```
   
   
 #### filter by: "soil"
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(top_100_RT, "soil")
+create_wordcloud(top_100_noRT, "soil")
 ```
   
 #### filter by: "soil health"
 ```{r,echo=F,warning=F,message=F}
-create_wordcloud(top_100_RT, "soil health")
+create_wordcloud(top_100_noRT, "soil health")
 ```
  
   
 #### filter by: "rangeland"
 no hits on "rangeland" within top_100
 ```{r,echo=F}
-#create_wordcloud(top_100_RT, "rangeland")
+create_wordcloud(top_100_noRT, "rangeland")
 ```
   
       
 #### filter by: "forest"
 ```{r, echo=F,warning=F,message=F}
-create_wordcloud(top_100_RT, "forest")
+create_wordcloud(top_100_noRT, "forest")
 ```
 
 

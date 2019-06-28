@@ -9,6 +9,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+##### This markdown visualizes the common flow of words in tweets by using bigram counts. These visualizations are separated into: the full noRT dataset, tweets about soil, forest, and rangeland health, and then repeats this for the top 100 tweets (based on their RT count)
 
 ```{r, include=FALSE}
 library(tidyverse)
@@ -16,62 +17,101 @@ library(tidytext)
 library(stringr)
 library(ggraph)
 library(igraph)
+source("../text_analysis_functions.R")
 
 
+<<<<<<< HEAD
 twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged_noRT.csv", stringsAsFactors = FALSE)
 twitter_merged_noRT <- distinct(twitter_merged_noRT)
+=======
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+>>>>>>> 399dfbf26cafb036aef21d25500561e8e82b3ea1
 
-noRT <- twitter_merged_noRT %>% 
-  filter(screen_name != "Pontifex") #remove the pope..
 
-top_100_RT <- twitter_merged_noRT %>% 
+#select top 100 tweets based on their RT count
+top_100_noRT <- noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
 
 
 
-source("text_analysis_functions.R")
+
+
+
 ```
 
 
 ### Full dataset (noRT)
-- # of bigrams set to >120
-```{r, echo=F, fig.width=12}
+
+```{r, echo=F, fig.width=12, fig.height=9}
 ####full dataset####
-noRT_bigram <- create_bigram(noRT, "")
-gram_network(noRT_bigram,120)
+noRT_bigram <- create_bigram(noRT, "", group = TRUE, stem = TRUE) # `group = T` groups terms into umbrella terms
+
+# the indexed value here (65) ensures that, at most, 65 bigrams will be included in the gram network plot. This number is somewhat arbitrary and was determined based on how cluttered/filled in the resulting graphs were.
+# these numbers (for this and all other bigram plots) can be tweaked if you want to add/remove words from the plot -- setting the index to somehwere between 60-70 seems to work best though
+limit <- noRT_bigram$n[65]
+
+gram_network(noRT_bigram,limit)
+
 ```
-  
+
   ***  
     
   
           
 ### filtered for "soil health"
-- # of bigrams set to >100
-```{r, echo=F, fig.width=12}
+
+```{r, echo=F, fig.width=12, fig.height=9}
 ###soil
-soil_bigram <- create_bigram(noRT, "soil health")
-gram_network(soil_bigram, 100)
+soil_bigram <- create_bigram(noRT, "soil health", group = T, stem = T)
+
+limit <- soil_bigram$n[70]
+
+gram_network(soil_bigram, limit)
+
+
+
 ```
   
+
   ***  
   
 ### filtered for "rangeland health"
-- # of bigrams set to >1
-```{r, echo=F, fig.width=12}
+
+```{r, echo=F, fig.width=12, fig.height=9}
 ###rangeland
-range_bigram <- create_bigram(noRT, "rangeland health")
-gram_network(range_bigram, 1)
+range_bigram <- create_bigram(noRT, "rangeland health", group = T, stem = T)
+
+limit <- range_bigram$n[70]
+
+gram_network(range_bigram, limit)
 ```
   
   ***  
+    
+    
+### filtered for "regenerative"
+
+```{r, echo=F, fig.width=12, fig.height=9}
+###
+regen_bigram <- create_bigram(noRT, "regenerative", group = T, stem = T)
+
+limit <- regen_bigram$n[65]
+
+gram_network(regen_bigram, limit)
+```
+  
   
 ### filtered for "forest health"
 - not very informative 
 ```{r,include=F, echo=F, fig.width=12}
 ###forest
-forest_bigram <- create_bigram(noRT, "forest health")
-gram_network(forest_bigram, 0)
+# forest_bigram <- create_bigram(noRT, "forest health", group = T, stem = T)
+# 
+# limit <- forest_bigram$n[70]
+# 
+# gram_network(forest_bigram, limit)
 ```
   
     
@@ -80,15 +120,26 @@ gram_network(forest_bigram, 0)
 ***
 ***
 
-## top 100 RT  
-  
+## top 100 noRT  
+
+```{r, echo=F, fig.width=12}
+###full (top100)
+top_100_bigram <- create_bigram(top_100_noRT, group = T, stem = T)
+
+limit <- top_100_bigram$n[70]
+
+gram_network(top_100_bigram, limit)
+```
   
 ### filtered for "soil"
-- # of bigrams set to >2
+
 ```{r, echo=F, fig.width=12}
 ###soil
-soil_100_bigram <- create_bigram(top_100_RT, "soil")
-gram_network(soil_100_bigram, 2)
+soil_100_bigram <- create_bigram(top_100_noRT, "soil", group = T, stem = T)
+
+limit <- soil_100_bigram$n[70]
+
+gram_network(soil_100_bigram, limit)
 ```
   
   ***  
@@ -98,15 +149,60 @@ gram_network(soil_100_bigram, 2)
 ```{r, echo=F, fig.width=12}
 ###rangeland
 # range_100_bigram <- create_bigram(top_100_RT, "rangeland")
-# gram_network(range_bigram, 1)
+# 
+# limit <- range_100_bigram$n[70]
+# 
+# gram_network(range_100_bigram, limit)
 ```
   
   ***  
   
 ### filtered for "forest"
-- # of bigrams set to >0
+- no hits
 ```{r,include=F, echo=F, fig.width=12}
 ###forest
-forest_100_bigram <- create_bigram(top_100_RT, "forest")
-gram_network(forest_100_bigram, 0)
+# forest_100_bigram <- create_bigram(top_100_RT, "forest", group = T, stem = T)
+# 
+# limit <- forest_100_bigram$n[70]
+# 
+# gram_network(forest_100_bigram, 0)
 ```
+  
+  *** 
+  ***  
+  
+### top 100 noRT (inda excluded)
+
+```{r,echo=F, fig.width=12}
+noRT_india <- flag_india(noRT)
+
+top_no_india <- noRT_india %>% 
+  filter(is_india == 0) %>% 
+  arrange(-retweet_count) %>% 
+  head(100)
+
+
+top_noIndia_bigram <- create_bigram(top_no_india, group = T, stem = T)
+
+limit <- top_noIndia_bigram$n[70]
+
+gram_network(top_noIndia_bigram, limit)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
