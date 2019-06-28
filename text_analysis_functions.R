@@ -39,6 +39,7 @@ word_umbrella <- function(data) {
   soil_health <- c("healthy soil", "soilhealth", "healthysoil", "soil health")
   soil_qual <- c("soil quality", "soilquality")
   soil_fert <- c("soil fertility", "soilfertility")
+  carbon_seq <- c('sequester carbon','carbon sequestration','sequestering carbon')
   regen_ag <- c("regenerative agriculture",	"regenerativeagriculture", "regenerative ag", "regenerative agricultural", "regenerativeag")
   conserv_ag <- c("conservation agriculture",	"conservationagriculture",	"conservationag")
   cover_crop <- c("cover crop",	"cover cropping",	"cover crops",	"covercrop",	"covercropping",	"covercrops")
@@ -61,6 +62,7 @@ word_umbrella <- function(data) {
       text = str_replace_all(tolower(text), str_c(rangeland, collapse = "|"), "rangeland_health") , 
       text = str_replace_all(tolower(text), str_c(health_card, collapse = "|"), "soil_health_card") , 
       text = str_replace_all(tolower(text), str_c(healthy_people, collapse = "|"), "healthy_people") , 
+      text = str_replace_all(tolower(text), str_c(carbon_seq, collapse = "|"), "carbon_sequestration") , 
       text = str_replace_all(tolower(text), str_c(organic_ag, collapse = "|"), "organic_ag") , 
       text = str_replace(tolower(text), str_c(n_modi, collapse = "|"), "Narendra_Modi") , 
       text = str_replace_all(tolower(text), "soil health institute", "soil_health_institute") , 
