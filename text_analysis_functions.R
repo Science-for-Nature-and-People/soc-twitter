@@ -39,7 +39,7 @@ word_umbrella <- function(data) {
   soil_health <- c("healthy soil", "soilhealth", "healthysoil", "soil health")
   soil_qual <- c("soil quality", "soilquality")
   soil_fert <- c("soil fertility", "soilfertility")
-  carbon_seq <- c('sequester carbon','carbon sequestration','sequestering carbon')
+  carbon_seq <- c('sequester carbon','carbon sequestration','sequestering carbon','sequesters carbon','sequestered carbon')
   regen_ag <- c("regenerative agriculture",	"regenerativeagriculture", "regenerative ag", "regenerative agricultural", "regenerativeag")
   conserv_ag <- c("conservation agriculture",	"conservationagriculture",	"conservationag")
   cover_crop <- c("cover crop",	"cover cropping",	"cover crops",	"covercrop",	"covercropping",	"covercrops")
