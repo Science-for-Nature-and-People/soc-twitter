@@ -1,8 +1,6 @@
 ---
 title: "bigram_plots"
-output:
-  html_document: default
-  pdf_document: default
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -18,27 +16,12 @@ library(stringr)
 library(ggraph)
 library(igraph)
 source("../text_analysis_functions.R")
-
-
-<<<<<<< HEAD
-twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged_noRT.csv", stringsAsFactors = FALSE)
-twitter_merged_noRT <- distinct(twitter_merged_noRT)
-=======
 # load data
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
->>>>>>> 399dfbf26cafb036aef21d25500561e8e82b3ea1
-
-
 #select top 100 tweets based on their RT count
 top_100_noRT <- noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
-
-
-
-
-
-
 ```
 
 
@@ -47,13 +30,10 @@ top_100_noRT <- noRT %>%
 ```{r, echo=F, fig.width=12, fig.height=9}
 ####full dataset####
 noRT_bigram <- create_bigram(noRT, "", group = TRUE, stem = TRUE) # `group = T` groups terms into umbrella terms
-
 # the indexed value here (65) ensures that, at most, 65 bigrams will be included in the gram network plot. This number is somewhat arbitrary and was determined based on how cluttered/filled in the resulting graphs were.
 # these numbers (for this and all other bigram plots) can be tweaked if you want to add/remove words from the plot -- setting the index to somehwere between 60-70 seems to work best though
 limit <- noRT_bigram$n[65]
-
 gram_network(noRT_bigram,limit)
-
 ```
 
   ***  
@@ -65,13 +45,8 @@ gram_network(noRT_bigram,limit)
 ```{r, echo=F, fig.width=12, fig.height=9}
 ###soil
 soil_bigram <- create_bigram(noRT, "soil health", group = T, stem = T)
-
 limit <- soil_bigram$n[70]
-
 gram_network(soil_bigram, limit)
-
-
-
 ```
   
 
@@ -82,9 +57,7 @@ gram_network(soil_bigram, limit)
 ```{r, echo=F, fig.width=12, fig.height=9}
 ###rangeland
 range_bigram <- create_bigram(noRT, "rangeland health", group = T, stem = T)
-
 limit <- range_bigram$n[70]
-
 gram_network(range_bigram, limit)
 ```
   
@@ -96,9 +69,7 @@ gram_network(range_bigram, limit)
 ```{r, echo=F, fig.width=12, fig.height=9}
 ###
 regen_bigram <- create_bigram(noRT, "regenerative", group = T, stem = T)
-
 limit <- regen_bigram$n[65]
-
 gram_network(regen_bigram, limit)
 ```
   
@@ -106,12 +77,12 @@ gram_network(regen_bigram, limit)
 ### filtered for "forest health"
 - not very informative 
 ```{r,include=F, echo=F, fig.width=12}
-###forest
-# forest_bigram <- create_bigram(noRT, "forest health", group = T, stem = T)
+##forest
+#forest_bigram <- create_bigram(noRT, "forest health", group = T, stem = T)
 # 
-# limit <- forest_bigram$n[70]
+#limit <- forest_bigram$n[70]
 # 
-# gram_network(forest_bigram, limit)
+#gram_network(forest_bigram, limit)
 ```
   
     
@@ -125,9 +96,7 @@ gram_network(regen_bigram, limit)
 ```{r, echo=F, fig.width=12}
 ###full (top100)
 top_100_bigram <- create_bigram(top_100_noRT, group = T, stem = T)
-
 limit <- top_100_bigram$n[70]
-
 gram_network(top_100_bigram, limit)
 ```
   
@@ -136,9 +105,7 @@ gram_network(top_100_bigram, limit)
 ```{r, echo=F, fig.width=12}
 ###soil
 soil_100_bigram <- create_bigram(top_100_noRT, "soil", group = T, stem = T)
-
 limit <- soil_100_bigram$n[70]
-
 gram_network(soil_100_bigram, limit)
 ```
   
@@ -175,34 +142,10 @@ gram_network(soil_100_bigram, limit)
 
 ```{r,echo=F, fig.width=12}
 noRT_india <- flag_india(noRT)
-
 top_no_india <- noRT_india %>% 
   filter(is_india == 0) %>% 
-  arrange(-retweet_count) %>% 
-  head(100)
-
-
+  arrange(-retweet_count)
 top_noIndia_bigram <- create_bigram(top_no_india, group = T, stem = T)
-
 limit <- top_noIndia_bigram$n[70]
-
 gram_network(top_noIndia_bigram, limit)
-
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
