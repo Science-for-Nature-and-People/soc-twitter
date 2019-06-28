@@ -1,6 +1,7 @@
 ---
 title: "word_assoc"
 output:
+  pdf_document: default
   html_document: default
 ---
 
@@ -118,7 +119,7 @@ total_counts <- data.frame(c("soil", "rangeland","forest","soil health","rangela
 
 names(total_counts) <- c("query", "counts")
 
-#refactoring to order in visualization
+#reoder levels based on count (for visualization)
 total_counts$query <- factor(total_counts$query, levels = total_counts$query[order(total_counts$counts)])
 
 
@@ -139,7 +140,7 @@ ggplot(total_counts, aes(x = query, y = counts)) +
 ```{r, echo = F}
 count_noSoil <- filter(total_counts, str_detect(query, "soil", negate = T))
 
-#refactoring to order in visualization
+#reoder levels based on count (for visualization)
 count_noSoil$query <- factor(count_noSoil$query, levels = count_noSoil$query[order(count_noSoil$counts)])
 
 ggplot(count_noSoil, aes(x = query, y = counts)) +
@@ -164,26 +165,21 @@ ggplot(count_noSoil, aes(x = query, y = counts)) +
 ## create count of querry hits
 
 #split hits into seperate columns
-hit_split <- colsplit(noRT$hits, ';', c('a','b','c','d','e','f','g'))
+hit_split <- separate_rows(noRT, hits, sep = ";") 
 
-#bind into single row
-hit_long <- data.frame(hit = c(hit_split$a,hit_split$b,hit_split$c,hit_split$d,hit_split$e))
 
-# summarise count of query words
-hit_sum <- hit_long %>% 
-  group_by(hit) %>% 
-  summarise(
-    count = n()
-  ) %>% 
-  filter(hit != '') %>%  #gets rid of blanks that arrose from combining the vectors
-  ungroup(hit)
+# get counts of the occurence of each query word
+hit_sum <- hit_split %>% 
+  select(hits) %>% 
+  filter(!is.na(hits)) %>% 
+  count(hits)
 
-#refactor based on count
-hit_sum$hit <- factor(hit_sum$hit, levels = hit_sum$hit[order(hit_sum$count)])
+#reoder levels based on count (for visualization)
+hit_sum$hits <- factor(hit_sum$hits, levels = hit_sum$hits[order(hit_sum$n)])
 
-ggplot(hit_sum, aes(hit, count)) +
-  geom_col(aes(fill = hit)) +
-  geom_text(aes(label = count), nudge_y = 1750) +
+ggplot(hit_sum, aes(hits, n)) +
+  geom_col(aes(fill = hits)) +
+  geom_text(aes(label = n), nudge_y = 1750) +
   scale_y_continuous(expand = c(0,0), limits = c(0,37500)) + 
   coord_flip() +
   labs(title = "number of hits on each query") +
@@ -204,7 +200,7 @@ ggplot(hit_sum, aes(hit, count)) +
 
 ## soil health
 
-#filter terms that are all related to 'soil healt'
+#filter terms that are all related to 'soil health'
 soil_health_terms <- c('soil health','#soilhealth','healthy soil','#healthysoil')
 
 soil_health_query <- noRT %>% 
@@ -259,7 +255,16 @@ range_terms_wc <- prepare_text(rangeland_query, group = T, stem = T)
   
 #### caclculate percentages based relative to word counts of top 20
 ```{r, echo = F, fig.height=10, fig.width=12}
-#join word lists to get relative counts of each all the terms found within each df
+### the goal of these next 3 figures are to demonstrate the differences in the counts of the top 20 words from each of the above query term 'catgegories'
+## the steps to creating this are as follows:
+#~ 1. join all the dataframes that were created together in the above codechunk to get the relative counts of each word for each category
+#~ 2. select the top 20 words from each category to create a 'top word list'
+#     - this list is <80 long b/c many of the top words overlap between the categories
+#~ 3. use this word list as a mask/filter over the combined dataframe from step 1
+#     - omit any words that do no co-occur between the categories (for example, there is no mention of soil_health_cards in the rangeland category, so this term does not come up in the visualization)
+#~ 4. plot
+
+# 1. join word lists to get relative counts of each all the terms found within each df
 total_count <- full_join(range_terms_wc, fertility_terms_wc, by = "word")
 
 total_count <- full_join(quality_terms_wc, total_count, by = 'word')
@@ -269,24 +274,25 @@ total_count <- full_join(health_terms_wc, total_count, by = 'word')
 names(total_count) <- c('word','health','quality','range','fertility')
 
 
-## create word list of top words from each - this will then be used as a filter from the larger total list above
+## 2(a) create word list of top words from each - this will then be used as a filter from the larger total list above
 top_range <- head(range_terms_wc, 20)
 top_qual <- head(quality_terms_wc, 20)
 top_fertil <- head(fertility_terms_wc, 20)
 top_health <- head(health_terms_wc, 20)
 
-# join all top words from each category into a word list
+## 2 (b) join all top words from each category into a word list
+##        - this word list may change over time if certain terms become more/less common or if,for example, someone mentions 'soil_health_cards' alongside a rangeland query term.
 word_list <- c(paste(top_qual$word), paste(top_range$word), paste(top_fertil$word), paste(top_health$word))
 
 
 
-#filter and remove any words that do not cooccur
+## 3. use word list from part 2 to select words from the dataframe created in part 1 and remove any words that do not cooccur
 selected_words <- total_count %>% 
   filter(word %in% word_list) %>%
-  na.omit() 
+  na.omit() # remove non-cooccuring words
 
 
-
+#reoder levels based on count (for visualization)
 selected_words$word <- factor(selected_words$word, levels = selected_words$word[order(selected_words$health)])
 
 
@@ -300,6 +306,7 @@ selected_pct <- selected_words %>%
   select(-quality, -range, -fertility,-health) %>% 
   gather("query", "percent", -word)
 
+#reoder levels based on count (for visualization)
 selected_pct$query <- factor(selected_pct$query, levels = c('soil_health','soil_quality','soil_fertility','rangeland'))
 
 comparison <- ggplot(selected_pct, aes(word, percent)) +
@@ -317,6 +324,8 @@ comparison
 #### caclculate percentages based relative to total word counts of each category
 no change in trend, only in percentages
 ```{r, echo=F, fig.height=10, fig.width=12}
+## same process as the code chuck above, but calculating percent differently
+
 sum_health <- sum(health_terms_wc$n)
 sum_fertil <- sum(fertility_terms_wc$n)
 sum_range <- sum(range_terms_wc$n)
@@ -330,6 +339,8 @@ selected_pct_full <- selected_words %>%
   select(-quality, -range, -fertility, -health) %>% 
   gather("query", "percent", -word)
 
+
+#reoder levels based on count (for visualization)
 selected_pct_full$query <- factor(selected_pct_full$query, levels = c('soil_health','soil_quality','soil_fertility','rangeland'))
 
 comparison_full <- ggplot(selected_pct_full, aes(word, percent)) +
@@ -343,9 +354,12 @@ comparison_full
 ```  
   
   
-#### same comparison, but visually comparing based on word counts of 'range'
+#### same comparison, but visually comparing based on word counts of 'rangeland'
 ```{r, echo=F, fig.height=10, fig.width=12}
 
+## again, same as the first graph of this type, but now visually comparing against rangeland
+
+#reoder levels based on count (for visualization)
 selected_words$word <- factor(selected_words$word, levels = selected_words$word[order(selected_words$range)])
 
 
@@ -389,17 +403,20 @@ soil_word_count <- prepare_text(soil_tweets, group = TRUE, stem = TRUE)
 
 
 
-# exlude terms with 'soil' in them which significantly outwiegh the other terms
+# exlude search terms in them which significantly outwiegh the other terms
+# create list of search terms
+query_terms <- data.frame(text = c(soil_fertil_terms, soil_quality_terms, soil_health_terms, rangeland_terms))
+#stem terms and group according to their umbrella so that they match (prepare text is a shortcut to doing both of these quickly)
+terms <- prepare_text(query_terms, group = T, stem = T)
+
 top_10_no_soil <- soil_word_count %>% 
-  filter(
-    str_detect(word, 'soil', negate = T)
-  ) %>% 
+  filter(!word %in% c(terms$word, 'soil', '#soil', "#regenerative_agricultur")) %>% 
   head(10) %>% 
   mutate(
     pct = n/sum(n)) # add 'percent' column that is the relative percent of each word - this is to make visual comparison easier
   
 
-#refactor order of words based on the count
+#reoder levels based on count (for visualization)
 top_10_no_soil$word <- factor(top_10_no_soil$word, levels = top_10_no_soil$word[order(top_10_no_soil$n)])
 
 #graph
@@ -409,7 +426,7 @@ no_soil <- ggplot(top_10_no_soil, aes(word, pct)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,.25))+
   scale_fill_manual(values = getPalette(colourCount)) +
   coord_flip() +
-  labs(title = "'soil' terms filtered (i.e soil health") +
+  labs(title = "search terms and 'soil' filtered") +
   theme_bw() +
   theme(legend.position="none") 
 
@@ -419,7 +436,7 @@ top_10_soil <- soil_word_count %>%
   mutate(
     pct = n/sum(n))
 
-#refactor order of words based on the count
+
 top_10_soil$word <- factor(top_10_soil$word, levels = top_10_soil$word[order(top_10_soil$n)])
 
 with_soil <- ggplot(top_10_soil, aes(word, pct)) +
@@ -456,30 +473,32 @@ soil_fertility_wc <- prepare_text(soil_fertility_tweets, group = T, stem = T)
 ### get top 10 w/ proportions
 
 top_10_soil_health <- soil_health_wc %>% 
+  filter(!word %in% c(terms$word, 'soil', '#soil', "#regenerative_agricultur")) %>% 
   head(10) %>% 
   mutate(
     pct = n/sum(n))
 
 top_10_soil_fertility <- soil_fertility_wc %>% 
-    filter(!word == "soil_fertil") %>% 
+    filter(!word %in% c(terms$word, 'soil', '#soil', "#regenerative_agricultur")) %>%  
     head(10) %>% 
     mutate(
     pct = n/sum(n))
 
 top_10_soil_quality <- soil_quality_wc %>% 
-    filter(!word == "soil_qual") %>% 
+    filter(!word %in% c(terms$word, 'soil', '#soil', "#regenerative_agricultur")) %>%  
     head(10) %>% 
     mutate(
     pct = n/sum(n))
 
-#refactor
+#reoder levels based on count (for visualization)
 top_10_soil_health$word <- factor(top_10_soil_health$word, levels = top_10_soil_health$word[order(top_10_soil_health$n)])
 
 top_10_soil_fertility$word <- factor(top_10_soil_fertility$word, levels = top_10_soil_fertility$word[order(top_10_soil_fertility$n)])
 
 top_10_soil_quality$word <- factor(top_10_soil_quality$word, levels = top_10_soil_quality$word[order(top_10_soil_quality$n)])
 
-# graph 
+
+### graph 
 soil_health <- ggplot(top_10_soil_health, aes(word, pct)) +
   geom_col(aes(fill = word)) +
   geom_text(aes(label = n), nudge_y = -.015) +
@@ -529,12 +548,13 @@ forest_word_count <- prepare_text(forest_tweets, group = TRUE, stem = TRUE)
 
 #filter out dominant terms: 'soil health' & 'forest"
 top_10_forest <- forest_word_count %>% 
+  filter(!word %in% c(terms$word, 'soil', '#soil', "#regenerative_agricultur")) %>% 
   head(10) %>% 
   mutate(
     pct = n/sum(n)) # add 'percent' column that is the relative percent of each word - this is to make visual comparison easier
   
 
-#refactor order of words based on the count
+#reoder levels based on count (for visualization)
 top_10_forest$word <- factor(top_10_forest$word, levels = top_10_forest$word[order(top_10_forest$n)])
 
 #graph
@@ -559,13 +579,14 @@ forest_health_wc <- prepare_text(forest_health_tweets, group = TRUE, stem = TRUE
 
 #filter out dominant terms: 'soil health' & 'forest"
 top_10_forest_health <- forest_health_wc %>% 
+  filter(!word %in% c(terms$word, 'soil', '#soil', "#regenerative_agricultur")) %>% 
   filter(n > 1) %>% 
   head(10) %>% 
   mutate(
     pct = n/sum(n)) # add 'percent' column that is the relative percent of each word - this is to make visual comparison easier
   
 
-#refactor order of words based on the count
+#reoder levels based on count (for visualization)
 top_10_forest_health$word <- factor(top_10_forest_health$word, levels = top_10_forest_health$word[order(top_10_forest_health$n)])
 
 #graph
@@ -605,12 +626,13 @@ range_word_count <- prepare_text(rangeland_tweets, group = TRUE, stem = TRUE)
 
 #filter out dominant terms: 'soil health' & 'range"
 top_10_range <- range_word_count %>% 
+  filter(!word %in% c(terms$word, 'soil', '#soil', "#regenerative_agricultur")) %>% 
   head(10) %>% 
   mutate(
     pct = n/sum(n)) # add 'percent' column that is the relative percent of each word - this is to make visual comparison easier
   
 
-#refactor order of words based on the count
+#reoder levels based on count (for visualization)
 top_10_range$word <- factor(top_10_range$word, levels = top_10_range$word[order(top_10_range$n)])
 
 #graph
@@ -634,12 +656,13 @@ range_health_wc <- prepare_text(rangeland_health_tweets, group = TRUE, stem = TR
 
 #filter out dominant terms: 'soil health' & 'range"
 top_10_range_health <- range_health_wc %>% 
+  filter(!word %in% c(terms$word, 'soil', '#soil', "#regenerative_agricultur")) %>% 
   head(10) %>% 
   mutate(
     pct = n/sum(n)) # add 'percent' column that is the relative percent of each word - this is to make visual comparison easier
   
 
-#refactor order of words based on the count
+#reoder levels based on count (for visualization)
 top_10_range_health$word <- factor(top_10_range_health$word, levels = top_10_range_health$word[order(top_10_range_health$n)])
 
 #graph
