@@ -26,8 +26,15 @@ library(tidytext)
 library(stringr)
 library(wordcloud)
 
+<<<<<<< HEAD
+twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
+  distinct()
+twitter_merged <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged.csv", stringsAsFactors = FALSE) %>% 
+  distinct()
+=======
 twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
 twitter_merged <- read.csv('/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv', stringsAsFactors = FALSE)
+>>>>>>> 399dfbf26cafb036aef21d25500561e8e82b3ea1
 
 top_100_noRT <- twitter_merged_noRT %>% 
   arrange(-retweet_count) %>% 
