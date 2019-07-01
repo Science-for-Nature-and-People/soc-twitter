@@ -110,11 +110,11 @@ limit <- carbon_bigram$n[75]
 gram_network(carbon_bigram, limit)
 ```
 
-### filtered for 'climate'
+### filtered for 'biodiversity'
 ```{r,fig.width=12, fig.height=9}
-climate_bigram <- create_bigram(noRT, "climate", group = T, stem = T) 
-limit <- climate_bigram$n[75] 
-gram_network(climate_bigram, limit)
+biod_bigram <- create_bigram(noRT, "biodiversity", group = T, stem = T) 
+limit <- biod_bigram$n[75] 
+gram_network(biod_bigram, limit)
 ```
 
     
