@@ -74,7 +74,8 @@ word_umbrella <- function(data) {
       text = str_replace_all(tolower(text), "microbial biomass", "microbial_biomass") , 
       text = str_replace_all(tolower(text), "crop rotation", "crop_rotation") , 
       text = str_replace_all(tolower(text), "crop insurance", "crop_insurance") , 
-      text = str_replace_all(tolower(text), "climate change", "climate_change") , 
+      text = str_replace_all(tolower(text), "climate change", "climate_change") ,
+      text = str_replace_all(tolower(text), "climatechange", "climate_change") ,
       text = str_replace_all(tolower(text), "food security", "food_security"),
       text = str_replace_all(tolower(text), str_c(soil_health, collapse = "|"), "soil_health") , 
     )

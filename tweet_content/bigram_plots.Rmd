@@ -10,15 +10,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ##### This markdown visualizes the common flow of words in tweets by using bigram counts. These visualizations are separated into: the full noRT dataset, tweets about soil, forest, and rangeland health, and then repeats this for the top 100 tweets (based on their RT count)
 
 ```{r, include=FALSE}
+# load packages
 library(tidyverse)
 library(tidytext)
 library(stringr)
 library(ggraph)
 library(igraph)
 source("../text_analysis_functions.R")
+
 # load data
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
-#select top 100 tweets based on their RT count
+
+# select top 100 tweets based on their RT count
 top_100_noRT <- noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
@@ -32,7 +35,7 @@ top_100_noRT <- noRT %>%
 noRT_bigram <- create_bigram(noRT, "", group = TRUE, stem = TRUE) # `group = T` groups terms into umbrella terms
 # the indexed value here (65) ensures that, at most, 65 bigrams will be included in the gram network plot. This number is somewhat arbitrary and was determined based on how cluttered/filled in the resulting graphs were.
 # these numbers (for this and all other bigram plots) can be tweaked if you want to add/remove words from the plot -- setting the index to somehwere between 60-70 seems to work best though
-limit <- noRT_bigram$n[65]
+limit <- noRT_bigram$n[75]
 gram_network(noRT_bigram,limit)
 ```
 
@@ -45,22 +48,49 @@ gram_network(noRT_bigram,limit)
 ```{r, echo=F, fig.width=12, fig.height=9}
 ###soil
 soil_bigram <- create_bigram(noRT, "soil health", group = T, stem = T)
-limit <- soil_bigram$n[70]
+limit <- soil_bigram$n[75]
 gram_network(soil_bigram, limit)
 ```
   
 
   ***  
+
+### filtered for "soil quality"
+
+```{r, echo=F, fig.width=12, fig.height=9}
+###soil
+soil_bigram <- create_bigram(noRT, "soil quality", group = T, stem = T)
+limit <- soil_bigram$n[70]
+gram_network(soil_bigram, limit)
+```
+
+### filtered for "soil fertility"
+
+```{r, echo=F, fig.width=12, fig.height=9}
+###soil
+soil_bigram <- create_bigram(noRT, "soil fertility", group = T, stem = T)
+limit <- soil_bigram$n[70]
+gram_network(soil_bigram, limit)
+```
   
 ### filtered for "rangeland health"
 
 ```{r, echo=F, fig.width=12, fig.height=9}
 ###rangeland
 range_bigram <- create_bigram(noRT, "rangeland health", group = T, stem = T)
-limit <- range_bigram$n[70]
+limit <- range_bigram$n[75]
 gram_network(range_bigram, limit)
 ```
   
+### filtered for "rangeland"
+
+```{r, echo=F, fig.width=12, fig.height=9}
+###rangeland
+range_bigram <- create_bigram(noRT, "rangeland", group = T, stem = T)
+limit <- range_bigram$n[75]
+gram_network(range_bigram, limit)
+```
+
   ***  
     
     
@@ -69,29 +99,22 @@ gram_network(range_bigram, limit)
 ```{r, echo=F, fig.width=12, fig.height=9}
 ###
 regen_bigram <- create_bigram(noRT, "regenerative", group = T, stem = T)
-limit <- regen_bigram$n[65]
+limit <- regen_bigram$n[75]
 gram_network(regen_bigram, limit)
 ```
-  
-  
-### filtered for "forest health"
-- not very informative 
-```{r,include=F, echo=F, fig.width=12}
-##forest
-#forest_bigram <- create_bigram(noRT, "forest health", group = T, stem = T)
-# 
-#limit <- forest_bigram$n[70]
-# 
-#gram_network(forest_bigram, limit)
-```
-  
     
 ### filtered for 'carbon'
 ```{r,fig.width=12, fig.height=9}
 carbon_bigram <- create_bigram(noRT, "carbon", group = T, stem = T) 
-limit <- carbon_bigram$n[65] 
+limit <- carbon_bigram$n[75] 
 gram_network(carbon_bigram, limit)
+```
 
+### filtered for 'climate'
+```{r,fig.width=12, fig.height=9}
+climate_bigram <- create_bigram(noRT, "climate", group = T, stem = T) 
+limit <- climate_bigram$n[75] 
+gram_network(climate_bigram, limit)
 ```
 
     
@@ -117,33 +140,6 @@ limit <- soil_100_bigram$n[70]
 gram_network(soil_100_bigram, limit)
 ```
   
-  ***  
-  
-### filtered for "rangeland"
-- no hits
-```{r, echo=F, fig.width=12}
-###rangeland
-# range_100_bigram <- create_bigram(top_100_RT, "rangeland")
-# 
-# limit <- range_100_bigram$n[70]
-# 
-# gram_network(range_100_bigram, limit)
-```
-  
-  ***  
-  
-### filtered for "forest"
-- no hits
-```{r,include=F, echo=F, fig.width=12}
-###forest
-# forest_100_bigram <- create_bigram(top_100_RT, "forest", group = T, stem = T)
-# 
-# limit <- forest_100_bigram$n[70]
-# 
-# gram_network(forest_100_bigram, 0)
-```
-  
-  *** 
   ***  
   
 ### top 100 noRT (inda excluded)
