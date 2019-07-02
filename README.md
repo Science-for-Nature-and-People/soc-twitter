@@ -29,7 +29,7 @@ The following scripts can be used for:
 More specific exploration and visualizations can be found in the following folders (see their respective README's for more detailed information about specific analyses):
 - [tweet_content](https://github.com/Science-for-Nature-and-People/soc-twitter/tree/master/tweet_content) various way of visualizing the content of tweets by different categories
 - [influencers](https://github.com/Science-for-Nature-and-People/soc-twitter/tree/master/influencers) attempts to identify what type of content appeals to different user groups
-- each of these ^ rely on the functions within [text_analysis_functions.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/text_analysis_functions.R)
+- each of these above rely on the functions within [text_analysis_functions.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/text_analysis_functions.R)
   
 ***       
       
