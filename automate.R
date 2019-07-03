@@ -10,11 +10,9 @@ library(jsonlite)
 library(streamR)
 library(httr)
 
+## DO NOT run the write.csv lines when making edits to script (make a seperate path in your own home folder on aurora)  
+
 path <- '/home/shares/soilcarbon/Twitter/' # LOCATION OF MASTER FILES
-<<<<<<< HEAD
-path_out <- "/home/knox/github/soc-twitter/"
-=======
->>>>>>> 0fa2f9dcaa3779c9ffe1eaf7a3af2acc15900495
 
 ## Read previous data ----
 
@@ -27,7 +25,6 @@ twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_v2/twitter_merged_no
 # Create token
 twitter_token <- readRDS('twitter_token.rds')
 
-<<<<<<< HEAD
 # Import tag_list.csv (this contains the words to be used in search query of twitter data)
 tag_file = read.csv('tag_list.csv')
 
@@ -35,20 +32,10 @@ tag_file = read.csv('tag_list.csv')
 tag_list = as.character(tag_file$tag_list)
 
 # Take tag_list and put quotes around each element for the twitterAPI search below
-q_test = unname(sapply(tag_list, function(x) toString(dQuote(x))))
-
-# Searching tweets with query above
-twitterAPI_new.prac <- search_tweets2(q_test, n = 100000, token=twitter_token, retryonratelimit = T)
-=======
-# Search twitter
-q <- c('"soil health"', '"healthy soil"', '#soilhealth', '#healthysoil', 
-       '"soil quality"', '"soil fertility"', '#soilquality', '#soilfertility',
-       '"rangeland health"','#rangelandhealth','"healthy rangelands"',
-       '#healthyrangelands')
+q = unname(sapply(tag_list, function(x) toString(dQuote(x))))
 
 # Searching tweets with query above
 twitterAPI_new.prac <- search_tweets2(q, n = 100000, token=twitter_token, retryonratelimit = T)
->>>>>>> 0fa2f9dcaa3779c9ffe1eaf7a3af2acc15900495
 
 # Make it a data frame
 twitterAPI_new <- as.data.frame(twitterAPI_new.prac, stringsAsFactors = FALSE)
@@ -81,11 +68,7 @@ rownames(twitterAPI_new) <- NULL
 
 ######### JB (We should save the dataframe to csv at this point appending the date of the day to the name)
 # Creating file name 
-<<<<<<< HEAD
-file.name <- paste0(path_out, '/API_csv/', Sys.Date(), '.csv')
-=======
 file.name <- paste0(path, '/API_csv/', Sys.Date(), '.csv')
->>>>>>> 0fa2f9dcaa3779c9ffe1eaf7a3af2acc15900495
 
 # Converting list columns to character columns to allow for writing to csv
 i <- sapply(twitterAPI_new, is.list)
@@ -148,15 +131,8 @@ charnull_set <- function(x){
 }
 
 # Text bits to search through # keywords = query words
-<<<<<<< HEAD
 
 keywords <- paste0(tag_list, collapse = "|")
-=======
-keywords <- paste0(c("soil health", "healthy soil", "#soilhealth", "#healthysoil", 
-                     "soil quality", "soil fertility", "#soilquality", "#soilfertility",
-                     "rangeland health","#rangelandhealth","healthy rangelands",
-                     "#healthyrangelands"), collapse = "|")
->>>>>>> 0fa2f9dcaa3779c9ffe1eaf7a3af2acc15900495
 
 ## Store the matches as a new columns with words seprated by `;`
 twitterAPI_new <- twitterAPI_new %>%
@@ -180,13 +156,9 @@ twitter_merged_new <- rbind(twitter_merged.master, twitterAPI_new)
 twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 
 # Re-exporting new merged dataset to master csv
-<<<<<<< HEAD
-write.csv(twitter_merged_new, paste(path_out, '/Merged6_v2/', 'twitter_merged_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
-write.csv(twitter_merged_noRTnew, paste(path_out, '/Merged_v2/', 'twitter_merged_noRT_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
-
-
-
-=======
-write.csv(twitter_merged_new, paste(path, '/Merged_v2/', 'twitter_merged_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+write.csv(twitter_merged_new, paste(path, '/Merged6_v2/', 'twitter_merged_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
 write.csv(twitter_merged_noRTnew, paste(path, '/Merged_v2/', 'twitter_merged_noRT_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
->>>>>>> 0fa2f9dcaa3779c9ffe1eaf7a3af2acc15900495
+
+
+
+
