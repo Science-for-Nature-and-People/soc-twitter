@@ -33,7 +33,7 @@ write.xlsx(hindi, file = "tweets_hi.xlsx",
 ### process to translate tweets from hindi to english ###
 #########################################################
 # 1) Upload excel document to google translate (https://translate.google.com/?hl=en&tab=TT)
-# IMPORTANT: scross to bottom of page and copy up from bottom (google does a live translation of the page)
+# IMPORTANT: scroll to bottom of page and copy up from bottom (google does a live translation of the page)
 # 2) Copy and paste result (it is in html) into a new excel file
 # 3) Use this (https://www.extendoffice.com/documents/excel/1139-excel-unmerge-cells-and-fill.html) 
 #    resource to unmerge and duplicate the tweet numbers (I used the script module)
