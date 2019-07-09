@@ -10,6 +10,8 @@ library(jsonlite)
 library(streamR)
 library(httr)
 
+## DO NOT run the write.csv lines when making edits to script (make a seperate path in your own home folder on aurora)  
+
 path <- '/home/shares/soilcarbon/Twitter/' # LOCATION OF MASTER FILES
 
 ## Read previous data ----
@@ -23,11 +25,14 @@ twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_v2/twitter_merged_no
 # Create token
 twitter_token <- readRDS('twitter_token.rds')
 
-# Search twitter
-q <- c('"soil health"', '"healthy soil"', '#soilhealth', '#healthysoil', 
-       '"soil quality"', '"soil fertility"', '#soilquality', '#soilfertility',
-       '"rangeland health"','#rangelandhealth','"healthy rangelands"',
-       '#healthyrangelands')
+# Import tag_list.csv (this contains the words to be used in search query of twitter data)
+tag_file <- read.csv('tag_list.csv', stringsAsFactors = FALSE)
+
+# Create a list from tag_list.csv
+tag_list <- as.character(tag_file$tag_list)
+
+# Take tag_list and put quotes around each element for the twitterAPI search below
+q <- unname(sapply(tag_list, function(x) toString(dQuote(x))))
 
 # Searching tweets with query above
 twitterAPI_new.prac <- search_tweets2(q, n = 100000, token=twitter_token, retryonratelimit = T)
@@ -126,10 +131,8 @@ charnull_set <- function(x){
 }
 
 # Text bits to search through # keywords = query words
-keywords <- paste0(c("soil health", "healthy soil", "#soilhealth", "#healthysoil", 
-                     "soil quality", "soil fertility", "#soilquality", "#soilfertility",
-                     "rangeland health","#rangelandhealth","healthy rangelands",
-                     "#healthyrangelands"), collapse = "|")
+
+keywords <- paste0(tag_list, collapse = "|")
 
 ## Store the matches as a new columns with words seprated by `;`
 twitterAPI_new <- twitterAPI_new %>%
@@ -155,3 +158,7 @@ twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 # Re-exporting new merged dataset to master csv
 write.csv(twitter_merged_new, paste(path, '/Merged_v2/', 'twitter_merged_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
 write.csv(twitter_merged_noRTnew, paste(path, '/Merged_v2/', 'twitter_merged_noRT_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+
+
+
+
