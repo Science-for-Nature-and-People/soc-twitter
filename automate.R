@@ -34,7 +34,7 @@ tag_list <- as.character(tag_file$tag_list)
 # Take tag_list and put quotes around each element for the twitterAPI search below
 q <- unname(sapply(tag_list, function(x) toString(dQuote(x))))
 
-# Searching tweets with query above
+# Searching tweets with query above (THIS CODE SEARCHES TWITTER FOR TERMS LISTED IN tag_list OVER THE LAST 6-9 DAYS)
 twitterAPI_new.prac <- search_tweets2(q, n = 100000, token=twitter_token, retryonratelimit = T)
 
 # Make it a data frame
@@ -110,12 +110,16 @@ for (i in 1:length(twitterAPI_new$country_code)){
 UID <- c((dim(twitter_merged.master)[1]+1):(dim(twitter_merged.master)[1]+dim(twitterAPI_new)[1]))
 twitterAPI_new$UID <- UID
 
+# REMOVE DUPLICATES: in twitterAPI_new based on created_at and text columns
+twitterAPI_new <- twitterAPI_new %>% 
+  distinct(created_at, text, .keep_all = TRUE)
+
 ######### JB 
-# Removing any duplicates with the same values in the five columns chosen (I did this instead of doing duplicated function due to UID column)
+# REMOVE DUPLICATES: when comparing twitterAPI_new and twitter_merged.master, 
+# with the same values in the five columns chosen (I did this instead of doing duplicated function due to UID column)
 uniqueRows <- !(do.call(paste0, twitterAPI_new[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
                   do.call(paste0, twitter_merged.master[,c("created_at", "user_id", "screen_name", "text", "source")]))
 twitterAPI_new <- twitterAPI_new[uniqueRows,]
-                  
 ######### JB
 
 # Creating new dataframe with no RTs (if error exists, restart R session and run code again)
@@ -131,7 +135,6 @@ charnull_set <- function(x){
 }
 
 # Text bits to search through # keywords = query words
-
 keywords <- paste0(tag_list, collapse = "|")
 
 ## Store the matches as a new columns with words seprated by `;`
@@ -158,7 +161,6 @@ twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 # Re-exporting new merged dataset to master csv
 write.csv(twitter_merged_new, paste(path, '/Merged_v2/', 'twitter_merged_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
 write.csv(twitter_merged_noRTnew, paste(path, '/Merged_v2/', 'twitter_merged_noRT_v2.csv', sep = ""), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
-
 
 
 
