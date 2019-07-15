@@ -1,4 +1,4 @@
-# Looking into duplicate tweets #
+# Remove duplicate tweets in RT and noRT master data frames #
 
 
 # libraries used
