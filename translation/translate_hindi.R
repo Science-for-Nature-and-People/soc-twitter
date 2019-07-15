@@ -1,59 +1,84 @@
 ################################
 ## Code for translating hindi ##
 ################################
-# the goal here was to create a .txt file of all the tweets that contain hindi, and then to translate the entire .txt file via google translate, then import back into R and replace the hindi tweets with their english translation
-# unfortunately google takes liberties with its syntax and did not comform to translating within/between delimiters ('||") so when I relayed the translated text back into a df, the tweets were misaligned...
-# not sure how to proceed from here
+# The goal is to filter out hindi tweets then translate the tweets using google translate 
+# then attach translated tweets to the hindi tweets for comparison 
 
-
+# libraries used
 library(tidyverse)
-library(stringr)
+library(xlsx)
+library(readxl)
 
-noRT <- read.csv("twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>%
+# LOCATION OF MASTER FILES
+path <- '/home/shares/soilcarbon/Twitter/'
+
+# read in data frame
+noRT <- read.csv(paste(path, '/Merged_v2/twitter_merged_noRT_v2.csv', sep = ""), stringsAsFactors = FALSE) %>%
   distinct()
 
 
-## extracting hindi texts ####
-
+# extracting only hindi text from data frame 
 hindi <- noRT %>% 
   filter(
     str_detect(text, '[\u0900-\u097F]+')
   ) %>% 
   select(text)
 
-# write this^ to a txt file to send to Steve for google translation
- write(paste(hindi$text, collapse = " || "), "hindi_tweets.txt")
+
+# export data frame to excel for translation by google (requires: library(xlsx))
+write.xlsx(hindi, file = "tweets_hi.xlsx",
+           sheetName = "tweets_hi", append = FALSE)
+
+#########################################################
+### process to translate tweets from hindi to english ###
+#########################################################
+# 1) Upload excel document to google translate (https://translate.google.com/?hl=en&tab=TT)
+# IMPORTANT: scroll to bottom of page and copy up from bottom (google does a live translation of the page)
+# 2) Copy and paste result (it is in html) into a new excel file
+# 3) Use this (https://www.extendoffice.com/documents/excel/1139-excel-unmerge-cells-and-fill.html) 
+#    resource to unmerge and duplicate the tweet numbers (I used the script module)
+# 4) Title the columns (I used numbers and text) then save excel document
+# 5) Import the long-format excel document to the working directory
 
 
+# Read in the translated text (NEED CORRECT FILE NAME, requires: library(readxl))
+hindi_translated <- as.data.frame(read_excel("tweets_hi_en.xlsx"), stringsAsFactors = FALSE)
 
+# convert from long to wide data (NOTE column names are 'number' then 'en_text')
+english <- aggregate(hindi_translated[,"en_text"], 
+                     list(hindi_translated[,"number"]), 
+                     function(x) paste0(unique(x), collapse = ""))
+names(english) <- c("number", "en_text")
 
-### Read in the translated text ###
- 
-## read.csv doesnt work b/c sep must be single character not the '||'
-# hindi_trans <- read.csv("hindi_tweets_translated.txt", sep = "||", header = FALSE, stringsAsFactors = FALSE)
+# index by 'number' in descending order 
+english$number <- as.numeric(as.character(unlist(english$number)))
+english <- english[order(english$number),]
 
+# set index to match 'number' column then drop 'number' column
+rownames(english) <- english$number
+rownames(english) <- NULL
 
-## next try readLines()
-translation <- readLines("translated_new.txt")
+# merge english and hindi  df's
+tweets_hi_en <- cbind(hindi, english) 
+names(tweets_hi_en) <- c("hi_text", "number", "en_text")
 
-#This give us a charcter value that isn't correctly separated. must recombine and then separate:
+# grab subset of noRT with just hindi tweets
+tweets_hi <- noRT %>% 
+  filter(
+    str_detect(text, '[\u0900-\u097F]+')
+  )
 
-#turn into dataframe
-trans_df <- as.data.frame(translation)
+# merge english tweets into hindi tweets
+tweets_merged <- cbind(tweets_hi, tweets_hi_en)
+tweets_translated <- tweets_merged[, c("provenance","created_at","user_id",
+                                       "screen_name","hi_text","en_text",
+                                       "source","favorite_count","retweet_count",
+                                       "hashtags","place_name","country_code",
+                                       "query","is_retweet","UID",
+                                       "country","hits")]
 
-#spread into single row
-one_row <- as.data.frame(matrix(trans_df$translation, nrow = 1, ncol = nrow(trans_df)))
-
-#combine into singe string
-one_string <- unite(one_row, 'new', 1:ncol(one_row), sep = " ")
-
-# reseparate based on '||'
-long <- separate(one_string, new, into = paste0("row", 1:nrow(hindi)), sep = '\\|\\|')
-
-# gather into tidy format
-tidy_trans <- gather(long, 'row', 'text')
-
-#compare
-
-combined_trans <- data.frame(tidy_trans$text, hindi$text, filler = 1:465)
+# Export the subset of hindi tweets with the english translation column next to hindi column
+write.csv(tweets_translated, "hindi_tweets_to_english.csv")
+  
+  
 
