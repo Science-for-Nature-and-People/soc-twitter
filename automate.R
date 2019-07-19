@@ -13,6 +13,7 @@ library(httr)
 ## DO NOT run the write.csv lines when making edits to script (make a seperate path in your own home folder on aurora)  
 
 path <- '/home/shares/soilcarbon/Twitter/' # LOCATION OF MASTER FILES
+script_dir <- dirname(sys.frame(1)$ofile) # for cron job
 
 ## Read previous data ----
 
@@ -26,7 +27,7 @@ twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_v2/twitter_merged_no
 twitter_token <- readRDS(file.path(path,'twitter_token.rds'))
 
 # Import tag_list.csv (this contains the words to be used in search query of twitter data)
-tag_file <- read.csv('tag_list.csv', stringsAsFactors = FALSE)
+tag_file <- read.csv(file.path(script_dir,'tag_list.csv'), stringsAsFactors = FALSE)
 
 # Create a list from tag_list.csv
 tag_list <- as.character(tag_file$tag_list)
