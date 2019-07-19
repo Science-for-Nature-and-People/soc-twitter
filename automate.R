@@ -23,7 +23,7 @@ twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_v2/twitter_merged_no
 ## Query the Twitter API for the latest data ----
 
 # Create token
-twitter_token <- readRDS('twitter_token.rds')
+twitter_token <- readRDS(file.path(path,'twitter_token.rds'))
 
 # Import tag_list.csv (this contains the words to be used in search query of twitter data)
 tag_file <- read.csv('tag_list.csv', stringsAsFactors = FALSE)
