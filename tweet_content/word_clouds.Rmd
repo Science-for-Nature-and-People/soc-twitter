@@ -34,8 +34,24 @@ twitter_merged <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_
 twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
 twitter_merged <- read.csv('/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv', stringsAsFactors = FALSE)
 
+
+
+#clean
+#remove numbers, twitter usernames and websites
+twitter_merged_noRT_clean <- removeNumbers(twitter_merged_noRT$text) 
+twitter_merged_noRT_clean <- gsub("@\\w+","",twitter_merged_noRT_clean)
+twitter_merged_noRT_clean <- gsub("http:\\w+","",twitter_merged_noRT_clean)
+twitter_merged_noRT$text <- twitter_merged_noRT_clean
 top_100_noRT <- twitter_merged_noRT %>% 
   arrange(-retweet_count) %>% 
+  head(100)
+
+```
+
+## top 100 based on likes
+```{r}
+top_100_noRT_likes <- twitter_merged_noRT %>% 
+  arrange(-favorite_count) %>% 
   head(100)
 ```
 
@@ -152,13 +168,21 @@ create_wordcloud(twitter_merged_noRT, "forest health")
 ```{r,echo=F,warning=F,message=F}
 create_wordcloud(top_100_noRT, "")
 ```
-  
+# top 100 based on likes
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(top_100_noRT_likes, "")
+```
   
 #### filter by: "soil"
 ```{r,echo=F,warning=F,message=F}
 create_wordcloud(top_100_noRT, "soil")
 ```
-  
+
+### top 100 based on likes filtered by "soil
+```{r,echo=F,warning=F,message=F}
+create_wordcloud(top_100_noRT_likes, "soil")
+```
+
 #### filter by: "soil health"
 ```{r,echo=F,warning=F,message=F}
 create_wordcloud(top_100_noRT, "soil health")

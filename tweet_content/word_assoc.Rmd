@@ -85,6 +85,8 @@ soil_fertility_tweets <- noRT %>%
   )
 ``` 
 
+
+
 ### Length of dataframes produced by each "category"
 it is import to keep in mind for all results (including here, in wordclouds, and bigram plots) that the number of hits for each query term varies dramatically, with "soil" terms being used far more frequently than "rangeland" or "forest" terms. For this reason, it may not be very valuable to perform this sort of analysis while looking at the most influential tweets. Nevertheless, this it seems valuable to get a feel for the different language being used within each category
 ```{r, echo = F}
@@ -174,7 +176,7 @@ rangeland_query <- noRT %>%
   )
 range_terms_wc <- prepare_text(rangeland_query, group = T, stem = T)
 ```  
-  
+
 #### caclculate percentages based relative to word counts of top 20
 ```{r, echo = F, fig.height=10, fig.width=12}
 ### the goal of these next 3 figures are to demonstrate the differences in the counts of the top 20 words from each of the above query term 'catgegories'
@@ -237,7 +239,61 @@ comparison <- ggplot(selected_pct, aes(word, percent)) +
     theme(legend.position = "none") 
 comparison
 ```
-  
+
+```{r}
+top_range$query = "rangeland"
+top_qual$query = "soil_quality"
+top_fertil$query = "soil_fertility"
+top_health$query = "soil_health"
+
+top_words <- rbind(top_range,top_qual,top_fertil, top_health)
+top_words
+```
+
+### try to use TF-IDF in this part to find out distinctive words in each group
+```{r}
+# caclculate percentages based relative to word counts of top 20
+#rearrange the four top 20 words
+
+total_n <- top_words %>%
+  group_by(query) %>%
+  summarize(total = sum(n))
+
+top_words <- left_join(top_words, total_n)
+
+top_words
+```
+
+```{r}
+top_words <- top_words %>% 
+  bind_tf_idf(word, query, n)
+top_words
+```
+
+```{r}
+top_words %>% 
+  select(-total) %>% 
+  arrange(desc(tf_idf))
+```
+```{r}
+top_words %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>%
+  group_by(query) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  ggplot(aes(word, tf_idf, fill = query)) +
+  geom_col(show.legend = FALSE) +
+    labs(x = NULL, y = "tf-idf") +
+    facet_wrap(~query, ncol = 2, scales = "free") +
+    coord_flip() +
+    theme_bw() +
+      theme(legend.position = "none") 
+
+```
+
+
+
 #### caclculate percentages based relative to total word counts of each category
 no change in trend, only in percentages
 ```{r, echo=F, fig.height=10, fig.width=12}

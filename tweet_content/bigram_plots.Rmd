@@ -21,12 +21,30 @@ source("../text_analysis_functions.R")
 # load data
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
 
-# select top 100 tweets based on their RT count
+
+# select top 100 tweets based on their likes count
+top_100_noRT_likes <- noRT %>% 
+  arrange(-favorite_count) %>% 
+  head(100)
+
+# select top 100 tweets based on the combined count
+top_100_noRT_combined <- noRT %>% 
+  arrange(-(favorite_count+retweet_count)) %>% 
+  head(100)
+```
+
+### TEST top 100 w/o numbers, usernames and website
+```{r}
+library(tm)
+library(NLP)
+noRT_clean <- removeNumbers(noRT$text)
+noRT_clean <- gsub("@\\w+","",noRT_clean)
+noRT_clean <- gsub("http:\\w+","",noRT_clean)
+noRT$text <- noRT_clean
 top_100_noRT <- noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
 ```
-
 
 ### Full dataset (noRT)
 
@@ -122,15 +140,55 @@ gram_network(biod_bigram, limit)
 ***
 ***
 
-## top 100 noRT  
-
+## top 100 noRT clean
 ```{r, echo=F, fig.width=12}
 ###full (top100)
 top_100_bigram <- create_bigram(top_100_noRT, group = T, stem = T)
 limit <- top_100_bigram$n[70]
 gram_network(top_100_bigram, limit)
 ```
-  
+
+## top 100 noRT based on likes
+
+```{r, echo=F, fig.width=12}
+###full (top100)
+top_100_bigram_likes <- create_bigram(top_100_noRT_likes, group = T, stem = T)
+limit <- top_100_bigram_likes$n[70]
+gram_network(top_100_bigram_likes, limit)
+```
+## top 100 noRT based on combined
+
+```{r, echo=F, fig.width=12}
+###full (top100)
+top_100_bigram_combined <- create_bigram(top_100_noRT_combined, group = T, stem = T)
+limit <- top_100_bigram_combined$n[70]
+gram_network(top_100_bigram_combined, limit)
+```
+
+## top 25 noRT retweets
+```{r, echo=F, fig.width=12}
+###full (top25)
+top_25_bigram_retweet <- create_bigram(top_25_noRT_retweet, group = T, stem = T)
+limit <- top_25_bigram_retweet$n[70]
+gram_network(top_25_bigram_retweet, limit)
+```
+
+## top 25 noRT likes
+```{r, echo=F, fig.width=12}
+###full (top25)
+top_25_bigram_likes <- create_bigram(top_25_noRT_likes, group = T, stem = T)
+limit <- top_25_bigram_likes$n[70]
+gram_network(top_25_bigram_likes, limit)
+```
+
+## top 25 noRT combined
+```{r, echo=F, fig.width=12}
+###full (top25)
+top_25_bigram <- create_bigram(top_25_noRT, group = T, stem = T)
+limit <- top_25_bigram$n[70]
+gram_network(top_25_bigram, limit)
+```
+
 ### filtered for "soil"
 
 ```{r, echo=F, fig.width=12}
@@ -139,7 +197,7 @@ soil_100_bigram <- create_bigram(top_100_noRT, "soil", group = T, stem = T)
 limit <- soil_100_bigram$n[70]
 gram_network(soil_100_bigram, limit)
 ```
-  
+
   ***  
   
 ### top 100 noRT (inda excluded)
