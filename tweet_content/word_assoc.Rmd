@@ -32,6 +32,12 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_
 #   filter(screen_name != "Pontifex") #remove the pope..
 ```
 
+### Filter out the outlier of Twittascope (could also be other sources)
+```{r}
+noRT <- noRT %>% 
+  filter(source != "Twittascope")
+```
+
 ```{r, include=FALSE}
 ##functions
 source("../text_analysis_functions.R")
@@ -84,7 +90,6 @@ soil_fertility_tweets <- noRT %>%
     str_detect(tolower(text), "soil fertility")
   )
 ``` 
-
 
 
 ### Length of dataframes produced by each "category"
@@ -250,7 +255,8 @@ top_words <- rbind(top_range,top_qual,top_fertil, top_health)
 top_words
 ```
 
-### try to use TF-IDF in this part to find out distinctive words in each group
+### Test
+### Try to use TF-IDF in this part to find out distinctive words in each group
 ```{r}
 # caclculate percentages based relative to word counts of top 20
 #rearrange the four top 20 words
@@ -261,6 +267,9 @@ total_n <- top_words %>%
 
 top_words <- left_join(top_words, total_n)
 
+# filter out all the search terms
+top_words <- top_words %>%
+  filter(!str_detect(word, 'rangeland|rangeland_health|#rangeland_health|soil_qual|#soil_qual|soil_fertil|#soil_fertil|soil|#soil|soil_health|#soil_health'))
 top_words
 ```
 

@@ -165,30 +165,6 @@ limit <- top_100_bigram_combined$n[70]
 gram_network(top_100_bigram_combined, limit)
 ```
 
-## top 25 noRT retweets
-```{r, echo=F, fig.width=12}
-###full (top25)
-top_25_bigram_retweet <- create_bigram(top_25_noRT_retweet, group = T, stem = T)
-limit <- top_25_bigram_retweet$n[70]
-gram_network(top_25_bigram_retweet, limit)
-```
-
-## top 25 noRT likes
-```{r, echo=F, fig.width=12}
-###full (top25)
-top_25_bigram_likes <- create_bigram(top_25_noRT_likes, group = T, stem = T)
-limit <- top_25_bigram_likes$n[70]
-gram_network(top_25_bigram_likes, limit)
-```
-
-## top 25 noRT combined
-```{r, echo=F, fig.width=12}
-###full (top25)
-top_25_bigram <- create_bigram(top_25_noRT, group = T, stem = T)
-limit <- top_25_bigram$n[70]
-gram_network(top_25_bigram, limit)
-```
-
 ### filtered for "soil"
 
 ```{r, echo=F, fig.width=12}
