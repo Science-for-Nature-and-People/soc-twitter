@@ -14,7 +14,7 @@ noRT <- read.csv(file.path(path, "twitter_merged_noRT_v2.csv"), stringsAsFactors
 viz_noRT <- noRT %>% 
   mutate(created_at = ymd_hms(created_at)) %>% # turn 'created_at' into date object
   mutate(created_at = floor_date(created_at, "day")) %>% # remove hours, minutes, seconds
-  filter(source != "Twittascope") # remove outlier (source = "Twittascope")
+  filter(source != "Twittascope") # remove outlier (spam tweets on 2019-07-06) (source = "Twittascope")
 
 # remove outlier day "2019-07-06", identified by running: CODE FOR FINDING MAX AND REMOVING
 #date = names(which.max(table(viz_noRT$created_at)))
@@ -24,7 +24,7 @@ viz_noRT <- noRT %>%
 
 
 
-####----Distribution Plots----####
+####----Plot Date Distributions----####
 
 # plot distribution of dates by DAYS OF THE WEEK
 qplot(wday(viz_noRT$created_at, label = T), data = viz_noRT, geom = "bar")
@@ -57,3 +57,17 @@ ggplot(viz_noRT, aes(month(created_at))) +
   facet_wrap(~year(created_at), scales = "free")
 
   
+
+####----Plot Missing Dates----####
+
+min_dt <- as.Date(as.POSIXct.Date(min(as.numeric(as.Date.POSIXct(ymd_hms(noRT$created_at))))))
+max_dt <- as.Date(as.POSIXct.Date(max(as.numeric(as.Date.POSIXct(ymd_hms(noRT$created_at))))))
+all_days <- seq.Date(min_dt, max_dt, by = "days")
+missing_days <- all_days[!all_days %in% as.Date(unique(noRT$created_at))]
+
+qplot(missing_days, geom="histogram", bins = length(all_days))
+
+
+
+
+
