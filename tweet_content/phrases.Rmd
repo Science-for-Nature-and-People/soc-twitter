@@ -1,0 +1,123 @@
+---
+title: "phrases"
+author: "Meilin"
+date: "7/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##### This markdown visualizes the common flow of words in tweets by using quanteda package to catch phrases. These visualizations are separated into: the full noRT dataset, tweets about soil, forest, and rangeland health, and then repeats this for the top 100 tweets (based on their RT count)
+
+```{r, include=FALSE}
+# load packages
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(SnowballC)
+source("../text_analysis_functions.R")
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+```
+
+```{r, include=FALSE}
+#clean data to remove numbers, usernames, websites and outlier
+noRT_clean <- removeNumbers(noRT$text)
+noRT_clean <- gsub("@\\w+","",noRT_clean)
+noRT_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", noRT_clean)
+noRT$text <- noRT_clean
+noRT <- noRT %>% 
+  filter(source != "Twittascope")
+```
+
+```{r, include=FALSE}
+# select top 100 tweets based on their retweet count
+# use a sample in the following code
+top_100_noRT <- noRT %>% 
+  arrange(-retweet_count) %>% 
+  head(100)
+```
+
+```{r}
+# tokenize the text, remove punctuation, symbols and stop words
+toks <- tokens(top_100_noRT$text)
+toks <- tokens(toks, remove_punct = T, remove_symbols = T)
+toks_nostop <- tokens_select(toks, pattern = stopwords('en'), selection = 'remove')
+
+# select keyword "soil" in context
+kwic(toks_nostop, pattern = "soil")
+```
+```{r}
+# select top features in top 100 noRT using dfm
+dfm_noRT <- dfm(toks_nostop)
+top_100_feat <- topfeatures(dfm_noRT, 20)
+top_100_feat
+```
+
+```{r}
+# see if selective n-gram works
+toks_neg_bigram <- tokens_compound(toks_nostop, pattern = phrase('soil *'))
+toks_neg_bigram_select <- tokens_select(toks_neg_bigram, pattern = phrase('soil_*'))
+toks_neg_bigram_select
+```
+
+```{r}
+# generate network of top 100 noRT using fcm (feature co-occurrence matrix)
+fcm_noRT <- fcm(dfm_noRT)
+feat <- names(topfeatures(fcm_noRT, 50))
+fcm_noRT_select <- fcm_select(fcm_noRT, pattern = feat)
+
+size <- log (colSums(dfm_select(dfm_noRT, feat)))
+set.seed(144)
+textplot_network(fcm_noRT_select, min_freq = 0.8, vertex_size = size/ max(size) * 3)
+
+```
+```{r}
+# IN PROGRESS -- DON'T RUN
+# try to detect different languages
+docvars(top_100_noRTm, "dummy_english") <- factor(ifelse(docvars(dfm_noRT, "lang") == "English", "English", "Not English"))
+dfm_noRT_lang <- dfm(top_100_noRT, select = "#*", groups = "dummy_english")
+set.seed(132)
+textplot_wordcloud(dfm_noRT_lang, comparison = T, max_words = 200)
+```
+```{r}
+# collocation analysis
+# detect phrases
+
+#creat tokens with the full noRT dataset
+toks_full <- tokens(noRT$text)
+toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T)
+toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('en'), selection = 'remove')
+
+tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
+                                valuetype = 'regex', 
+                                case_insensitive = FALSE, 
+                                padding = TRUE) %>% 
+  textstat_collocations(min_count = 50)
+head(tstat_col_caps, 100) %>% arrange(desc(count))
+```
+```{r}
+# select top features in whole noRT using dfm
+dfm_noRT_full <- dfm(toks_nostop_full)
+top_feat <- topfeatures(dfm_noRT_full, 20)
+top_feat
+```
+
+```{r}
+# generate network of whole noRT using fcm (feature co-occurrence matrix)
+fcm_noRT_full <- fcm(dfm_noRT_full)
+feat <- names(topfeatures(fcm_noRT_full, 50))
+fcm_noRT_select_full <- fcm_select(fcm_noRT_full, pattern = feat)
+
+size <- log (colSums(dfm_select(dfm_noRT_full, feat)))
+set.seed(144)
+textplot_network(fcm_noRT_select_full, min_freq = 0.8, vertex_size = size/ max(size) * 3)
+```
