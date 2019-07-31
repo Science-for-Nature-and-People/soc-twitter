@@ -3,6 +3,7 @@
 ####----Load Libraries and Data Set----####
 library(tidyverse)
 library(lubridate)
+library(scales)
 path <- "/home/shares/soilcarbon/Twitter/Merged_v2"
 noRT <- read.csv(file.path(path, "twitter_merged_noRT_v2.csv"), stringsAsFactors = FALSE)
 
@@ -60,14 +61,24 @@ ggplot(viz_noRT, aes(month(created_at))) +
 
 ####----Plot Missing Dates----####
 
-min_dt <- as.Date(as.POSIXct.Date(min(as.numeric(as.Date.POSIXct(ymd_hms(noRT$created_at))))))
-max_dt <- as.Date(as.POSIXct.Date(max(as.numeric(as.Date.POSIXct(ymd_hms(noRT$created_at))))))
-all_days <- seq.Date(min_dt, max_dt, by = "days")
-missing_days <- all_days[!all_days %in% as.Date(unique(noRT$created_at))]
+min_dt <- as.Date(as.POSIXct.Date(min(as.numeric(as.Date.POSIXct(ymd_hms(noRT$created_at)))))) # find first date in df
+max_dt <- as.Date(as.POSIXct.Date(max(as.numeric(as.Date.POSIXct(ymd_hms(noRT$created_at)))))) # find last date in df 
+all_days <- seq.Date(min_dt, max_dt, by = "days") # sequence of all days between min_dt and max_dt
+missing_days <- all_days[!all_days %in% as.Date(unique(noRT$created_at))] # days where tweets are missing
 
-qplot(missing_days, geom="histogram", bins = length(all_days))
+df <- data_frame(missing_days)
+ggplot(df, aes(missing_days)) +
+  geom_histogram(bins = length(all_days)) +
+  scale_x_date(breaks = date_breaks("1 month"),
+               labels = date_format("%b %y"))
 
-
-
+# Below shows that there are no missing days from the original data frame purchased from Twitter
+testing <- read_csv("/home/shares/soilcarbon/Twitter/Merged_data/twitter_merged_noRT.csv")
+test_df <- testing %>% 
+  filter(provenance != "API")
+min_dt <- as.Date(as.POSIXct.Date(min(as.numeric(as.Date.POSIXct(ymd_hms(test_df$created_at)))))) # find first date in df
+max_dt <- as.Date(as.POSIXct.Date(max(as.numeric(as.Date.POSIXct(ymd_hms(test_df$created_at)))))) # find last date in df 
+all_days <- seq.Date(min_dt, max_dt, by = "days") # sequence of all days between min_dt and max_dt
+missing_days <- all_days[!all_days %in% as.Date(unique(test_df$created_at))] # days where tweets are missing
 
 
