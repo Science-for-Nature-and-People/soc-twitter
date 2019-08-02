@@ -29,10 +29,13 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_
 ```
 
 ```{r, include=FALSE}
-#clean data to remove numbers, usernames, websites and outlier
+#clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
 noRT_clean <- removeNumbers(noRT$text)
 noRT_clean <- gsub("@\\w+","",noRT_clean)
 noRT_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", noRT_clean)
+noRT_clean <- gsub("#\\s+","", noRT_clean)
+noRT_clean <- gsub("amp", "", noRT_clean)
+noRT_clean <- gsub("[^\x01-\x7F]", "", noRT_clean)
 
 noRT$text <- noRT_clean
 noRT <- noRT %>% 
@@ -100,24 +103,21 @@ set.seed(144)
 textplot_network(fcm_noRT_select, min_freq = 0.8, vertex_size = size/ max(size) * 3)
 
 ```
-```{r}
-# IN PROGRESS -- DON'T RUN
-# try to detect different languages
-docvars(top_100_noRTm, "dummy_english") <- factor(ifelse(docvars(dfm_noRT, "lang") == "English", "English", "Not English"))
-dfm_noRT_lang <- dfm(top_100_noRT, select = "#*", groups = "dummy_english")
-set.seed(132)
-textplot_wordcloud(dfm_noRT_lang, comparison = T, max_words = 200)
-```
 
 ***
 ```{r}
 # collocation analysis
 # detect phrases
 
-#creat tokens with the full noRT dataset
+# creat tokens with the full noRT dataset
 toks_full <- tokens(noRT_no_india$text)
-toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T)
-toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('en'), selection = 'remove')
+
+# remove punctuation, symbols, numbers, and spaces
+toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
+# remove the stop words
+toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('english'), selection = 'remove')
+# covert to stem words
+toks_nostop_full <- tokens_wordstem(toks_nostop_full)
 
 tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
                                 valuetype = 'regex', 
@@ -126,7 +126,7 @@ tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]',
   textstat_collocations(min_count = 100)
   #textstat_collocations(min_count =  100, size = 3) # collocations of 3 words
 
-head(tstat_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthy soil"& collocation != "regenerative agriculture" & collocation != "soil fertility" & collocation != "soil quality")
+head(tstat_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti")
 ```
 
 
@@ -135,30 +135,34 @@ head(tstat_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "so
 toks_25 <- tokens(top_25_noRT$text)
 toks_25 <- tokens(toks_25, remove_punct = T, remove_symbols = T)
 toks_nostop_25 <- tokens_select(toks_25, pattern = stopwords('en'), selection = 'remove')
+# stem words
+toks_nostop_25 <- tokens_wordstem(toks_nostop_25)
 
 tstat_col_caps_25 <- tokens_select(toks_nostop_25, pattern = '^[A-Z]', 
                                 valuetype = 'regex', 
                                 case_insensitive = T, 
                                 padding = TRUE) %>% 
   textstat_collocations(min_count = 2)
-  #textstat_collocations(min_count =  100, size = 3) # collocations of 3 words
+  #textstat_collocations(min_count =  2, size = 3) # collocations of 3 words
 
-head(tstat_col_caps_25, 20) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthy soil"& collocation != "regenerative agriculture" & collocation != "soil fertility" & collocation != "soil quality")
+head(tstat_col_caps_25, 20) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti")
 ```
 
 ```{r}
 toks_100 <- tokens(top_100_noRT$text)
 toks_100 <- tokens(toks_100, remove_punct = T, remove_symbols = T)
 toks_nostop_100 <- tokens_select(toks_100, pattern = stopwords('en'), selection = 'remove')
+# stem words
+toks_nostop_100 <- tokens_wordstem(toks_nostop_100)
 
 tstat_col_caps_100 <- tokens_select(toks_nostop_100, pattern = '^[A-Z]', 
                                 valuetype = 'regex', 
                                 case_insensitive = T, 
                                 padding = TRUE) %>% 
   textstat_collocations(min_count = 2)
-  #textstat_collocations(min_count =  100, size = 3) # collocations of 3 words
+  #textstat_collocations(min_count =  2, size = 3) # collocations of 3 words
 
-head(tstat_col_caps_100, 50) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthy soil"& collocation != "regenerative agriculture" & collocation != "soil fertility" & collocation != "soil quality")
+head(tstat_col_caps_100, 50) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti")
 ```
 
 ```{r}
@@ -166,15 +170,17 @@ head(tstat_col_caps_100, 50) %>% arrange(desc(count)) %>% filter(collocation != 
 toks_rest <- tokens(rest_noRT$text)
 toks_rest <- tokens(toks_rest, remove_punct = T, remove_symbols = T)
 toks_nostop_rest <- tokens_select(toks_rest, pattern = stopwords('en'), selection = 'remove')
+# stem words
+toks_nostop_rest <- tokens_wordstem(toks_nostop_rest)
 
 tstat_col_caps_rest <- tokens_select(toks_nostop_rest, pattern = '^[A-Z]', 
                                 valuetype = 'regex', 
                                 case_insensitive = T, 
                                 padding = TRUE) %>% 
-  textstat_collocations(min_count = 100)
-  #textstat_collocations(min_count =  100, size = 3) # collocations of 3 words
+  #textstat_collocations(min_count = 100)
+  textstat_collocations(min_count =  100, size = 3) # collocations of 3 words
 
-head(tstat_col_caps_rest, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthy soil"& collocation != "regenerative agriculture" & collocation != "soil fertility" & collocation != "soil quality")
+head(tstat_col_caps_rest, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti")
 
 ```
 
