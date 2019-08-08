@@ -1,0 +1,159 @@
+---
+title: "Time Series"
+author: "Meilin"
+date: "8/2/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### This Markdown aims to visualize the time series of query terms/ keywords
+
+```{r, include=FALSE}
+# load packages
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(SnowballC)
+library(lubridate)
+library(ggplot2)
+source("../text_analysis_functions.R")
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+```
+
+```{r, include=FALSE}
+#clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+noRT_clean <- removeNumbers(noRT$text)
+noRT_clean <- gsub("@\\w+","",noRT_clean)
+noRT_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", noRT_clean)
+noRT_clean <- gsub("#\\s+","", noRT_clean)
+noRT_clean <- gsub("&amp", "", noRT_clean)
+noRT_clean <- gsub("[^\x01-\x7F]", "", noRT_clean)
+
+noRT$text <- noRT_clean
+noRT <- noRT %>% 
+  filter(source != "Twittascope") 
+
+# to remove the pope
+noRT <- noRT %>%
+  arrange(-retweet_count) %>%
+  filter(screen_name != "Pontifex")
+
+# to remove all india related tweets
+noRT_india <- flag_india(noRT)
+noRT_no_india <- noRT_india %>% 
+  filter(is_india == 0)
+```
+
+```{r, include=FALSE}
+# select top 25 and 100 tweets based on their retweet count
+# use a sample in the following code
+top_25_noRT <- noRT_no_india %>%
+  arrange(-retweet_count) %>%
+  head(25)
+
+top_100_noRT <- noRT_no_india %>% 
+  arrange(-retweet_count) %>% 
+  head(100)
+```
+
+```{r}
+# 
+### creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
+
+input <- top_100_noRT
+
+#### soil
+soil_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "soil"))
+#### rangeland 
+rangeland_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "rangeland"))
+#### forest 
+forest_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "forest"))
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#### soil health
+soil_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "soil health"))
+#### rangeland 
+rangeland_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "rangeland health"))
+#### forest 
+forest_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "forest health"))
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#### soil quality
+soil_quality_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "soil quality"))
+#### rangeland quality
+rangeland_quality_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "rangeland quality"))
+#### forest quality
+forest_quality_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "forest quality"))
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+### soil fertility (one of the twitter querry terms)
+soil_fertility_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), "soil fertility")
+  )
+```
+
+```{r}
+### plot time series of the query terms in top 100
+
+# select input
+#input <- top_100_noRT
+input <- top_25_noRT
+#input <- noRT_no_india
+
+# remove double quote
+# doesn't work, need to find a better way
+# as.data.frame(sapply(input$query, function(x) gsub("\"", "", x)))
+
+## use querry hits
+#split hits into seperate columns
+hit_split <- separate_rows(input, hits, sep = ";") %>% filter(!is.na(hits))
+
+# get counts of the occurence of each query word
+res_table <- hit_split %>%
+  select(hits) %>% 
+  filter(!is.na(hits)) %>% 
+  count(hits)
+
+# scatter plot to show time series
+theme_set(theme_minimal())
+ggplot(hit_split, aes(x = lubridate::date(created_at), y = hits)) + geom_point()
+
+# heat map
+base_size <- 8
+p <- ggplot(hit_split, aes(month(created_at), y = hits)) + 
+  geom_tile(aes(fill = retweet_count), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", name = "retweet count") +
+  labs(title = "Heat Map", x = "date", y = "query term") 
+  
+p + theme_grey(base_size = base_size)
+```
+```{r}
+
+```
+
