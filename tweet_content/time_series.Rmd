@@ -23,6 +23,7 @@ library(NLP)
 library(quanteda)
 library(SnowballC)
 library(lubridate)
+library(dplyr)
 library(ggplot2)
 source("../text_analysis_functions.R")
 
@@ -71,28 +72,19 @@ top_100_noRT <- noRT_no_india %>%
 ### creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
 
 input <- top_100_noRT
+#input <- noRT_no_india
 
-#### soil
-soil_tweets <- input %>% 
-  filter(
-    str_detect(tolower(text), "soil"))
-#### rangeland 
-rangeland_tweets <- input %>% 
-  filter(
-    str_detect(tolower(text), "rangeland"))
-#### forest 
-forest_tweets <- input %>% 
-  filter(
-    str_detect(tolower(text), "forest"))
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #### soil health
 soil_health_tweets <- input %>% 
   filter(
-    str_detect(tolower(text), "soil health"))
+    str_detect(tolower(text), paste(c("soil health","#soilhealth","healthy soil"), collapse = '|')))
+soil_health_tweets$hits <- "soil health"
+
 #### rangeland 
 rangeland_health_tweets <- input %>% 
   filter(
     str_detect(tolower(text), "rangeland health"))
+
 #### forest 
 forest_health_tweets <- input %>% 
   filter(
@@ -102,28 +94,33 @@ forest_health_tweets <- input %>%
 soil_quality_tweets <- input %>% 
   filter(
     str_detect(tolower(text), "soil quality"))
+soil_quality_tweets$hits <- "soil quality"
+
 #### rangeland quality
 rangeland_quality_tweets <- input %>% 
   filter(
     str_detect(tolower(text), "rangeland quality"))
+
 #### forest quality
 forest_quality_tweets <- input %>% 
   filter(
     str_detect(tolower(text), "forest quality"))
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 ### soil fertility (one of the twitter querry terms)
 soil_fertility_tweets <- input %>% 
   filter(
     str_detect(tolower(text), "soil fertility")
   )
+soil_fertility_tweets$hits <- "soil fertility"
 ```
 
 ```{r}
 ### plot time series of the query terms in top 100
 
 # select input
-#input <- top_100_noRT
-input <- top_25_noRT
+input <- top_100_noRT
+#input <- top_25_noRT
 #input <- noRT_no_india
 
 # remove double quote
@@ -142,18 +139,34 @@ res_table <- hit_split %>%
 
 # scatter plot to show time series
 theme_set(theme_minimal())
-ggplot(hit_split, aes(x = lubridate::date(created_at), y = hits)) + geom_point()
+ggplot(hit_split, aes(x = date(created_at), y = hits)) + geom_point(aes(size = retweet_count))
 
 # heat map
 base_size <- 8
-p <- ggplot(hit_split, aes(month(created_at), y = hits)) + 
+p <- ggplot(hit_split, aes(month(created_at), y = hits)) +
   geom_tile(aes(fill = retweet_count), color = "white") +
-  scale_fill_gradient(low = "white", high = "steelblue", name = "retweet count") +
-  labs(title = "Heat Map", x = "date", y = "query term") 
+  scale_fill_gradient(low = "white", high = "steelblue", name = "retweet count (log scale)", trans = 'log') +
+  labs(title = "Heat Map", x = "month", y = "query term") 
   
 p + theme_grey(base_size = base_size)
 ```
 ```{r}
+# separate by categories
+# soil health, soil quality, soil fertility, rangeland health
+
+# mutate the 4 categories in one data frame
+all.df <- soil_health_tweets %>% bind_rows(soil_quality_tweets) %>% bind_rows(soil_fertility_tweets) %>% bind_rows(rangeland_health_tweets)
+
+#split the hit terms
+hit_split.df <- separate_rows(all.df, hits, sep = ";") %>% filter(!is.na(hits))
+
+#day
+#all.df$created_at <- date(all.df$created_at)
+#month
+all.df$created_at <- month(all.df$created_at)
+
+ggplot(hit_split.df, aes(y = retweet_count, x = date(created_at), color = hits)) + geom_line() + ggtitle('time series')
+
 
 ```
 
