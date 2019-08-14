@@ -1,0 +1,109 @@
+---
+title: "decay"
+author: "Meilin"
+date: "8/14/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# load packages
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+source("../text_analysis_functions.R")
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+```
+
+```{r}
+#clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+noRT_clean <- removeNumbers(noRT$text)
+noRT_clean <- gsub("@\\w+","",noRT_clean)
+noRT_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", noRT_clean)
+noRT_clean <- gsub("#\\s+","", noRT_clean)
+noRT_clean <- gsub("&amp", "", noRT_clean)
+noRT_clean <- gsub("[^\x01-\x7F]", "", noRT_clean)
+
+noRT$text <- noRT_clean
+noRT <- noRT %>% 
+  filter(source != "Twittascope") 
+
+# to remove the pope
+noRT <- noRT %>%
+  arrange(-retweet_count) %>%
+  filter(screen_name != "Pontifex")
+
+# to remove all india related tweets
+noRT_india <- flag_india(noRT)
+noRT_no_india <- noRT_india %>% 
+  filter(is_india == 0)
+```
+
+```{r}
+#filter out tweets with hashtag
+# SHPSummit18 & #SoilSummit19
+
+input <- noRT_no_india
+SHS18 <-  input %>% 
+  filter(str_detect(tolower(hashtags), "shpsummit18"))
+SHS18$conference <- "SHS18"
+
+SHS19 <- input %>% 
+  filter(str_detect(tolower(hashtags), "soilsummit19"))
+SHS19$conference <- "SHS19"
+
+```
+
+```{r}
+# barplot to show time series on retweet counts
+ggplot(SHS18, aes(y = retweet_count, x = date(created_at), fill = conference)) + 
+  geom_bar(stat = "identity") + ggtitle('time series')
+
+ggplot(SHS19, aes(y = retweet_count, x = date(created_at), fill = conference)) + 
+  geom_bar(stat = "identity") + ggtitle('time series')
+```
+
+```{r}
+# barplot to show time series on total tweets counts
+SHS18$date <- date(SHS18$created_at)
+
+Event_18 <- data.frame(SHS18$date, SHS18$conference)
+names(Event_18) <- c("date","Conference")
+
+#count value based on week and query words
+library(plyr)
+counts.df <- ddply(Event_18, .(Event_18$date, Event_18$Conference), nrow)
+names(counts.df) <- c("Date", "Conference", "Freq")
+
+ggplot(counts.df, aes(y = Freq, x = Date, fill = Conference)) + 
+  geom_bar(stat = "identity") + ggtitle('time series 2018')
+```
+
+```{r}
+# barplot to show time series on total tweets counts
+SHS19$date <- date(SHS19$created_at)
+
+Event_19 <- data.frame(SHS19$date, SHS19$conference)
+names(Event_19) <- c("date","Conference")
+
+#count value based on week and query words
+library(plyr)
+counts.df <- ddply(Event_19, .(Event_19$date, Event_19$Conference), nrow)
+names(counts.df) <- c("Date", "Conference", "Freq")
+
+ggplot(counts.df, aes(y = Freq, x = Date, fill = Conference)) + 
+  geom_bar(stat = "identity") + ggtitle('time series 2019')
+```
