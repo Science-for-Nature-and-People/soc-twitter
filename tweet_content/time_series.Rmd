@@ -71,8 +71,8 @@ top_100_noRT <- noRT_no_india %>%
 # 
 ### creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
 
-#input <- top_100_noRT
-input <- noRT_no_india
+input <- top_100_noRT
+#input <- noRT_no_india
 
 #### soil health
 soil_health_tweets <- input %>% 
@@ -143,21 +143,24 @@ library(grid)
 
 base_size <- 8
 p_17 <- ggplot(hit_split%>% filter(created_year == 2017), aes(week(created_at), y = hits)) +
-  geom_tile(aes(fill = log(retweet_count)), color = "white") +
-  scale_fill_gradient(low = "white", high = "steelblue", name = "retweet count (log scale)", 
-                      limit = c(log(min_rt),log(max_rt))) + 
+  geom_tile(aes(fill = retweet_count), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log", 
+                      name = "retweet count (log scale)", 
+                      limit = c(min_rt,max_rt)) + 
   labs(title = "Heat Map 2017", x = "week", y = "query term") + theme_grey(base_size = base_size)
 
 p_18 <- ggplot(hit_split%>% filter(created_year == 2018), aes(week(created_at), y = hits)) +
-  geom_tile(aes(fill = log(retweet_count)), color = "white") +
-  scale_fill_gradient(low = "white", high = "steelblue", name = "retweet count (log scale)", 
-                      limit = c(log(min_rt),log(max_rt))) + 
+  geom_tile(aes(fill = retweet_count), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log",
+                      name = "retweet count (log scale)", 
+                      limit = c(min_rt,max_rt)) + 
   labs(title = "Heat Map 2018", x = "week", y = "query term") + theme_grey(base_size = base_size)
 
 p_19 <- ggplot(hit_split%>% filter(created_year == 2019), aes(week(created_at), y = hits)) +
-  geom_tile(aes(fill = log(retweet_count)), color = "white") +
-  scale_fill_gradient(low = "white", high = "steelblue", name = "retweet count (log scale)", 
-                      limit = c(log(min_rt),log(max_rt))) + 
+  geom_tile(aes(fill = retweet_count), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log",
+                      name = "retweet count (log scale)", 
+                      limit = c(min_rt,max_rt)) + 
   labs(title = "Heat Map 2019", x = "week", y = "query term") + theme_grey(base_size = base_size)
 
 p17 <- ggplotGrob(p_17)
@@ -171,25 +174,25 @@ grid.draw(heatmap_top_100)
 
 ```{r}
 # line graph and barplot
-ggplot(hit_split, aes(y = log(retweet_count), x = date(created_at), color = hits)) + 
+ggplot(hit_split, aes(y = retweet_count, x = date(created_at), color = hits)) + 
   geom_line() + ggtitle('time series')
 
-ggplot(hit_split, aes(y = log(retweet_count), x = week(created_at), fill = hits)) +
+ggplot(hit_split, aes(y = retweet_count, x = week(created_at), fill = hits)) +
   geom_bar(stat = "identity") + ggtitle('time series')
 
 library(gtable)
 library(grid)
 
 b_17 <- ggplot(hit_split %>% filter(created_year == 2017), 
-               aes(y = log(retweet_count), x = week(created_at), fill = hits)) + 
+               aes(y = retweet_count, x = week(created_at), fill = hits)) + 
         geom_bar(stat = "identity") + ggtitle('time series 2017')
 
 b_18 <- ggplot(hit_split %>% filter(created_year == 2018), 
-               aes(y = log(retweet_count), x = week(created_at), fill = hits)) + 
+               aes(y = retweet_count, x = week(created_at), fill = hits)) + 
         geom_bar(stat = "identity") + ggtitle('time series 2018')
 
 b_19 <- ggplot(hit_split %>% filter(created_year == 2019), 
-               aes(y = log(retweet_count), x = week(created_at), fill = hits)) + 
+               aes(y = retweet_count, x = week(created_at), fill = hits)) + 
         geom_bar(stat = "identity") + ggtitle('time series 2019')
 
 b17 <- ggplotGrob(b_17)
@@ -218,7 +221,7 @@ names(counts.df) <- c("Year", "Week", "Hits", "Freq")
 library(gtable)
 library(grid)
 count_17 <- ggplot(counts.df %>% filter(Year == 2017), aes(y = Freq, x = Week, fill = Hits)) + 
-  geom_bar(stat = "identity") + ggtitle('time series 2017')
+  geom_bar(stat = "identity") + ggtitle('time series 2017')  
 count_18 <- ggplot(counts.df %>% filter(Year == 2018), aes(y = Freq, x = Week, fill = Hits)) + 
   geom_bar(stat = "identity") + ggtitle('time series 2018')
 count_19 <- ggplot(counts.df %>% filter(Year == 2019), aes(y = Freq, x = Week, fill = Hits)) + 
