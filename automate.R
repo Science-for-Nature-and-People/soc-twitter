@@ -12,13 +12,13 @@ library(httr)
 
 ## DO NOT run the write.csv lines when making edits to script (make a seperate path in your own home folder on aurora)  
 
-path <- '/home/shares/soilcarbon/Twitter/Merged_v2' # LOCATION OF MASTER FILES
+path <- '/home/shares/soilcarbon/Twitter' # LOCATION OF MASTER FILES
 
 ## Read previous data ----
 
 # Master files 
-twitter_merged.master <- read.csv(file.path(path, 'twitter_merged_v2.csv'), stringsAsFactors = FALSE) 
-twitter_merged_noRT.master <- read.csv(file.path(path, 'twitter_merged_noRT_v2.csv'), stringsAsFactors = FALSE) 
+twitter_merged.master <- read.csv(file.path(path, 'Merged_v2/twitter_merged_v2.csv'), stringsAsFactors = FALSE) 
+twitter_merged_noRT.master <- read.csv(file.path(path, 'Merged_v2/twitter_merged_noRT_v2.csv'), stringsAsFactors = FALSE) 
 
 ## Query the Twitter API for the latest data ----
 
@@ -159,8 +159,8 @@ twitter_merged_new <- rbind(twitter_merged.master, twitterAPI_new)
 twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 
 # Re-exporting new merged dataset to master csv
-write.csv(twitter_merged_new, file.path(path, "twitter_merged_v2.csv"), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
-write.csv(twitter_merged_noRTnew, file.path(path, "twitter_merged_noRT_v2.csv"),  row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+write.csv(twitter_merged_new, file.path(path, "Merged_v2/twitter_merged_v2.csv"), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+write.csv(twitter_merged_noRTnew, file.path(path, "Merged_v2/twitter_merged_noRT_v2.csv"),  row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
 
 
 
