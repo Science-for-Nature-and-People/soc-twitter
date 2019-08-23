@@ -68,12 +68,14 @@ top_100_noRT <- noRT_no_india %>%
 ```
 
 ```{r}
-# 
-### creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
+# creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
 
-input <- top_100_noRT
-#input <- noRT_no_india
+# select input
+#input <- top_100_noRT
+input <- noRT_no_india
+```
 
+```{r}
 #### soil health
 soil_health_tweets <- input %>% 
   filter(
@@ -108,7 +110,7 @@ regen_agri_tweets$hits <- "regenerative agriculture"
 ```
 
 ```{r}
-### plot time series of the query terms in top 100
+### plot time series of the query terms 
 
 ## use querry hits
 #split hits into seperate columns
@@ -124,16 +126,20 @@ hit_split$created_month <- month(hit_split$created_at)
 hit_split$created_week <- week(hit_split$created_at)
 ```
 
-
+### time series based on retweet count
 ```{r}
 # scatter plot to show time series
 theme_set(theme_minimal())
-ggplot(hit_split, aes(x = date(created_at), y = hits)) + geom_point(aes(size = retweet_count))
-```
+p11 <- ggplot(hit_split, aes(x = date(created_at), y = hits)) + geom_point(aes(size = retweet_count))
 
-```{r}
+# line graph and barplot
+p21 <- ggplot(hit_split, aes(y = retweet_count, x = week(created_at), color = hits)) + 
+  geom_line() + ggtitle('time series')
+
+p31 <- ggplot(hit_split, aes(y = retweet_count, x = week(created_at), fill = hits)) +
+  geom_bar(stat = "identity") + ggtitle('time series')
+
 # heat map
-
 #find min and max of retweet count to set the limit
 min_rt = min(hit_split$retweet_count)
 max_rt = max(hit_split$retweet_count)
@@ -170,30 +176,22 @@ p19 <- ggplotGrob(p_19)
 heatmap_top_100 <- rbind(p17, p18, p19, size = "last")
 grid.newpage()
 grid.draw(heatmap_top_100)
-```
 
-```{r}
-# line graph and barplot
-ggplot(hit_split, aes(y = retweet_count, x = date(created_at), color = hits)) + 
-  geom_line() + ggtitle('time series')
-
-ggplot(hit_split, aes(y = retweet_count, x = week(created_at), fill = hits)) +
-  geom_bar(stat = "identity") + ggtitle('time series')
 
 library(gtable)
 library(grid)
 
 b_17 <- ggplot(hit_split %>% filter(created_year == 2017), 
                aes(y = retweet_count, x = week(created_at), fill = hits)) + 
-        geom_bar(stat = "identity") + ggtitle('time series 2017')
+        geom_bar(stat = "identity") + ggtitle('Retweet count time series 2017')
 
 b_18 <- ggplot(hit_split %>% filter(created_year == 2018), 
                aes(y = retweet_count, x = week(created_at), fill = hits)) + 
-        geom_bar(stat = "identity") + ggtitle('time series 2018')
+        geom_bar(stat = "identity") + ggtitle('Retweet count time series 2018')
 
 b_19 <- ggplot(hit_split %>% filter(created_year == 2019), 
                aes(y = retweet_count, x = week(created_at), fill = hits)) + 
-        geom_bar(stat = "identity") + ggtitle('time series 2019')
+        geom_bar(stat = "identity") + ggtitle('Retweet count time series 2019')
 
 b17 <- ggplotGrob(b_17)
 b18 <- ggplotGrob(b_18)
@@ -205,6 +203,7 @@ grid.draw(RT_full)
 
 ```
 
+### time series based on total tweets count
 ```{r}
 # group tweets by week and get counts
 # x is grouped week, y is counts of tweets, color coded by query words
@@ -218,22 +217,115 @@ library(plyr)
 counts.df <- ddply(group, .(group$Year, group$Week, group$Hits), nrow)
 names(counts.df) <- c("Year", "Week", "Hits", "Freq")
 
+# scatter plot to show time series
+theme_set(theme_minimal())
+p12 <- ggplot(counts.df, aes(x = Week, y = Hits)) + geom_point(aes(size = Freq))
+
+# line and bar graph
+p22 <- ggplot(counts.df, aes(y = Freq, x = Week, color = Hits)) + 
+  geom_line() + ggtitle('time series')
+
+p32 <-ggplot(counts.df, aes(y = Freq, x = Week, fill = Hits)) +
+  geom_bar(stat = "identity") + ggtitle('time series')
+
+# heat map
+#find min and max of retweet count to set the limit
+min_f = min(counts.df$Freq)
+max_f = max(counts.df$Freq)
+
+library(gtable)
+library(grid)
+
+base_size <- 8
+p_17 <- ggplot(counts.df%>% filter(Year == 2017), aes(Week, y = Hits)) +
+  geom_tile(aes(fill = Freq), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log", 
+                      name = "retweet count (log scale)", 
+                      limit = c(min_f,max_f)) + 
+  labs(title = "Heat Map 2017", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p_18 <- ggplot(counts.df%>% filter(Year == 2018), aes(Week, y = Hits)) +
+  geom_tile(aes(fill = Freq), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log",
+                      name = "retweet count (log scale)", 
+                      limit = c(min_f,max_f)) + 
+  labs(title = "Heat Map 2018", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p_19 <- ggplot(counts.df%>% filter(Year == 2019), aes(Week, y = Hits)) +
+  geom_tile(aes(fill = Freq), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log",
+                      name = "retweet count (log scale)", 
+                      limit = c(min_f,max_f)) + 
+  labs(title = "Heat Map 2019", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p17 <- ggplotGrob(p_17)
+p18 <- ggplotGrob(p_18)
+p19 <- ggplotGrob(p_19)
+
+heatmap_top_100_count <- rbind(p17, p18, p19, size = "last")
+grid.newpage()
+grid.draw(heatmap_top_100_count)
+
+# bar plot separate by years
 library(gtable)
 library(grid)
 count_17 <- ggplot(counts.df %>% filter(Year == 2017), aes(y = Freq, x = Week, fill = Hits)) + 
-  geom_bar(stat = "identity") + ggtitle('time series 2017')  
+  geom_bar(stat = "identity") + ggtitle('Total Tweet Count time series 2017')  
 count_18 <- ggplot(counts.df %>% filter(Year == 2018), aes(y = Freq, x = Week, fill = Hits)) + 
-  geom_bar(stat = "identity") + ggtitle('time series 2018')
+  geom_bar(stat = "identity") + ggtitle('Total Tweet Count time series 2018')
 count_19 <- ggplot(counts.df %>% filter(Year == 2019), aes(y = Freq, x = Week, fill = Hits)) + 
-  geom_bar(stat = "identity") + ggtitle('time series 2019')
+  geom_bar(stat = "identity") + ggtitle('Total Tweet Count time series 2019')
 
 c17 <- ggplotGrob(count_17)
 c18 <- ggplotGrob(count_18)
 c19 <- ggplotGrob(count_19)
 
-count_top_100 <- rbind(c17, c18, c19, size = "last")
+count_full<- rbind(c17, c18, c19, size = "last")
 grid.newpage()
-grid.draw(count_top_100)
+grid.draw(count_full)
+```
+```{r}
+## output multiple-figures
+
+multiplot(p11,p12,p21,p22, cols = 2)
+
+```
+```{r}
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
 ```
 
 
