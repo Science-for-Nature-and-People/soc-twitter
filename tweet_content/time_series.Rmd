@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### This Markdown aims to visualize the time series of query terms/ keywords
+### This Markdown aims to visualize the time series of query terms/ keywords in top 100 noRT and full noRT dataset based on retweet_count and total tweets count.
 
 ```{r, include=FALSE}
 # load packages
@@ -40,6 +40,7 @@ noRT_clean <- gsub("#\\s+","", noRT_clean)
 noRT_clean <- gsub("&amp", "", noRT_clean)
 noRT_clean <- gsub("[^\x01-\x7F]", "", noRT_clean)
 
+# to remove the bot
 noRT$text <- noRT_clean
 noRT <- noRT %>% 
   filter(source != "Twittascope") 
@@ -56,11 +57,8 @@ noRT_no_india <- noRT_india %>%
 ```
 
 ```{r, include=FALSE}
-# select top 25 and 100 tweets based on their retweet count
-# use a sample in the following code
-top_25_noRT <- noRT_no_india %>%
-  arrange(-retweet_count) %>%
-  head(25)
+# select top 100 tweets based on their retweet count
+# used as a sample in the following code
 
 top_100_noRT <- noRT_no_india %>% 
   arrange(-retweet_count) %>% 
@@ -68,14 +66,16 @@ top_100_noRT <- noRT_no_india %>%
 ```
 
 ```{r}
-# creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
+# select a input
 
-# select input
-#input <- top_100_noRT
-input <- noRT_no_india
+input <- top_100_noRT
+#input <- noRT_no_india
 ```
 
 ```{r}
+# creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
+# combine similar terms in hits column
+
 #### soil health
 soil_health_tweets <- input %>% 
   filter(
@@ -110,37 +110,37 @@ regen_agri_tweets$hits <- "regenerative agriculture"
 ```
 
 ```{r}
-### plot time series of the query terms 
-
-## use querry hits
-#split hits into seperate columns
+## combine dataset for terms of interest into one data frame
 df <- soil_health_tweets %>% bind_rows(soil_quality_tweets) %>% bind_rows(soil_fertility_tweets) %>% bind_rows(rangeland_health_tweets) %>% bind_rows(regen_agri_tweets)
 
+## split hits into seperate rows
 hit_split <- separate_rows(df, hits, sep = ";") %>% filter(!is.na(hits)) 
-hit_split <- hit_split %>% filter(retweet_count > 0)
 
-#split year, month, week and date data
+#split year, month, week and date data for later aggregation
 hit_split$created_at <- date(hit_split$created_at)
 hit_split$created_year <- year(hit_split$created_at)
 hit_split$created_month <- month(hit_split$created_at)
 hit_split$created_week <- week(hit_split$created_at)
 ```
 
-### time series based on retweet count
+### plot time series based on retweet_count
 ```{r}
-# scatter plot to show time series
+# Figure 1. scatter plot
 theme_set(theme_minimal())
-p11 <- ggplot(hit_split, aes(x = date(created_at), y = hits)) + geom_point(aes(size = retweet_count))
+ggplot(hit_split, aes(x = date(created_at), y = hits)) + geom_point(aes(size = retweet_count))
 
-# line graph and barplot
-p21 <- ggplot(hit_split, aes(y = retweet_count, x = week(created_at), color = hits)) + 
+# Figure 2 & 3. line graph and barplot
+ggplot(hit_split, aes(y = retweet_count, x = week(created_at), color = hits)) + 
   geom_line() + ggtitle('time series')
 
-p31 <- ggplot(hit_split, aes(y = retweet_count, x = week(created_at), fill = hits)) +
+ggplot(hit_split, aes(y = retweet_count, x = week(created_at), fill = hits)) +
   geom_bar(stat = "identity") + ggtitle('time series')
 
-# heat map
-#find min and max of retweet count to set the limit
+# Figure 4. heat map
+# add small value to 0's to avoid getting NAs in log transform
+hit_split$retweet_count[hit_split$retweet_count == 0] <- 0.00001
+
+# find min and max of retweet count to set the limit
 min_rt = min(hit_split$retweet_count)
 max_rt = max(hit_split$retweet_count)
 
@@ -173,14 +173,12 @@ p17 <- ggplotGrob(p_17)
 p18 <- ggplotGrob(p_18)
 p19 <- ggplotGrob(p_19)
 
+## combine three years data into one graph
 heatmap_top_100 <- rbind(p17, p18, p19, size = "last")
 grid.newpage()
 grid.draw(heatmap_top_100)
 
-
-library(gtable)
-library(grid)
-
+# Figure 5. bar plot separated by years
 b_17 <- ggplot(hit_split %>% filter(created_year == 2017), 
                aes(y = retweet_count, x = week(created_at), fill = hits)) + 
         geom_bar(stat = "identity") + ggtitle('Retweet count time series 2017')
@@ -203,7 +201,7 @@ grid.draw(RT_full)
 
 ```
 
-### time series based on total tweets count
+### plot time series based on total tweets count
 ```{r}
 # group tweets by week and get counts
 # x is grouped week, y is counts of tweets, color coded by query words
@@ -217,18 +215,20 @@ library(plyr)
 counts.df <- ddply(group, .(group$Year, group$Week, group$Hits), nrow)
 names(counts.df) <- c("Year", "Week", "Hits", "Freq")
 
-# scatter plot to show time series
-theme_set(theme_minimal())
-p12 <- ggplot(counts.df, aes(x = Week, y = Hits)) + geom_point(aes(size = Freq))
 
-# line and bar graph
-p22 <- ggplot(counts.df, aes(y = Freq, x = Week, color = Hits)) + 
+# Figure 1. scatter plot
+theme_set(theme_minimal())
+ggplot(counts.df, aes(x = Week, y = Hits)) + geom_point(aes(size = Freq))
+
+# Figure 2 & 3. line and bar graph
+ggplot(counts.df, aes(y = Freq, x = Week, color = Hits)) + 
   geom_line() + ggtitle('time series')
 
-p32 <-ggplot(counts.df, aes(y = Freq, x = Week, fill = Hits)) +
+ggplot(counts.df, aes(y = Freq, x = Week, fill = Hits)) +
   geom_bar(stat = "identity") + ggtitle('time series')
 
-# heat map
+
+# Figure 4. heat map
 #find min and max of retweet count to set the limit
 min_f = min(counts.df$Freq)
 max_f = max(counts.df$Freq)
@@ -266,9 +266,7 @@ heatmap_top_100_count <- rbind(p17, p18, p19, size = "last")
 grid.newpage()
 grid.draw(heatmap_top_100_count)
 
-# bar plot separate by years
-library(gtable)
-library(grid)
+# Figure 5. bar plot separate by years
 count_17 <- ggplot(counts.df %>% filter(Year == 2017), aes(y = Freq, x = Week, fill = Hits)) + 
   geom_bar(stat = "identity") + ggtitle('Total Tweet Count time series 2017')  
 count_18 <- ggplot(counts.df %>% filter(Year == 2018), aes(y = Freq, x = Week, fill = Hits)) + 
