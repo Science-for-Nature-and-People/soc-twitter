@@ -32,7 +32,8 @@ path <- '/home/shares/soilcarbon/Twitter' # LOCATION OF MASTER FILES
 twitter_merged.master <- read.csv(file.path(path, 'Merged_v2/twitter_merged_v2.csv'), stringsAsFactors = FALSE) 
 twitter_merged_noRT.master <- read.csv(file.path(path, 'Merged_v2/twitter_merged_noRT_v2.csv'), stringsAsFactors = FALSE) 
 
-
+# twitter_merged.master <- flag_india(twitter_merged.master) # one time fix
+# twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix
 
 
 ## **QUERY** TWITTER API FOR LAST 6-9 DAYS OF TWEET DATA ----
@@ -155,6 +156,14 @@ twitterAPI_new <- twitterAPI_new %>%
            tolower) %>% # all our keywords are lower case
               distinct()
 
+# Flag tweets with HINDI 
+source("text_analysis_functions.R")
+twitterAPI_new <- flag_india(twitterAPI_new)
+
+
+
+
+
 ## SEPARATE INTO RT AND NORT DATA FRAMES ----
 twitterAPI_new_noRT <- twitterAPI_new %>% 
   filter(is_retweet == FALSE)
@@ -167,7 +176,7 @@ twitterAPI_new_noRT <- twitterAPI_new %>%
 # looking through new tweets and comparing to old tweets in master data frame then
 # removing tweets from old df as to keep the most up-to-date tweets
 uniqueRows <- !(do.call(paste0, twitter_merged.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
-                  do.call(paste0, twitterAPI_new[,c("created_at", "user_id", "screen_name", "text", "source")]))
+                  do.call(paste0, twitterAPI_new[,c("created_at", "user_id", "screen_name", "text", "source"))]))
 twitter_merged.master <- twitter_merged.master[uniqueRows,]
 
 uniqueRows_noRT <- !(do.call(paste0, twitter_merged_noRT.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
