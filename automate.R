@@ -155,6 +155,10 @@ twitterAPI_new <- twitterAPI_new %>%
            tolower) %>% # all our keywords are lower case
               distinct()
 
+## SEPARATE INTO RT AND NORT DATA FRAMES ----
+twitterAPI_new_noRT <- twitterAPI_new %>% 
+  filter(is_retweet == FALSE)
+
 
 
 
@@ -166,13 +170,9 @@ uniqueRows <- !(do.call(paste0, twitter_merged.master[,c("created_at", "user_id"
                   do.call(paste0, twitterAPI_new[,c("created_at", "user_id", "screen_name", "text", "source")]))
 twitter_merged.master <- twitter_merged.master[uniqueRows,]
 
-
-
-
-
-## SEPARATE INTO RT AND NORT DATA FRAMES ----
-twitterAPI_new_noRT <- twitterAPI_new %>% 
-  filter(is_retweet == FALSE)
+uniqueRows_noRT <- !(do.call(paste0, twitter_merged_noRT.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
+                  do.call(paste0, twitterAPI_new_noRT[,c("created_at", "user_id", "screen_name", "text", "source")]))
+twitter_merged_noRT.master <- twitter_merged_noRT.master[uniqueRows_noRT,]
 
 
 
