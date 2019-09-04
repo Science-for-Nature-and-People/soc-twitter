@@ -176,7 +176,7 @@ twitterAPI_new_noRT <- twitterAPI_new %>%
 # looking through new tweets and comparing to old tweets in master data frame then
 # removing tweets from old df as to keep the most up-to-date tweets
 uniqueRows <- !(do.call(paste0, twitter_merged.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
-                  do.call(paste0, twitterAPI_new[,c("created_at", "user_id", "screen_name", "text", "source"))]))
+                  do.call(paste0, twitterAPI_new[,c("created_at", "user_id", "screen_name", "text", "source")]))
 twitter_merged.master <- twitter_merged.master[uniqueRows,]
 
 uniqueRows_noRT <- !(do.call(paste0, twitter_merged_noRT.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
