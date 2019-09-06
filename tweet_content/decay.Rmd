@@ -29,65 +29,49 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_
 RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv",stringsAsFactors = FALSE)
 ```
 
-### noRT dataset
-```{r}
-#clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
-#noRT_clean <- removeNumbers(noRT$text)
-noRT_clean <- noRT$text
-noRT_clean <- gsub("@\\w+","",noRT_clean)
-noRT_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", noRT_clean)
-noRT_clean <- gsub("#\\s+","", noRT_clean)
-noRT_clean <- gsub("&amp", "", noRT_clean)
-noRT_clean <- gsub("[^\x01-\x7F]", "", noRT_clean)
 
-noRT$text <- noRT_clean
-noRT <- noRT %>% 
+```{r, include=FALSE}
+#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+clean_data <- function(input){
+  #input_clean <- removeNumbers(input$text)
+  input_clean <- gsub("@\\w+","",input$text)
+  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
+  input_clean <- gsub("#\\s+","", input_clean)
+  input_clean <- gsub("amp", "", input_clean)
+  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
+
+  input$text <- input_clean
+  input <- input %>% 
   filter(source != "Twittascope") 
 
-# to remove the pope
-noRT <- noRT %>%
-  arrange(-retweet_count) %>%
-  filter(screen_name != "Pontifex")
+  # to remove the pope
+  input <- input %>%
+    arrange(-retweet_count) %>%
+    filter(screen_name != "Pontifex")
 
-# to remove all india related tweets
-noRT_india <- flag_india(noRT)
-noRT_no_india <- noRT_india %>% 
-  filter(is_india == 0)
+  # to remove all india related tweets
+  input_india <- flag_india(input)
+  input_no_india <- input_india %>% 
+    filter(is_india == 0) 
+  
+  return(input_no_india)
+}
 ```
 
-### RT dataset
+### noRT dataset
 ```{r}
-#clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
-#RT_clean <- removeNumbers(RT$text)
-RT_clean <- RT$text
-RT_clean <- gsub("@\\w+","",RT_clean)
-RT_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", RT_clean)
-RT_clean <- gsub("#\\s+","", RT_clean)
-RT_clean <- gsub("&amp", "", RT_clean)
-RT_clean <- gsub("[^\x01-\x7F]", "", RT_clean)
-
-RT$text <- RT_clean
-RT <- RT %>% 
-  filter(source != "Twittascope") 
-
-# to remove the pope
-RT <- RT %>%
-  arrange(-retweet_count) %>%
-  filter(screen_name != "Pontifex")
-
-# to remove all india related tweets
-RT_india <- flag_india(RT)
-RT_no_india <- RT_india %>% 
-  filter(is_india == 0)
+noRT_no_india <- clean_data(noRT)
+RT_no_india <- clean_data(RT)
 ```
 
 ### select the SHS 2019 conference
 ```{r}
-# filter out tweets with hashtag
+# select tweets with hashtag
 # #SoilSummit19
 
 input <- noRT_no_india
 
+# SoilSummit19 is used by three conferences (Soil Health Summit 19, TCM Soil Summit, Red River Soil Health Summit)
 SHS19 <- input %>% 
   filter(str_detect(tolower(text), "soilsummit19"))
 SHS19$conference <- "SHS19"
@@ -95,7 +79,10 @@ SHS19$conference <- "SHS19"
 # the five most retweeted tweets
 SHS19_top5 <- SHS19 %>% arrange(-retweet_count) %>% head(5)
 # select the RT of SHS19
-SHS19_RT <- RT %>% filter(str_detect(tolower(text), "soilsummit19")) 
+SHS19_RT <- RT_no_india %>% filter(str_detect(tolower(text), "soilsummit19"))
+SHS19_RT <- SHS19_RT %>% filter (is_retweet == TRUE)
+SHS19_RT <- SHS19_RT  %>% filter (retweet_count > 0)
+
 # select the RT of the top five
 SHS19_RT_top5 <- SHS19_RT %>% filter(retweet_count >= 8) %>% filter(is_retweet == T)
 
@@ -103,7 +90,6 @@ SHS19_RT_top5 <- SHS19_RT %>% filter(retweet_count >= 8) %>% filter(is_retweet =
 
 ```{r}
 # barplot to show time series on retweet counts
-
 ggplot(SHS19, aes(y = retweet_count, x = date(created_at), fill = conference)) + 
   geom_bar(stat = "identity") + ggtitle('Soil Health Summit 2019 Tweets')
 ```
@@ -124,84 +110,97 @@ ggplot(counts.df, aes(y = Freq, x = Date, fill = Conference)) +
   geom_bar(stat = "identity") + ggtitle('Number of Tweets on SHS 2019')
 ```
 
-### barplot to show the decay of five most retweeted tweets from 2019 conference
-```{r}
-library(plyr)
-counts.df <- ddply(SHS19_RT_top5, .(date(SHS19_RT_top5$created_at)), nrow)
-names(counts.df) <- c("Date", "Number")
-
-ggplot(counts.df, aes(y = Number, x = Date)) +
-  geom_bar(stat = "identity") + ggtitle('Decay of SHS 2019 top 5 retweets') 
-
-
-```
-
-### select the 10 most retweeted tweets overall
+### select the 5 most retweeted tweets overall
 ### across all search terms
-```{r}
-# select 10 highly retweeted tweets and plot the decay
-test <- RT_no_india %>% 
-  filter(retweet_count < 3050 & retweet_count > 280)
-
-
-#count based on retweet date
-library(plyr)
-counts.df <- ddply(test, .(date(test$created_at), test$hits), nrow)
-names(counts.df) <- c("Date", "Hits", "Number")
-counts.df <- counts.df %>% filter (Hits != "NA")
-counts.df$Hits[counts.df$Hits == "healthy soil"] <- "soil health"
-
-ggplot(counts.df, aes(y = Number, x = Date, fill = Hits)) +
-  geom_bar(stat = "identity") + ggtitle('Decay of 10 most retweeted tweets')
-
-
-```
 
 ```{r}
 # write a function to find retweet and plot decay for certain tweet based on retweet count rank
 library(plyr)
 
-find_rt <- function(rank) {
-  result_rt <- RT_no_india %>% 
-    filter(substring(RT_no_india$text, 1, 30) == substring(noRT_no_india$text[rank], 1, 30))
+find_rt <- function(rank, noRT_dataset, RT_dataset) {
+  result_rt <- RT_dataset %>% 
+    filter(substring(RT_dataset$text, 1, 30) == substring(noRT_dataset$text[rank], 1, 30))
   result.df <- ddply(result_rt, .(date(result_rt$created_at), result_rt$query), nrow)
   names(result.df) <- c("Date", "Query", "Number")
-  result.df$day_since <- result.df$Date - date(noRT_no_india$created_at[rank])
+  result.df$time_since <- result.df$Date - date(noRT_dataset$created_at[rank])
   result.df$content <- substring(result_rt$text[1], 1, 30)
-  names(result.df) <- c("Date", "Query", "Number", "Day_since", "Content")
+  names(result.df) <- c("Date", "Query", "Number", "Time_since", "Content")
   return(result.df)
 }
 ```
 
 ```{r}
 # combine the top five retweets and plot
-first <- find_rt(1)
-second <- find_rt(2)
-third <- find_rt(3)
-fourth <- find_rt(4)
-fifth <- find_rt(5)
+first <- find_rt(1, noRT_no_india, RT_no_india)
+second <- find_rt(2, noRT_no_india, RT_no_india)
+third <- find_rt(3, noRT_no_india, RT_no_india)
+fourth <- find_rt(4, noRT_no_india, RT_no_india)
+fifth <- find_rt(5, noRT_no_india, RT_no_india)
 
 top5 <- rbind(first, second, third, fourth, fifth)
-# filtering the data frame by number > 2 to avoid long tail
+# filtering the data frame by number > 10 to avoid long tail
 top5 <- top5 %>% 
-  filter(top5$Number > 2)
-ggplot(top5, aes(x = Day_since, y = Number, color = Content)) +  geom_line()
+  filter(top5$Number > 13)
+ggplot(top5, aes(x = Time_since, y = Number, color = Content)) +  geom_line()
+```
+
+```{r}
+# select one retweet and plot
+
+single_decay <- function(num) {
+  test_rt <- SHS19_RT %>% 
+    filter(substring(SHS19_RT$text, 1, 30) == substring(SHS19$text[num], 1, 30)) %>% arrange(created_at)
+  test_rt$time_since <- round(difftime(test_rt$created_at, test_rt$created_at[1], units = "hours"),0)
+  test_rt.df <- ddply(test_rt,.(test_rt$time_since, substring(test_rt$text, 1, 30)), nrow)
+  names(test_rt.df) <- c("Time", "Content", "Number")
+  #test_rt.df <- test_rt.df %>% filter(test_rt.df$Number > 5)
+  return(test_rt.df)
+}
+
+```
+
+```{r}
+rank1 <- single_decay(1)
+ggplot(rank1, aes(x = Time, y = Number)) + geom_line() + 
+  labs(x = "Time [Hours]", y = "Total Number of Retweets") +
+  ggtitle("top 1 tweet")
+
+rank2 <- single_decay(2)
+ggplot(rank2, aes(x = Time, y = Number)) + geom_line() + 
+  labs(x = "Time [Hours]", y = "Total Number of Retweets") +
+  ggtitle("top 2 tweet")
+
+rank3 <- single_decay(3)
+ggplot(rank3, aes(x = Time, y = Number)) + geom_line() + 
+  labs(x = "Time [Hours]", y = "Total Number of Retweets") +
+  ggtitle("top 3 tweet")
+
 ```
 
 
+```{r}
+SHS19_first <- head(SHS19_RT,10) %>% arrange(created_at)
+
+SHS19_first$time_since <- round(difftime(SHS19_first$created_at, SHS19_first$created_at[1], units = "hours"),0)
+SHS19_first.df <- ddply(SHS19_first, .(SHS19_first$time_since, SHS19_first$query), nrow)
+  names(SHS19_first.df) <- c("Time", "Query", "Number")
+
+ggplot(SHS19_first.df, aes(x = Time, y = Number)) + geom_point()
+```
+
+-------------------------------------------------------
 ### Network Diagram
 ```{r}
-# select a sample tweet with TOP 5 retweet
-tt <- data.frame(SHS19_RT_top5$text,SHS19_RT_top5$screen_name)
+# select input
+tt <- data.frame(SHS19_RT$text, SHS19_RT$screen_name)
 names(tt) <- c("text", "retweet_user")
-tt$author <- SHS19_top5$screen_name[match(tt$text, SHS19_top5$text)]
+tt$author <- SHS19$screen_name[match(tt$text, SHS19$text)]
 
 network <- tt %>% filter(tt$author != "NA")
 ```
 
-```{r}
 # tweet/RT user network visualization
-
+```{r}
 # generate node list
 authors <- network %>% distinct(author) 
 names(authors) <- "label"
@@ -209,10 +208,9 @@ retweet_users <- network %>% distinct(retweet_user)
 names(retweet_users) <- "label"
 
 nodes <- rbind(authors, retweet_users)
+nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
 nodes <- nodes %>% rowid_to_column("id")
-```
 
-```{r}
 # generate edge list
 library(plyr)
 per_route <- ddply(network, .(network$author, network$retweet_user), nrow)
@@ -227,38 +225,46 @@ colnames(edges)[5] <- "to"
 edges <- select(edges, from, to, weight)
 edges
 ```
+```{r}
+# interactive plot
+library(visNetwork)
+library(networkD3)
+
+graph <- graph.data.frame(edges, directed = T)
+edges$value <- edges$weight
+degree_value <- degree(graph, mode = "in")
+nodes$value <- degree_value[match(nodes$id, names(degree_value))]
+
+visNetwork(nodes, edges)
+```
 
 ```{r}
-library(network)
-routes_network <- network(edges, vertex.attr = nodes, matrix.type = "edgelist", ignore.eval = FALSE)
-plot(routes_network, vertex.cex = 2)
+# network ßdiagram with direction
+visNetwork(nodes, edges) %>% 
+  visIgraphLayout(layout = "layout_with_fr") %>% 
+  visEdges(arrows = "middle")
 ```
-```{r}
+
+# static network diagram
+```{r, fig.width= 16, fig.height= 12}
 # ggraph packages to show network diagram
 library(tidygraph)
 library(ggraph)
 
 routes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
-routes_igraph_tidy <- as_tbl_graph(routes_igraph)
 
 routes_tidy %>% 
   activate(edges) %>% 
   arrange(desc(weight))
 
 ggraph(routes_tidy, layout = "graphopt") + 
-  geom_node_point() +
+  geom_node_point(aes(size = value)) +
   geom_edge_link(aes(width = weight), alpha = 0.8) + 
   scale_edge_width(range = c(0.1, 0.5)) +
   geom_node_text(aes(label = label), label.size = 0.25, repel = TRUE) +
   labs(edge_width = "Number") +
   theme_graph()
 
-ggraph(routes_igraph, layout = "linear") + 
-  geom_edge_arc(aes(width = weight), alpha = 0.8) + 
-  scale_edge_width(range = c(0.1, 0.5)) +
- # geom_node_text(aes(label = label)) +
-  labs(edge_width = "Number") +
-  theme_graph()
 ```
 
 
