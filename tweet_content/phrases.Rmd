@@ -29,33 +29,39 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_
 ```
 
 ```{r, include=FALSE}
-#clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
-noRT_clean <- removeNumbers(noRT$text)
-noRT_clean <- gsub("@\\w+","",noRT_clean)
-noRT_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", noRT_clean)
-noRT_clean <- gsub("#\\s+","", noRT_clean)
-noRT_clean <- gsub("amp", "", noRT_clean)
-noRT_clean <- gsub("[^\x01-\x7F]", "", noRT_clean)
+#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+clean_data <- function(input){
+  input_clean <- removeNumbers(input$text)
+  input_clean <- gsub("@\\w+","",input_clean)
+  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
+  input_clean <- gsub("#\\s+","", input_clean)
+  input_clean <- gsub("amp", "", input_clean)
+  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
 
-noRT$text <- noRT_clean
-noRT <- noRT %>% 
+  input$text <- input_clean
+  input <- input %>% 
   filter(source != "Twittascope") 
 
-# to remove the pope
-noRT <- noRT %>%
-  arrange(-retweet_count) %>%
-  filter(screen_name != "Pontifex")
+  # to remove the pope
+  input <- input %>%
+    arrange(-retweet_count) %>%
+    filter(screen_name != "Pontifex")
 
-# to remove all india related tweets
-noRT_india <- flag_india(noRT)
-noRT_no_india <- noRT_india %>% 
-  filter(is_india == 0)
-
+  # to remove all india related tweets
+  input_india <- flag_india(input)
+  input_no_india <- input_india %>% 
+    filter(is_india == 0) 
+  
+  return(input_no_india)
+}
 ```
 
 ```{r, include=FALSE}
 # select top 25 and 100 tweets based on their retweet count
 # use a sample in the following code
+
+noRT_no_india <- clean_data(noRT)
+
 top_25_noRT <- noRT_no_india %>%
   arrange(-retweet_count) %>%
   head(25)
@@ -85,121 +91,142 @@ top_100_feat <- topfeatures(dfm_noRT, 20)
 top_100_feat
 ```
 
-```{r}
-# see if selective n-gram works
-toks_neg_bigram <- tokens_compound(toks_nostop, pattern = phrase('soil *'))
-toks_neg_bigram_select <- tokens_select(toks_neg_bigram, pattern = phrase('soil_*'))
-toks_neg_bigram_select
-```
-
-```{r}
-# generate network of top 100 noRT using fcm (feature co-occurrence matrix)
-fcm_noRT <- fcm(dfm_noRT)
-feat <- names(topfeatures(fcm_noRT, 50))
-fcm_noRT_select <- fcm_select(fcm_noRT, pattern = feat)
-
-size <- log (colSums(dfm_select(dfm_noRT, feat)))
-set.seed(144)
-textplot_network(fcm_noRT_select, min_freq = 0.8, vertex_size = size/ max(size) * 3)
-
-```
-
 ***
 ```{r}
 # collocation analysis
-# detect phrases
+# function detect phrases
 
-# creat tokens with the full noRT dataset
-toks_full <- tokens(noRT_no_india$text)
+# input as dataset
+# min as minimum count number limit
 
-# remove punctuation, symbols, numbers, and spaces
-toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
-# remove the stop words
-toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('english'), selection = 'remove')
-# covert to stem words
-toks_nostop_full <- tokens_wordstem(toks_nostop_full)
+phrases <- function(input, min){
+  toks_full <- tokens(input$text)
 
-tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
+  # remove punctuation, symbols, numbers, and spaces
+  toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
+  # remove the stop words
+  toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('english'), selection = 'remove')
+  # covert to stem words
+  toks_nostop_full <- tokens_wordstem(toks_nostop_full)
+
+  tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
                                 valuetype = 'regex', 
                                 case_insensitive = T, 
                                 padding = TRUE) %>% 
-  textstat_collocations(min_count = 100)
-  #textstat_collocations(min_count =  100, size = 3) # collocations of 3 words
-
-head(tstat_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti")
+  textstat_collocations(min_count = min)
+  #textstat_collocations(min_count =  100, size = 3) # to create collocations of 3 words
+  return(tstat_col_caps)
+}
 ```
 
+# detect phrases using the full noRT dataset
+```{r}
+tstat_col_caps <- phrases(noRT_no_india, 100)
+
+head(tstat_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti"& collocation != "rangeland health" & collocation != "healthi rangeland")
+```
 
 # Compare the phrases from the top 25, top 100 to the rest
 ```{r}
-toks_25 <- tokens(top_25_noRT$text)
-toks_25 <- tokens(toks_25, remove_punct = T, remove_symbols = T)
-toks_nostop_25 <- tokens_select(toks_25, pattern = stopwords('en'), selection = 'remove')
-# stem words
-toks_nostop_25 <- tokens_wordstem(toks_nostop_25)
+# top 25 noRT
+tstat_col_caps_25 <- phrases(top_25_noRT, 2)
 
-tstat_col_caps_25 <- tokens_select(toks_nostop_25, pattern = '^[A-Z]', 
-                                valuetype = 'regex', 
-                                case_insensitive = T, 
-                                padding = TRUE) %>% 
-  textstat_collocations(min_count = 2)
-  #textstat_collocations(min_count =  2, size = 3) # collocations of 3 words
-
-head(tstat_col_caps_25, 20) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti")
+head(tstat_col_caps_25, 20) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti"& collocation != "rangeland health" & collocation != "healthi rangeland")
 ```
 
 ```{r}
-toks_100 <- tokens(top_100_noRT$text)
-toks_100 <- tokens(toks_100, remove_punct = T, remove_symbols = T)
-toks_nostop_100 <- tokens_select(toks_100, pattern = stopwords('en'), selection = 'remove')
-# stem words
-toks_nostop_100 <- tokens_wordstem(toks_nostop_100)
+# top 100 noRT
+tstat_col_caps_100 <- phrases(top_100_noRT, 2)
 
-tstat_col_caps_100 <- tokens_select(toks_nostop_100, pattern = '^[A-Z]', 
-                                valuetype = 'regex', 
-                                case_insensitive = T, 
-                                padding = TRUE) %>% 
-  textstat_collocations(min_count = 2)
-  #textstat_collocations(min_count =  2, size = 3) # collocations of 3 words
-
-head(tstat_col_caps_100, 50) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti")
+head(tstat_col_caps_100, 50) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti" & collocation != "rangeland health" & collocation != "healthi rangeland")
 ```
 
 ```{r}
 # compared to the rest (exclude the top 100)
-toks_rest <- tokens(rest_noRT$text)
-toks_rest <- tokens(toks_rest, remove_punct = T, remove_symbols = T)
-toks_nostop_rest <- tokens_select(toks_rest, pattern = stopwords('en'), selection = 'remove')
-# stem words
-toks_nostop_rest <- tokens_wordstem(toks_nostop_rest)
+tstat_col_caps_rest <- phrases(rest_noRT, 100)
 
-tstat_col_caps_rest <- tokens_select(toks_nostop_rest, pattern = '^[A-Z]', 
-                                valuetype = 'regex', 
-                                case_insensitive = T, 
-                                padding = TRUE) %>% 
-  #textstat_collocations(min_count = 100)
-  textstat_collocations(min_count =  100, size = 3) # collocations of 3 words
-
-head(tstat_col_caps_rest, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti")
-
+head(tstat_col_caps_rest, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil"& collocation != "regen agricultur" & collocation != "soil fertil" & collocation != "soil qualiti"& collocation != "rangeland health" & collocation != "healthi rangeland")
 ```
 
 ***
+---------------------------------------------
+# Break out the common phrases by search term
 
 ```{r}
-# select top features in whole noRT using dfm
-dfm_noRT_full <- dfm(toks_nostop_full)
-top_feat <- topfeatures(dfm_noRT_full, 20)
-top_feat
+### creating dataset for each seach term
+#### soil health
+input <- noRT_no_india
+
+soil_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil health","#soilhealth","healthy soil","#healthysoil"), collapse = '|')))
+soil_health_tweets$hits <- "soil health"
+
+#### soil quality
+soil_quality_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil quality","#soilquality"),collapse = '|')))
+soil_quality_tweets$hits <- "soil quality"
+
+### soil fertility
+soil_fertility_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil fertility","#soilfertility"),collapse = '|')))
+soil_fertility_tweets$hits <- "soil fertility"
+
+#### rangeland health
+rangeland_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("rangeland health","#rangelandhealth","healthy rangelands", "#healthyrangelands"),
+                                      collapse = '|')))
+rangeland_health_tweets$hits <- "rangeland health"
+
+#### regenerative agriculture
+regen_agri_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("regenerative agriculture","#regenerativeagriculture"), collapse = '|')))
+regen_agri_tweets$hits <- "regenerative agriculture"
+
 ```
 
 ```{r}
-# generate network of whole noRT using fcm (feature co-occurrence matrix)
-fcm_noRT_full <- fcm(dfm_noRT_full)
-feat <- names(topfeatures(fcm_noRT_full, 50))
-fcm_noRT_select_full <- fcm_select(fcm_noRT_full, pattern = feat)
+# detect phrases based on search term
+# soil health | soil quality | soil fertility | rangeland health | regenerative agriculture
+# creat tokens with the search term dataset
 
-size <- log (colSums(dfm_select(dfm_noRT_full, feat)))
-set.seed(144)
-textplot_network(fcm_noRT_select_full, min_freq = 0.8, vertex_size = size/ max(size) * 3)
+# soil health
+
+soil_health_col_caps <- phrases(soil_health_tweets, 100)
+
+head(soil_health_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil health" & collocation != "healthi soil")
+
+```
+```{r}
+# soil quality
+
+soil_quality_col_caps <- phrases(soil_quality_tweets, 20)
+
+head(soil_quality_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil qualiti")
+```
+```{r}
+# soil fertility
+
+soil_fertility_col_caps <- phrases(soil_fertility_tweets, 20)
+
+head(soil_fertility_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "soil fertil")
+```
+```{r}
+# rangeland health
+
+range_health_col_caps <- phrases(rangeland_health_tweets, 2)
+
+head(range_health_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "rangeland health" & collocation != "healthi rangeland")
+```
+
+```{r}
+# regenerative agriculture
+
+regen_agri_col_caps <- phrases(regen_agri_tweets, 50)
+
+head(regen_agri_col_caps, 100) %>% arrange(desc(count)) %>% filter(collocation != "regen agricultur")
 ```
