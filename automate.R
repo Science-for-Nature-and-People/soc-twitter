@@ -15,6 +15,7 @@ library(jsonlite)
 library(streamR)
 library(httr)
 
+source("text_analysis_functions.R")
 
 
 
@@ -32,8 +33,8 @@ path <- '/home/shares/soilcarbon/Twitter' # LOCATION OF MASTER FILES
 twitter_merged.master <- read.csv(file.path(path, 'Merged_v2/twitter_merged_v2.csv'), stringsAsFactors = FALSE) 
 twitter_merged_noRT.master <- read.csv(file.path(path, 'Merged_v2/twitter_merged_noRT_v2.csv'), stringsAsFactors = FALSE) 
 
-# twitter_merged.master <- flag_india(twitter_merged.master) # one time fix
-# twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix
+# twitter_merged.master <- flag_india(twitter_merged.master) # one time fix (used 2019/09/06)
+# twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix (used 2019/09/06)
 
 
 ## **QUERY** TWITTER API FOR LAST 6-9 DAYS OF TWEET DATA ----
@@ -157,7 +158,6 @@ twitterAPI_new <- twitterAPI_new %>%
               distinct()
 
 # Flag tweets with HINDI 
-source("text_analysis_functions.R")
 twitterAPI_new <- flag_india(twitterAPI_new)
 
 
