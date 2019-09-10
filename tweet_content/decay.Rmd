@@ -74,18 +74,19 @@ input <- noRT_no_india
 # SoilSummit19 is used by three conferences (Soil Health Summit 19, TCM Soil Summit, Red River Soil Health Summit)
 SHS19 <- input %>% 
   filter(str_detect(tolower(text), "soilsummit19"))
-SHS19$conference <- "SHS19"
+SHS19 <- SHS19 %>% filter(date(SHS19$created_at) < "2019-01-25")
 
-# the five most retweeted tweets
-SHS19_top5 <- SHS19 %>% arrange(-retweet_count) %>% head(5)
+SHS19$conference <- "SHS19"
+# select the noRT with retweet count > 0
+SHS19_n <- SHS19 %>% filter(retweet_count > 1)
+
+
 # select the RT of SHS19
 SHS19_RT <- RT_no_india %>% filter(str_detect(tolower(text), "soilsummit19"))
 SHS19_RT <- SHS19_RT %>% filter (is_retweet == TRUE)
-SHS19_RT <- SHS19_RT  %>% filter (retweet_count > 0)
+SHS19_RT <- SHS19_RT  %>% filter (retweet_count > 1)
 
-# select the RT of the top five
-SHS19_RT_top5 <- SHS19_RT %>% filter(retweet_count >= 8) %>% filter(is_retweet == T)
-
+SHS19_RT <- SHS19_RT %>% filter(date(SHS19_RT$created_at) < "2019-02-11")
 ```
 
 ```{r}
@@ -110,8 +111,7 @@ ggplot(counts.df, aes(y = Freq, x = Date, fill = Conference)) +
   geom_bar(stat = "identity") + ggtitle('Number of Tweets on SHS 2019')
 ```
 
-### select the 5 most retweeted tweets overall
-### across all search terms
+### select the retweeted tweets during SHS19 conference
 
 ```{r}
 # write a function to find retweet and plot decay for certain tweet based on retweet count rank
@@ -122,7 +122,10 @@ find_rt <- function(rank, noRT_dataset, RT_dataset) {
     filter(substring(RT_dataset$text, 1, 30) == substring(noRT_dataset$text[rank], 1, 30))
   result.df <- ddply(result_rt, .(date(result_rt$created_at), result_rt$query), nrow)
   names(result.df) <- c("Date", "Query", "Number")
-  result.df$time_since <- result.df$Date - date(noRT_dataset$created_at[rank])
+  result.df <- result.df %>% arrange (result.df$Date)
+  value <- result.df$Date - date(noRT_dataset$created_at[rank])
+  if(value > 0){result.df$time_since =  value}
+  else{result.df$time_since = result.df$Date - result.df$Date[1]}
   result.df$content <- substring(result_rt$text[1], 1, 30)
   names(result.df) <- c("Date", "Query", "Number", "Time_since", "Content")
   return(result.df)
@@ -130,63 +133,24 @@ find_rt <- function(rank, noRT_dataset, RT_dataset) {
 ```
 
 ```{r}
-# combine the top five retweets and plot
-first <- find_rt(1, noRT_no_india, RT_no_india)
-second <- find_rt(2, noRT_no_india, RT_no_india)
-third <- find_rt(3, noRT_no_india, RT_no_india)
-fourth <- find_rt(4, noRT_no_india, RT_no_india)
-fifth <- find_rt(5, noRT_no_india, RT_no_india)
+# find all retweet decay for SHS19
+test <- find_rt(1, SHS19_n, SHS19_RT)
+test$Cat <- 1
+g <- ggplot() + geom_line(data = test, aes(x = Time_since, y = Number)) + xlim(0,3) + 
+  xlab("Time Since (days)") + ylab("Number of tweets")
 
-top5 <- rbind(first, second, third, fourth, fifth)
-# filtering the data frame by number > 10 to avoid long tail
-top5 <- top5 %>% 
-  filter(top5$Number > 13)
-ggplot(top5, aes(x = Time_since, y = Number, color = Content)) +  geom_line()
-```
-
-```{r}
-# select one retweet and plot
-
-single_decay <- function(num) {
-  test_rt <- SHS19_RT %>% 
-    filter(substring(SHS19_RT$text, 1, 30) == substring(SHS19$text[num], 1, 30)) %>% arrange(created_at)
-  test_rt$time_since <- round(difftime(test_rt$created_at, test_rt$created_at[1], units = "hours"),0)
-  test_rt.df <- ddply(test_rt,.(test_rt$time_since, substring(test_rt$text, 1, 30)), nrow)
-  names(test_rt.df) <- c("Time", "Content", "Number")
-  #test_rt.df <- test_rt.df %>% filter(test_rt.df$Number > 5)
-  return(test_rt.df)
+i <- 2
+while(i < nrow(SHS19_n)){
+  tmp <- find_rt(i, SHS19_n, SHS19_RT)
+  tmp$Cat <- i
+  g <- g + geom_line(data = tmp, aes(x = Time_since, y = Number)) + xlim(0,3)
+  test <- rbind(test, tmp)
+  i = i + 1
 }
 
+g
 ```
 
-```{r}
-rank1 <- single_decay(1)
-ggplot(rank1, aes(x = Time, y = Number)) + geom_line() + 
-  labs(x = "Time [Hours]", y = "Total Number of Retweets") +
-  ggtitle("top 1 tweet")
-
-rank2 <- single_decay(2)
-ggplot(rank2, aes(x = Time, y = Number)) + geom_line() + 
-  labs(x = "Time [Hours]", y = "Total Number of Retweets") +
-  ggtitle("top 2 tweet")
-
-rank3 <- single_decay(3)
-ggplot(rank3, aes(x = Time, y = Number)) + geom_line() + 
-  labs(x = "Time [Hours]", y = "Total Number of Retweets") +
-  ggtitle("top 3 tweet")
-
-```
-
-
-```{r}
-SHS19_first <- head(SHS19_RT,10) %>% arrange(created_at)
-
-SHS19_first$time_since <- round(difftime(SHS19_first$created_at, SHS19_first$created_at[1], units = "hours"),0)
-SHS19_first.df <- ddply(SHS19_first, .(SHS19_first$time_since, SHS19_first$query), nrow)
-  names(SHS19_first.df) <- c("Time", "Query", "Number")
-
-ggplot(SHS19_first.df, aes(x = Time, y = Number)) + geom_point()
-```
 
 -------------------------------------------------------
 ### Network Diagram
@@ -266,6 +230,7 @@ ggraph(routes_tidy, layout = "graphopt") +
   theme_graph()
 
 ```
+
 
 
 
