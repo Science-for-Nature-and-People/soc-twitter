@@ -77,7 +77,7 @@ SHS19 <- input %>%
 SHS19 <- SHS19 %>% filter(date(SHS19$created_at) < "2019-01-25")
 
 SHS19$conference <- "SHS19"
-# select the noRT with retweet count > 0
+# select the noRT with retweet count > 1
 SHS19_n <- SHS19 %>% filter(retweet_count > 1)
 
 
@@ -123,14 +123,13 @@ find_rt <- function(rank, noRT_dataset, RT_dataset) {
   result.df <- ddply(result_rt, .(date(result_rt$created_at), result_rt$query), nrow)
   names(result.df) <- c("Date", "Query", "Number")
   result.df <- result.df %>% arrange (result.df$Date)
-  value <- result.df$Date - date(noRT_dataset$created_at[rank])
-  if(value > 0){result.df$time_since =  value}
-  else{result.df$time_since = result.df$Date - result.df$Date[1]}
+  result.df$time_since <- result.df$Date - date(noRT_dataset$created_at[rank])
   result.df$content <- substring(result_rt$text[1], 1, 30)
   names(result.df) <- c("Date", "Query", "Number", "Time_since", "Content")
   return(result.df)
 }
 ```
+
 
 ```{r}
 # find all retweet decay for SHS19
@@ -148,7 +147,7 @@ while(i < nrow(SHS19_n)){
   i = i + 1
 }
 
-g
+g + ggtitle("Retweet decay during SHS 2019")
 ```
 
 
@@ -156,10 +155,13 @@ g
 ### Network Diagram
 ```{r}
 # select input
+# limiting the tweets for retweet_count > 5
+SHS19_RT <- SHS19_RT %>% filter(SHS19_RT$retweet_count > 5)
 tt <- data.frame(SHS19_RT$text, SHS19_RT$screen_name)
 names(tt) <- c("text", "retweet_user")
 tt$author <- SHS19$screen_name[match(tt$text, SHS19$text)]
 
+# filter out the ones w/o authors
 network <- tt %>% filter(tt$author != "NA")
 ```
 
@@ -190,7 +192,7 @@ edges <- select(edges, from, to, weight)
 edges
 ```
 ```{r}
-# interactive plot
+# interactive diagram
 library(visNetwork)
 library(networkD3)
 
@@ -203,7 +205,7 @@ visNetwork(nodes, edges)
 ```
 
 ```{r}
-# network ßdiagram with direction
+# interactive network diagram with direction
 visNetwork(nodes, edges) %>% 
   visIgraphLayout(layout = "layout_with_fr") %>% 
   visEdges(arrows = "middle")
