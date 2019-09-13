@@ -9,6 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+### This Markdown aims to visualize the decay of retweets and plot interactive/static network diagrams of users during Soil Health Summit 2019 conference.
+
 ```{r}
 # load packages
 library(tidyverse)
@@ -74,6 +77,7 @@ input <- noRT_no_india
 # SoilSummit19 is used by three conferences (Soil Health Summit 19, TCM Soil Summit, Red River Soil Health Summit)
 SHS19 <- input %>% 
   filter(str_detect(tolower(text), "soilsummit19"))
+# to remove possible tweets from two other conferences also using this hashtag
 SHS19 <- SHS19 %>% filter(date(SHS19$created_at) < "2019-01-25")
 
 SHS19$conference <- "SHS19"
@@ -86,6 +90,7 @@ SHS19_RT <- RT_no_india %>% filter(str_detect(tolower(text), "soilsummit19"))
 SHS19_RT <- SHS19_RT %>% filter (is_retweet == TRUE)
 SHS19_RT <- SHS19_RT  %>% filter (retweet_count > 1)
 
+# to remove possible RT from two other conferences also using this hashtag
 SHS19_RT <- SHS19_RT %>% filter(date(SHS19_RT$created_at) < "2019-02-11")
 ```
 
@@ -129,7 +134,6 @@ find_rt <- function(rank, noRT_dataset, RT_dataset) {
   return(result.df)
 }
 ```
-
 
 ```{r}
 # find all retweet decay for SHS19
