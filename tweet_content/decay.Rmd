@@ -120,14 +120,17 @@ ggplot(counts.df, aes(y = Freq, x = Date, fill = Conference)) +
 
 ```{r}
 # write a function to find retweet and plot decay for certain tweet based on retweet count rank
+
 library(plyr)
 
 find_rt <- function(rank, noRT_dataset, RT_dataset) {
   result_rt <- RT_dataset %>% 
     filter(substring(RT_dataset$text, 1, 30) == substring(noRT_dataset$text[rank], 1, 30))
+  # aggregate tweets by date
   result.df <- ddply(result_rt, .(date(result_rt$created_at), result_rt$query), nrow)
   names(result.df) <- c("Date", "Query", "Number")
   result.df <- result.df %>% arrange (result.df$Date)
+  # calculate day_since based on the original tweet (noRT) date
   result.df$time_since <- result.df$Date - date(noRT_dataset$created_at[rank])
   result.df$content <- substring(result_rt$text[1], 1, 30)
   names(result.df) <- c("Date", "Query", "Number", "Time_since", "Content")
@@ -138,14 +141,16 @@ find_rt <- function(rank, noRT_dataset, RT_dataset) {
 ```{r}
 # find all retweet decay for SHS19
 test <- find_rt(1, SHS19_n, SHS19_RT)
-test$Cat <- 1
+
+#plot the first tweet
 g <- ggplot() + geom_line(data = test, aes(x = Time_since, y = Number)) + xlim(0,3) + 
   xlab("Time Since (days)") + ylab("Number of tweets")
 
+# a loop to find all retweets for SHS19 tweets and plot decay
 i <- 2
 while(i < nrow(SHS19_n)){
   tmp <- find_rt(i, SHS19_n, SHS19_RT)
-  tmp$Cat <- i
+  # plot a line for retweet decay in each loop 
   g <- g + geom_line(data = tmp, aes(x = Time_since, y = Number)) + xlim(0,3)
   test <- rbind(test, tmp)
   i = i + 1
