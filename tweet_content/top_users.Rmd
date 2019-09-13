@@ -9,16 +9,24 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### This Markdown aims to create a list of top 500 users based on the number of total retweets of all their tweets.
+
 ```{r, include=FALSE}
 # load packages
 library(tidyverse)
 library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(SnowballC)
 library(dplyr)
 source("../text_analysis_functions.R")
 
 # load data
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
-RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv",stringsAsFactors = FALSE)
 ```
 
 ```{r, include=FALSE}
@@ -49,17 +57,12 @@ clean_data <- function(input){
 }
 ```
 
+### Create a list of top 500 users in terms of num of total retweets of all their tweets
 ```{r, include=FALSE}
 # data cleaning
 noRT_no_india <- clean_data(noRT)
-RT_no_india <- clean_data(RT)
 
-# to remove unrelated retweets
-RT_no_india <- RT_no_india %>% filter(retweet_count <= 3023)
-```
 
-### Create a list of top 500 users in terms of num of total retweets of all their tweets
-```{r}
 # create a list with username, text and retweet_count
 user.df <- noRT_no_india %>% select(screen_name, text, retweet_count)
 user.df$text <- substring(user.df$text, 1, 30)
