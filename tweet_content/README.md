@@ -27,7 +27,7 @@ The three .Rmd files in this folder are a first attempt at visuallzing the conte
 
 * [phrases](https://github.com/meilinshi/soc-twitter/blob/time_series/tweet_content/phrases.Rmd) extracts phrases from full noRT/ top 25 noRT/ top 100 noRT; as well as breaking out phrases by search terms. 
 
-* [decay](https://github.com/meilinshi/soc-twitter/blob/time_series/tweet_content/decay.Rmd) visualizes the decay of tweets and interactive/static network diagrams of users during Soil Health Summit 2019.
+* [decay](decay.Rmd) visualizes the decay of tweets and interactive/static network diagrams of users during Soil Health Summit 2019.
  ***
  
 The code in each of these .Rmd's relies on functions that are stored and documented in [text_analysis_functions.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/text_analysis_functions.R)
