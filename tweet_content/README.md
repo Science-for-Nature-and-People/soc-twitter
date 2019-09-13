@@ -21,8 +21,13 @@ The three .Rmd files in this folder are a first attempt at visuallzing the conte
       
 * [word_clouds](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/tweet_content/word_clouds.Rmd) creates wordclouds for the tweets within these same ^ categories 
 
-* [top_users](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/tweet_content/top_users.Rmd) creates a list of top 500 users based on the total number of retweets of their tweets.
+* top_users creates a list of top 500 users based on the total number of retweets of their tweets.
 
+* time_series visualizes time series of query terms in top 100 noRT and full noRT datasets based on retweet_count and total tweets count via scatter plot, line graph, bar graph and heat map.
+
+* phrases extracts phrases from full noRT/ top 25 noRT/ top 100 noRT; as well as breaking out phrases by search terms. 
+
+* decay visualizes the decay of tweets and interactive/static network diagrams of users during Soil Health Summit 2019.
  ***
  
 The code in each of these .Rmd's relies on functions that are stored and documented in [text_analysis_functions.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/text_analysis_functions.R)
