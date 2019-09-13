@@ -30,6 +30,7 @@ The three .Rmd files in this folder are a first attempt at visuallzing the conte
 * [phrases](phrases.Rmd):
   - extract phrases from full noRT/ top 25 noRT/ top 100 noRT
   - breaking out phrases by search terms
+  - Future work: see if "improv" stemmed from improve, improving, improves .etc, can be combined with "improve" stemmed from improvement.
 
 * [decay](decay.Rmd) visualizes the decay of tweets and interactive/static network diagrams of users during Soil Health Summit 2019.
  ***
