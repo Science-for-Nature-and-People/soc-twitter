@@ -10,10 +10,10 @@ library(xlsx)
 library(readxl)
 
 # LOCATION OF MASTER FILES
-path <- '/home/shares/soilcarbon/Twitter/'
+path <- '/home/shares/soilcarbon/Twitter/Merged_v2'
 
 # read in data frame
-noRT <- read.csv(paste(path, '/Merged_v2/twitter_merged_noRT_v2.csv', sep = ""), stringsAsFactors = FALSE) %>%
+noRT <- read.csv(file.path(path, 'twitter_merged_noRT_v2.csv'), stringsAsFactors = FALSE) %>%
   distinct()
 
 
