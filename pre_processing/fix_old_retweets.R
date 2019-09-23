@@ -45,7 +45,9 @@ twitter_merged_v3 <- old %>%
   ungroup() %>% 
   select(-short_text, -n)
 
+twitter_merged_noRT_v3 <- twitter_merged_v3 %>% 
+  filter(is_retweet == FALSE)
 
 # write out final data frame in Merged_v3 directory
 write.csv(twitter_merged_v3, paste(path, '/Merged_v3/', 'twitter_merged_v3.csv', sep = ""), row.names = FALSE)
-
+write.csv(twitter_merged_noRT_v3, paste(path, '/Merged_v3/', 'twitter_merged_noRT_v3.csv', sep = ""), row.names = FALSE)
