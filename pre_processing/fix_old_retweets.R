@@ -10,7 +10,7 @@ library(lubridate)
 path <- '/home/shares/soilcarbon/Twitter' # LOCATION OF MASTER FILES
 twitter_master <- read.csv(file.path(path, 'Merged_v2/twitter_merged_v2.csv'), stringsAsFactors = FALSE) 
 
-#SPLIT DFs into archive where is_retweet = NA and newer where is_retweet = T or F
+#SPLIT MASTER DF into archive where is_retweet = NA and newer where is_retweet = T or F
 # Flag retweets in master data frame that came from archived (purchased) data (2017-04-01 to 2017-10-10)
 twitter_archive <- twitter_master %>% 
   mutate(created_at = ymd_hms(created_at)) %>% 
@@ -25,8 +25,10 @@ twitter_newer <- twitter_master %>%
 
 twitter_merged <- rbind(twitter_archive, twitter_newer)
 
+# SLIT MSATER DF into old retweet format (has "RT @xxxx:") and new rewtweet format (same as orginal tweet)
 # Make DF that first drops "RT @xxxx:" then groups by first 100 characters of tweets
-old <- twitter_merged %>% 
+old_RT_format <- twitter_merged %>% 
+  filter(str_detect(text, "^RT @\\w+:")) %>% 
   # another filter start with and end with 
   mutate(text = str_replace_all(text, "^RT @\\w+:", "") %>% str_trim()) %>% 
   mutate(short_text = str_sub(text, 1, 100)) %>% 
@@ -34,16 +36,21 @@ old <- twitter_merged %>%
   add_tally() %>% 
   arrange(desc(text))
 
+new_RT_format <- twitter_merged %>% 
+  filter(!(str_detect(text, "^RT @\\w+:")))
+
 # temp DF that takes the first (which should put the longest tweet (original tweet) first)
-temp <- old %>% 
+temp <- old_RT_format %>% 
   slice(1)
 
-# Make final DF that takes the original tweet and replaces the old retweet text  
-twitter_merged_v3 <- old %>%
+# Make final DF that takes the original tweet and replaces the old_RT_format retweet text  
+old_RT_format <- old_RT_format %>%
   select(short_text) %>% 
   left_join(temp, "short_text") %>% 
   ungroup() %>% 
   select(-short_text, -n)
+
+twitter_merged_v3 <- rbind(old_RT_format, new_RT_format)
 
 twitter_merged_noRT_v3 <- twitter_merged_v3 %>% 
   filter(is_retweet == FALSE)
