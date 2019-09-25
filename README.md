@@ -32,8 +32,8 @@ For the archive data:
 For the data collected via Twitter API:
 
 - Main: [automate.R](automate.R) 
-  - saves two files: 
-  (1) raw data from Twitter API in .csv formatsaved in directory /home/shares/soilcarbon/Twitter/API_csv/ 
+  - saves two files:  
+  (1) raw data from Twitter API in .csv format saved in directory /home/shares/soilcarbon/Twitter/API_csv/   
   (2) writes over previous /home/shares/soilcarbon/Twitter/Merged_v3/ (master files) cleaning and standardizing to enable merge
   - runs twice a week collecting the last 6-9 days of twitter data based on query words from [tag_list.csv](tag_list.csv)
   
