@@ -13,14 +13,12 @@ twitter_master <- read.csv(file.path(path, 'Merged_v2/twitter_merged_v2.csv'), s
 #SPLIT MASTER DF into archive where is_retweet = NA and newer where is_retweet = T or F
 # Flag retweets in master data frame that came from archived (purchased) data (2017-04-01 to 2017-10-10)
 twitter_archive <- twitter_master %>% 
-  mutate(created_at = ymd_hms(created_at)) %>% 
-  mutate(created_at = round_date(created_at, unit = "day")) %>% 
+  mutate(created_at = ymd_hms(created_at)) %>%  
   filter(is.na(is_retweet)) %>% 
   mutate(is_retweet = str_detect(text, "^RT @\\w+:"))
 
 twitter_newer <- twitter_master %>% 
   mutate(created_at = ymd_hms(created_at)) %>% 
-  mutate(created_at = round_date(created_at, unit = "day")) %>% 
   filter(!is.na(is_retweet))
 
 twitter_merged <- rbind(twitter_archive, twitter_newer)

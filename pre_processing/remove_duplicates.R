@@ -16,12 +16,11 @@ RT_dups <- read.csv(paste(path, '/Merged_v3/twitter_merged_v3.csv', sep = ""), s
 noRT_dups <- read.csv(paste(path, '/Merged_v3/twitter_merged_noRT_v3.csv', sep = ""), stringsAsFactors = FALSE)
 
 
-# remove duplicates based on 'created_at' and 'text' columns
+# remove duplicates based on have identical variables listed below
 RT <- RT_dups %>% 
-  distinct(created_at, text, .keep_all = TRUE)
+  distinct(created_at, user_id, screen_name, text, source, .keep_all = TRUE)
 noRT <- noRT_dups %>% 
-  distinct(created_at, text, .keep_all = TRUE)
-
+  distinct(created_at, user_id, screen_name, text, source, .keep_all = TRUE)
 
 # write out data frames 
 write.csv(RT, paste(path, '/Merged_v3/', 'twitter_merged_v3.csv', sep = ""), row.names = FALSE)
