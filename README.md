@@ -17,7 +17,7 @@ Two different data sources are used:
      There have been multiple "versions" of data, current code should be run on the latest version (ie. change code and directory names to v3):  
      - V1 "Merged_data":  
      - V2 "Merged_v2":  
-     - V3 "Merged_v3": this fixed issue where archive data did not have *is_retweet* flagged and replaced old retweets where usernames were present with the original tweets, see: [fix_old_retweets.r](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/pre_processing/fix_old_retweets.R)  
+     - V3 "Merged_v3": this fixed issue where archive data did not have *is_retweet* flagged and replaced old retweets where usernames were present with the original tweets, see: [fix_old_retweets.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/pre_processing/fix_old_retweets.R)  
         
 
 For the archive data:
