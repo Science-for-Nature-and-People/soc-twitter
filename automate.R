@@ -23,7 +23,11 @@ library(httr)
 ## CONSTANTS ----
 
 # path to the master files
-path <- '/home/shares/soilcarbon/Twitter/' # LOCATION OF MASTER FILES
+path_shared <- '/home/shares/soilcarbon/Twitter/' # Location of the shared folder on aurora
+
+# master files
+masster_data <- "Merged_v3/twitter_merged_v3.csv"
+masster_data_noRT <-"/Merged_v3/twitter_merged_noRT_v3.csv"
 
 # Get the path to folder for cron job
 args <- commandArgs(trailingOnly = TRUE)
@@ -42,12 +46,11 @@ source(file.path(full_path, "text_analysis_functions.R"))
 
 
 
-
 ## READ PREVIOUS (MASTER) DATA ----
 
 # Master files 
-twitter_merged.master <- read.csv(paste(path, '/Merged_v3/twitter_merged_v3.csv', sep = ""), stringsAsFactors = FALSE) 
-twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_v3/twitter_merged_noRT_v3.csv', sep = ""), stringsAsFactors = FALSE) 
+twitter_merged.master <- read.csv(paste(path_shared, masster_data, sep = ""), stringsAsFactors = FALSE) 
+twitter_merged_noRT.master <- read.csv(paste(path_shared, masster_data_noRT, sep = ""), stringsAsFactors = FALSE) 
 
 # twitter_merged.master <- flag_india(twitter_merged.master) # one time fix (used 2019/09/06)
 # twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix (used 2019/09/06)
@@ -56,7 +59,7 @@ twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_v3/twitter_merged_no
 ## **QUERY** TWITTER API FOR LAST 6-9 DAYS OF TWEET DATA ----
 
 # Read the Twitter API token
-twitter_token <- readRDS(file.path(path,'twitter_token.rds'))
+twitter_token <- readRDS(file.path(path_shared,'twitter_token.rds'))
 
 # Import tag_list.csv (this contains the words to be used in search query of twitter data)
 tag_file <- read.csv(file.path(full_path, 'tag_list.csv'), stringsAsFactors = FALSE)
@@ -111,7 +114,7 @@ rownames(twitterAPI_new) <- NULL
 
 # saving data as .csv file
 # Creating file name 
-file.name <- paste0(path, '/API_csv/', Sys.Date(), '.csv')
+file.name <- paste0(path_shared, '/API_csv/', Sys.Date(), '.csv')
 
 # Converting list columns to character columns to allow for writing to csv
 i <- sapply(twitterAPI_new, is.list)
@@ -209,5 +212,5 @@ twitter_merged_new <- rbind(twitter_merged.master, twitterAPI_new)
 twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 
 # Re-exporting new merged dataset to master csv
-write.csv(twitter_merged_new, file.path(path, "Merged_v2/twitter_merged_v2.csv"), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
-write.csv(twitter_merged_noRTnew, file.path(path, "Merged_v2/twitter_merged_noRT_v2.csv"),  row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+write.csv(twitter_merged_new, file.path(path_shared, masster_data), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+write.csv(twitter_merged_noRTnew, file.path(path_shared, masster_data_noRT),  row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
