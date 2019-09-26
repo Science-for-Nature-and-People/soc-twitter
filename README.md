@@ -2,10 +2,26 @@
 
 This repository contains several scripts developed to process Twitter data to investigate how soil organic content and health are related.
 
+
+### Processing Twitter Data
+
 Two different data sources are used:
 
-- Data collected directly from the Twitter API 
 - Data from the Twitter archives
+- Data collected directly from the Twitter API 
+
+
+   History of Data: 
+
+     - Archive Data (purchased) 2017-04-01 to 2017-10-10
+     - Manual API Data 2017-10-11 to 2019-06-14 NOTE there is missing data during these dates
+     - Automatic API Data 2019-06-15 to Current
+     
+     There have been multiple "versions" of data, current code should be run on the latest version (ie. change code and directory names to v3):  
+     - V1 "Merged_data":  
+     - V2 "Merged_v2":  
+     - V3 "Merged_v3": this fixed issue where archive data did not have *is_retweet* flagged and replaced old retweets where usernames were present within the original tweet *text*, see: [fix_old_retweets.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/pre_processing/fix_old_retweets.R)  
+        
 
 For the archive data:
 
@@ -16,12 +32,16 @@ For the archive data:
   - to correct parsing errors found in the csv files derived from the API (cell overlap) use [fixed_tweet.sh](fixed_tweet.sh)
     **!!! This script needs to be edited from the command line and _NOT_ from R, as it is dealing with hidden characters !!!**
 
-For the collected data via Twitter API:
+For the data collected via Twitter API:
 
 - Main: [automate.R](automate.R) 
-  - runs every week collecting the last 6-9 days of twitter data based on query words from [tag_list.csv](tag_list.csv)
-  - cleans and standarize to enable merge
+  - saves two files:  
+  (1) raw data from Twitter API in .csv format saved in directory /home/shares/soilcarbon/Twitter/API_csv/   
+  (2) writes over previous /home/shares/soilcarbon/Twitter/Merged_v3/ (master files) cleaning and standardizing to enable merge
+  - runs twice a week collecting the last 6-9 days of twitter data based on query words from [tag_list.csv](tag_list.csv)
   
+
+
 *** 
 
 - Inititial data exploration: 
