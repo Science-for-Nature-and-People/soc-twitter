@@ -46,8 +46,8 @@ source(file.path(full_path, "text_analysis_functions.R"))
 ## READ PREVIOUS (MASTER) DATA ----
 
 # Master files 
-twitter_merged.master <- read.csv(paste(path, '/Merged_v2/twitter_merged_v2.csv', sep = ""), stringsAsFactors = FALSE) 
-twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_v2/twitter_merged_noRT_v2.csv', sep = ""), stringsAsFactors = FALSE) 
+twitter_merged.master <- read.csv(paste(path, '/Merged_v3/twitter_merged_v3.csv', sep = ""), stringsAsFactors = FALSE) 
+twitter_merged_noRT.master <- read.csv(paste(path, '/Merged_v3/twitter_merged_noRT_v3.csv', sep = ""), stringsAsFactors = FALSE) 
 
 # twitter_merged.master <- flag_india(twitter_merged.master) # one time fix (used 2019/09/06)
 # twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix (used 2019/09/06)
