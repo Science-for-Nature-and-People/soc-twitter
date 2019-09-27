@@ -1,0 +1,288 @@
+---
+title: "Time Series"
+author: "Meilin"
+date: "8/2/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### This Markdown aims to visualize the time series of query terms/ keywords in top 100 noRT and full noRT dataset based on retweet_count and total tweets count.
+
+```{r, include=FALSE}
+# load packages
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(SnowballC)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+source("../text_analysis_functions.R")
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+```
+
+```{r, include=FALSE}
+#clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+noRT_clean <- removeNumbers(noRT$text)
+noRT_clean <- gsub("@\\w+","",noRT_clean)
+noRT_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", noRT_clean)
+noRT_clean <- gsub("#\\s+","", noRT_clean)
+noRT_clean <- gsub("&amp", "", noRT_clean)
+noRT_clean <- gsub("[^\x01-\x7F]", "", noRT_clean)
+
+# to remove the bot
+noRT$text <- noRT_clean
+noRT <- noRT %>% 
+  filter(source != "Twittascope") 
+
+# to remove the pope
+noRT <- noRT %>%
+  arrange(-retweet_count) %>%
+  filter(screen_name != "Pontifex")
+
+# to remove all india related tweets
+noRT_india <- flag_india(noRT)
+noRT_no_india <- noRT_india %>% 
+  filter(is_india == 0)
+```
+
+```{r, include=FALSE}
+# select top 100 tweets based on their retweet count
+# used as a sample in the following code
+
+top_100_noRT <- noRT_no_india %>% 
+  arrange(-retweet_count) %>% 
+  head(100)
+```
+
+```{r}
+# select a input
+
+input <- top_100_noRT
+#input <- noRT_no_india
+```
+
+```{r}
+# creating dataset for each seach term - this will be used for analysis and to create a figure comparing the sizes of the dataframes produced by each query
+# combine similar terms in hits column
+
+#### soil health
+soil_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil health","#soilhealth","healthy soil","#healthysoil"), collapse = '|')))
+soil_health_tweets$hits <- "soil health"
+
+#### soil quality
+soil_quality_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil quality","#soilquality"),collapse = '|')))
+soil_quality_tweets$hits <- "soil quality"
+
+### soil fertility
+soil_fertility_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil fertility","#soilfertility"),collapse = '|')))
+soil_fertility_tweets$hits <- "soil fertility"
+
+#### rangeland health
+rangeland_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("rangeland health","#rangelandhealth","healthy rangelands", "#healthyrangelands"),
+                                      collapse = '|')))
+rangeland_health_tweets$hits <- "rangeland health"
+
+#### regenerative agriculture
+regen_agri_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("regenerative agriculture","#regenerativeagriculture"), collapse = '|')))
+regen_agri_tweets$hits <- "regenerative agriculture"
+
+```
+
+```{r}
+## combine dataset for terms of interest into one data frame
+df <- soil_health_tweets %>% bind_rows(soil_quality_tweets) %>% bind_rows(soil_fertility_tweets) %>% bind_rows(rangeland_health_tweets) %>% bind_rows(regen_agri_tweets)
+
+## split hits into seperate rows
+hit_split <- separate_rows(df, hits, sep = ";") %>% filter(!is.na(hits)) 
+
+#split year, month, week and date data for later aggregation
+hit_split$created_at <- date(hit_split$created_at)
+hit_split$created_year <- year(hit_split$created_at)
+hit_split$created_month <- month(hit_split$created_at)
+hit_split$created_week <- week(hit_split$created_at)
+```
+
+### plot time series based on retweet_count
+```{r}
+# Figure 1. scatter plot
+theme_set(theme_minimal())
+ggplot(hit_split, aes(x = date(created_at), y = hits)) + geom_point(aes(size = retweet_count))
+
+# Figure 2 & 3. line graph and barplot
+ggplot(hit_split, aes(y = retweet_count, x = week(created_at), color = hits)) + 
+  geom_line() + ggtitle('time series')
+
+ggplot(hit_split, aes(y = retweet_count, x = week(created_at), fill = hits)) +
+  geom_bar(stat = "identity") + ggtitle('time series')
+
+# Figure 4. heat map
+# add small value to 0's to avoid getting NAs in log transform
+hit_split$retweet_count[hit_split$retweet_count == 0] <- 0.00001
+
+# find min and max of retweet count to set the limit
+min_rt = min(hit_split$retweet_count)
+max_rt = max(hit_split$retweet_count)
+
+library(gtable)
+library(grid)
+
+base_size <- 8
+p_17 <- ggplot(hit_split%>% filter(created_year == 2017), aes(week(created_at), y = hits)) +
+  geom_tile(aes(fill = retweet_count), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log", 
+                      name = "retweet count (log scale)", 
+                      limit = c(min_rt,max_rt)) + 
+  labs(title = "Heat Map 2017", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p_18 <- ggplot(hit_split%>% filter(created_year == 2018), aes(week(created_at), y = hits)) +
+  geom_tile(aes(fill = retweet_count), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log",
+                      name = "retweet count (log scale)", 
+                      limit = c(min_rt,max_rt)) + 
+  labs(title = "Heat Map 2018", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p_19 <- ggplot(hit_split%>% filter(created_year == 2019), aes(week(created_at), y = hits)) +
+  geom_tile(aes(fill = retweet_count), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log",
+                      name = "retweet count (log scale)", 
+                      limit = c(min_rt,max_rt)) + 
+  labs(title = "Heat Map 2019", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p17 <- ggplotGrob(p_17)
+p18 <- ggplotGrob(p_18)
+p19 <- ggplotGrob(p_19)
+
+## combine three years data into one graph
+heatmap_top_100 <- rbind(p17, p18, p19, size = "last")
+grid.newpage()
+grid.draw(heatmap_top_100)
+
+# Figure 5. bar plot separated by years
+b_17 <- ggplot(hit_split %>% filter(created_year == 2017), 
+               aes(y = retweet_count, x = week(created_at), fill = hits)) + 
+        geom_bar(stat = "identity") + ggtitle('Retweet count time series 2017')
+
+b_18 <- ggplot(hit_split %>% filter(created_year == 2018), 
+               aes(y = retweet_count, x = week(created_at), fill = hits)) + 
+        geom_bar(stat = "identity") + ggtitle('Retweet count time series 2018')
+
+b_19 <- ggplot(hit_split %>% filter(created_year == 2019), 
+               aes(y = retweet_count, x = week(created_at), fill = hits)) + 
+        geom_bar(stat = "identity") + ggtitle('Retweet count time series 2019')
+
+b17 <- ggplotGrob(b_17)
+b18 <- ggplotGrob(b_18)
+b19 <- ggplotGrob(b_19)
+
+RT_full <- rbind(b17, b18, b19, size = "last")
+grid.newpage()
+grid.draw(RT_full)
+
+```
+
+### plot time series based on total tweets count
+```{r}
+# group tweets by week and get counts
+# x is grouped week, y is counts of tweets, color coded by query words
+
+# get counts of the occurence of each query word
+group <- data.frame(hit_split$created_year, hit_split$created_week, hit_split$hits)
+names(group) <- c("Year","Week","Hits")
+
+#count value based on week and query words
+library(plyr)
+counts.df <- ddply(group, .(group$Year, group$Week, group$Hits), nrow)
+names(counts.df) <- c("Year", "Week", "Hits", "Freq")
+
+
+# Figure 1. scatter plot
+theme_set(theme_minimal())
+ggplot(counts.df, aes(x = Week, y = Hits)) + geom_point(aes(size = Freq))
+
+# Figure 2 & 3. line and bar graph
+ggplot(counts.df, aes(y = Freq, x = Week, color = Hits)) + 
+  geom_line() + ggtitle('time series')
+
+ggplot(counts.df, aes(y = Freq, x = Week, fill = Hits)) +
+  geom_bar(stat = "identity") + ggtitle('time series')
+
+
+# Figure 4. heat map
+#find min and max of retweet count to set the limit
+min_f = min(counts.df$Freq)
+max_f = max(counts.df$Freq)
+
+library(gtable)
+library(grid)
+
+base_size <- 8
+p_17 <- ggplot(counts.df%>% filter(Year == 2017), aes(Week, y = Hits)) +
+  geom_tile(aes(fill = Freq), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log", 
+                      name = "retweet count (log scale)", 
+                      limit = c(min_f,max_f)) + 
+  labs(title = "Heat Map 2017", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p_18 <- ggplot(counts.df%>% filter(Year == 2018), aes(Week, y = Hits)) +
+  geom_tile(aes(fill = Freq), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log",
+                      name = "retweet count (log scale)", 
+                      limit = c(min_f,max_f)) + 
+  labs(title = "Heat Map 2018", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p_19 <- ggplot(counts.df%>% filter(Year == 2019), aes(Week, y = Hits)) +
+  geom_tile(aes(fill = Freq), color = "white") +
+  scale_fill_gradient(low = "white", high = "steelblue", trans = "log",
+                      name = "retweet count (log scale)", 
+                      limit = c(min_f,max_f)) + 
+  labs(title = "Heat Map 2019", x = "week", y = "query term") + theme_grey(base_size = base_size)
+
+p17 <- ggplotGrob(p_17)
+p18 <- ggplotGrob(p_18)
+p19 <- ggplotGrob(p_19)
+
+heatmap_top_100_count <- rbind(p17, p18, p19, size = "last")
+grid.newpage()
+grid.draw(heatmap_top_100_count)
+
+# Figure 5. bar plot separate by years
+count_17 <- ggplot(counts.df %>% filter(Year == 2017), aes(y = Freq, x = Week, fill = Hits)) + 
+  geom_bar(stat = "identity") + ggtitle('Total Tweet Count time series 2017')  
+count_18 <- ggplot(counts.df %>% filter(Year == 2018), aes(y = Freq, x = Week, fill = Hits)) + 
+  geom_bar(stat = "identity") + ggtitle('Total Tweet Count time series 2018')
+count_19 <- ggplot(counts.df %>% filter(Year == 2019), aes(y = Freq, x = Week, fill = Hits)) + 
+  geom_bar(stat = "identity") + ggtitle('Total Tweet Count time series 2019')
+
+c17 <- ggplotGrob(count_17)
+c18 <- ggplotGrob(count_18)
+c19 <- ggplotGrob(count_19)
+
+count_full<- rbind(c17, c18, c19, size = "last")
+grid.newpage()
+grid.draw(count_full)
+```
+
+
+
+

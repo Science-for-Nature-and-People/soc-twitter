@@ -1,0 +1,81 @@
+---
+title: "Network"
+author: "Meilin"
+date: "9/11/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### This Markdown aims to create a list of top 500 users based on the number of total retweets of all their tweets.
+
+```{r, include=FALSE}
+# load packages
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(SnowballC)
+library(dplyr)
+source("../text_analysis_functions.R")
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
+```
+
+```{r, include=FALSE}
+#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+clean_data <- function(input){
+  input_clean <- removeNumbers(input$text)
+  input_clean <- gsub("@\\w+","",input_clean)
+  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
+  input_clean <- gsub("#\\s+","", input_clean)
+  input_clean <- gsub("amp", "", input_clean)
+  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
+
+  input$text <- input_clean
+  input <- input %>% 
+  filter(source != "Twittascope") 
+
+  # to remove the pope
+  input <- input %>%
+    arrange(-retweet_count) %>%
+    filter(screen_name != "Pontifex")
+
+  # to remove all india related tweets
+  input_india <- flag_india(input)
+  input_no_india <- input_india %>% 
+    filter(is_india == 0) 
+  
+  return(input_no_india)
+}
+```
+
+### Create a list of top 500 users in terms of num of total retweets of all their tweets
+```{r, include=FALSE}
+# data cleaning
+noRT_no_india <- clean_data(noRT)
+
+
+# create a list with username, text and retweet_count
+user.df <- noRT_no_india %>% select(screen_name, text, retweet_count)
+user.df$text <- substring(user.df$text, 1, 30)
+
+# remove duplicate usernames
+user.df <- user.df[!duplicated(user.df[1:2]),]
+
+# sum up retweet_count based on username
+user.df <- aggregate(user.df$retweet_count, by=list(Users = user.df$screen_name), FUN = sum)
+names(user.df) <- c("screen_name", "tot_retweet_count")
+
+user.df <- user.df %>% arrange(-user.df$tot_retweet_count) %>% head(500)
+```
+
+
+
