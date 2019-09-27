@@ -67,7 +67,7 @@ twitter_token <- readRDS(file.path(path_shared,'twitter_token.rds'))
 keyword_list <- read.csv(paste0(path_local, 'tag_list.csv'), stringsAsFactors = FALSE)
 
 # Take tag_list and put quotes around each element for the twitterAPI search below
-q <- unname(sapply(keyword_list, function(x) toString(dQuote(x))))
+q <- unname(sapply(keyword_list$tag_list, function(x) toString(dQuote(x))))
 
 # Searching tweets with query above (THIS CODE SEARCHES TWITTER FOR TERMS LISTED IN tag_list OVER THE LAST 6-9 DAYS)
 twitterAPI_new <- search_tweets2(q, n = 100000, token=twitter_token, retryonratelimit = T)
