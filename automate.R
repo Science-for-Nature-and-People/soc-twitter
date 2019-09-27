@@ -56,19 +56,18 @@ twitter_merged_noRT.master <- read.csv(paste(path_shared, master_data_noRT, sep 
 # twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix (used 2019/09/06)
 
 
+
+
 ## **QUERY** TWITTER API FOR LAST 6-9 DAYS OF TWEET DATA ----
 
 # Read the Twitter API token
 twitter_token <- readRDS(file.path(path_shared,'twitter_token.rds'))
 
-# Import tag_list.csv (this contains the words to be used in search query of twitter data)
-tag_file <- read.csv(paste0(path_local, 'tag_list.csv'), stringsAsFactors = FALSE)
-
-# Create a list from tag_list.csv
-tag_list <- as.character(tag_file$tag_list)
+# Import tag_list.csv (this contains the keywords to be used in search query of twitter data)
+keyword_list <- read.csv(paste0(path_local, 'tag_list.csv'), stringsAsFactors = FALSE)
 
 # Take tag_list and put quotes around each element for the twitterAPI search below
-q <- unname(sapply(tag_list, function(x) toString(dQuote(x))))
+q <- unname(sapply(keyword_list, function(x) toString(dQuote(x))))
 
 # Searching tweets with query above (THIS CODE SEARCHES TWITTER FOR TERMS LISTED IN tag_list OVER THE LAST 6-9 DAYS)
 twitterAPI_new <- search_tweets2(q, n = 100000, token=twitter_token, retryonratelimit = T)
@@ -90,7 +89,7 @@ new_hashtags <- twitterAPI_new$hashtags %>% map_chr(~paste(unlist(.x), collapse=
 twitterAPI_new$hashtags <- new_hashtags
 
 
-# Selecting columns we want
+# Selecting columns we want to match the archive dataset
 twitterAPI_new <- twitterAPI_new %>% 
   select(created_at,
          user_id,
@@ -107,6 +106,9 @@ twitterAPI_new <- twitterAPI_new %>%
 
 # Remove row names
 rownames(twitterAPI_new) <- NULL
+
+# Remove quotes around query terms
+twitterAPI_new$query <- str_remove_all(twitterAPI_new$query,"[\\W]+")
 
 
 
