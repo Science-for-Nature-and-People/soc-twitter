@@ -41,7 +41,7 @@ if (is.na(script_dir)) {
 }
 
 # Source the functions
-source(paste0(path_local, "text_analysis_functions.R"))
+source(paste0(path_local, "text_analysis_functions.R")) # use paste0 instead of file.path to handle the local run
 
 
 
@@ -82,12 +82,13 @@ twitterAPI_new <- search_tweets2(q, n = 100000, token=twitter_token, retryonrate
 twitterAPI_new <- as.data.frame(twitterAPI_new, stringsAsFactors = FALSE)
 
 # Collapsing hashtags column 
-new_hashtags <- c()
-for (i in c(1:nrow(twitterAPI_new))){
-  new_hashtags <- c(new_hashtags, paste(unlist(twitterAPI_new$hashtags[i]), collapse = "|"))
-}
 
+# Flatten the list and collapse
+new_hashtags <- twitterAPI_new$hashtags %>% map_chr(~paste(unlist(.x), collapse="|")) 
+
+# overwrite the column
 twitterAPI_new$hashtags <- new_hashtags
+
 
 # Selecting columns we want
 twitterAPI_new <- twitterAPI_new %>% 
@@ -178,9 +179,6 @@ twitterAPI_new <- twitterAPI_new %>%
 
 # Flag tweets with HINDI 
 twitterAPI_new <- flag_india(twitterAPI_new)
-
-
-
 
 
 ## SEPARATE INTO RT AND NORT DATA FRAMES ----
