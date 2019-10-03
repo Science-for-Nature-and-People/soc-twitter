@@ -108,7 +108,7 @@ twitterAPI_new <- twitterAPI_new %>%
 rownames(twitterAPI_new) <- NULL
 
 # Remove quotes around query terms
-twitterAPI_new$query <- str_remove_all(twitterAPI_new$query,"[^A-Za-z ]+")
+twitterAPI_new$query <- str_remove_all(twitterAPI_new$query,"[^A-Za-z\\s\\#]+")
 
 
 
