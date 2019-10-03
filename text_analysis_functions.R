@@ -39,6 +39,7 @@ word_umbrella <- function(data) {
   soil_health <- c("healthy soil", "soilhealth", "healthysoil", "soil health")
   soil_qual <- c("soil quality", "soilquality")
   soil_fert <- c("soil fertility", "soilfertility")
+  carbon_seq <- c('sequester carbon','carbon sequestration','sequestering carbon','sequesters carbon','sequestered carbon')
   regen_ag <- c("regenerative agriculture",	"regenerativeagriculture", "regenerative ag", "regenerative agricultural", "regenerativeag")
   conserv_ag <- c("conservation agriculture",	"conservationagriculture",	"conservationag")
   cover_crop <- c("cover crop",	"cover cropping",	"cover crops",	"covercrop",	"covercropping",	"covercrops")
@@ -61,6 +62,7 @@ word_umbrella <- function(data) {
       text = str_replace_all(tolower(text), str_c(rangeland, collapse = "|"), "rangeland_health") , 
       text = str_replace_all(tolower(text), str_c(health_card, collapse = "|"), "soil_health_card") , 
       text = str_replace_all(tolower(text), str_c(healthy_people, collapse = "|"), "healthy_people") , 
+      text = str_replace_all(tolower(text), str_c(carbon_seq, collapse = "|"), "carbon_sequestration") , 
       text = str_replace_all(tolower(text), str_c(organic_ag, collapse = "|"), "organic_ag") , 
       text = str_replace(tolower(text), str_c(n_modi, collapse = "|"), "Narendra_Modi") , 
       text = str_replace_all(tolower(text), "soil health institute", "soil_health_institute") , 
@@ -72,7 +74,8 @@ word_umbrella <- function(data) {
       text = str_replace_all(tolower(text), "microbial biomass", "microbial_biomass") , 
       text = str_replace_all(tolower(text), "crop rotation", "crop_rotation") , 
       text = str_replace_all(tolower(text), "crop insurance", "crop_insurance") , 
-      text = str_replace_all(tolower(text), "climate change", "climate_change") , 
+      text = str_replace_all(tolower(text), "climate change", "climate_change") ,
+      text = str_replace_all(tolower(text), "climatechange", "climate_change") ,
       text = str_replace_all(tolower(text), "food security", "food_security"),
       text = str_replace_all(tolower(text), str_c(soil_health, collapse = "|"), "soil_health") , 
     )
@@ -129,6 +132,7 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
   if (group) {terms <- word_umbrella(data)}
   else {
     terms <- data}
+  
   # define regex that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ and #
   reg_words <- "([^A-Za-z_\u0900-\u097F\\d#@']|'(?![A-Za-z_\u0900-\u097F\\d#@]))" 
   
@@ -330,6 +334,8 @@ gram_network <- function(data, limit) {
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 #' flag tweets from india
+#' 
+#' This list was created iteratively based manually checking to see if the function accurately flagged tweets related to India -- this may need to be updated..
 #'
 #' @param data tweet data
 #'

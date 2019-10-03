@@ -26,8 +26,57 @@ library(tidytext)
 library(stringr)
 library(wordcloud)
 
+twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged_noRT.csv", stringsAsFactors = FALSE) %>% 
+  distinct()
+twitter_merged <- read.csv("/home/shares/soilcarbon/Twitter/soc-twitter/twitter_merged.csv", stringsAsFactors = FALSE) %>% 
+  distinct()
+
 twitter_merged_noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
 twitter_merged <- read.csv('/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv', stringsAsFactors = FALSE)
+
+```
+
+```{r, include=F}
+source("../text_analysis_functions.R")
+```
+
+```{r}
+#clean
+#remove numbers, twitter usernames and websites
+#remove outliers, source from Twittascope
+library(tm)
+library(NLP)
+
+clean_data <- function(input){
+  input_clean <- removeNumbers(input$text)
+  input_clean <- gsub("@\\w+","",input_clean)
+  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
+  input_clean <- gsub("#\\s+","", input_clean)
+  input_clean <- gsub("amp", "", input_clean)
+  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
+
+  input$text <- input_clean
+  input <- input %>% 
+  filter(source != "Twittascope") 
+
+  # to remove the pope
+  input <- input %>%
+    arrange(-retweet_count) %>%
+    filter(screen_name != "Pontifex")
+
+  # to remove all india related tweets
+  input_india <- flag_india(input)
+  input_no_india <- input_india %>% 
+    filter(is_india == 0) 
+  
+  return(input_no_india)
+}
+```
+
+
+```{r}
+twitter_merged_noRT <- clean_data(twitter_merged_noRT)
+twitter_merged <- clean_data(twitter_merged)
 
 top_100_noRT <- twitter_merged_noRT %>% 
   arrange(-retweet_count) %>% 
@@ -35,31 +84,28 @@ top_100_noRT <- twitter_merged_noRT %>%
 ```
 
 
-
-```{r, include=F}
-source("../text_analysis_functions.R")
-```
+***  
+***  
 
 ## full data - w/ RT
 ```{r, echo=F,warning=F,message=F}
 create_wordcloud(twitter_merged, "", group = T, stem = T)
 ```
 
-***  
-***  
 
-# full noRT df
+## full noRT df
 ```{r,echo=F,warning=F,message=F}
 create_wordcloud(twitter_merged_noRT, "", group = T, stem = T)
 ```
-  
-  
+
+***  
+***  
+
 #### filter by: "soil"
 ```{r,echo=F,warning=F,message=F}
 create_wordcloud(twitter_merged_noRT, "soil", group = T, stem = T)
 ```  
   
-    
 #### filter by: "soil health"
 ```{r,echo=F,warning=F,message=F}
 create_wordcloud(twitter_merged_noRT, "soil health", group = T, stem = T)
@@ -139,11 +185,6 @@ create_wordcloud(twitter_merged_noRT, "forest")
 create_wordcloud(twitter_merged_noRT, "forest health")
 ```
 
-#### filter by: "forest quality"
--no hits
-```{r,echo=F,warning=F,message=F}
-create_wordcloud(twitter_merged_noRT, "forest quality")
-```
 
 ***
 ***
@@ -155,17 +196,15 @@ create_wordcloud(twitter_merged_noRT, "forest quality")
 create_wordcloud(top_100_noRT, "")
 ```
   
-  
 #### filter by: "soil"
 ```{r,echo=F,warning=F,message=F}
 create_wordcloud(top_100_noRT, "soil")
 ```
-  
+
 #### filter by: "soil health"
 ```{r,echo=F,warning=F,message=F}
 create_wordcloud(top_100_noRT, "soil health")
 ```
- 
   
 #### filter by: "rangeland"
 no hits on "rangeland" within top_100
@@ -173,15 +212,7 @@ no hits on "rangeland" within top_100
 create_wordcloud(top_100_noRT, "rangeland")
 ```
   
-      
 #### filter by: "forest"
 ```{r, echo=F,warning=F,message=F}
 create_wordcloud(top_100_noRT, "forest")
 ```
-
-
-
-
-
-
-

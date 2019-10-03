@@ -8,6 +8,8 @@
 ##~~ approach: 
 #~~~~ Id the users who retweeted the most RTed tweets
 #~~~~ perform user search and try to separate them into "groups"
+
+## the goal of this code was to begin looking at users to create a word list for futrue grouping
   
 
 

@@ -161,27 +161,29 @@ id_count <- id %>%
 
 ## create document list for use in LDA
 
-doc_list <- vector('list', length(unique(id_count$doc_ID)))
+doc_list <- list()
 for(i in 1:length(unique(id_count$doc_ID))) {
   
   doc <- id_count %>% 
-    filter(doc_ID == 1) %>% 
-    select(-doc_ID) %>% 
-    transpose()
+    filter(doc_ID == i) %>% 
+    select(-doc_ID) 
   
-  doc <- as.matrix(doc)
+  doc_matrix <- as.matrix(t(doc))  
   
-  doc <- unname(doc) 
+  doc_matrix <- unname(doc_matrix)
   
-  storage.mode(doc) <- 'integer' 
+  storage.mode(doc_matrix) <- 'integer'
   
-  doc_list[[i]] <- doc
+  doc_list[[i]] <- doc_matrix
   
 }
 
 return(doc_list)
 
 }
+
+
+
 
 
 

@@ -1,4 +1,16 @@
-####generate training content#####
+#################################
+### generate training content ###
+#################################
+
+# this is essentially the same code as generate_content.R but only gets the past 100 tweets for the users that we mannually grouped.
+# this was so i could start testing the model during the 7+ days it takes to querry the API for all the users in our dataset
+
+#This code 
+#~ 1. identifies all unique users from our full dataset(w/ RT)
+#~ 2. compiles their past 100 tweets + their user descriptions
+#~ 3. combines all that content into a single cell which will be treated as a single document when input into the sLDA model
+
+# Note: the final variable (training_content) is needed in the training_data.R script
 
 library(tidyverse)
 library(rtweet)
