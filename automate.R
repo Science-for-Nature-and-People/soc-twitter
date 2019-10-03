@@ -138,10 +138,6 @@ twitter_merged_noRT.master$created_at <- as_datetime(twitter_merged_noRT.master$
 # Creating provenance columns w/ value as API
 twitterAPI_new <- add_column(twitterAPI_new, provenance = "API", .before = 1)  
 
-# Removing quotes from query columns
-twitterAPI_new  <- twitterAPI_new  %>%
-  mutate(query = gsub("\"", "", query))
-
 # Replacing NA with ""
 is.na(twitterAPI_new$country_code) <- twitterAPI_new$country_code == ""
 is.na(twitterAPI_new$place_name) <- twitterAPI_new$place_name == ""
