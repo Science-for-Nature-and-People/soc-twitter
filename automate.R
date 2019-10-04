@@ -48,9 +48,11 @@ source(paste0(path_local, "text_analysis_functions.R")) # use paste0 instead of 
 
 ## READ PREVIOUS (MASTER) DATA ----
 
+
 # Master files 
 twitter_merged.master <- read.csv(paste(path_shared, master_data, sep = ""), stringsAsFactors = FALSE) 
 twitter_merged_noRT.master <- read.csv(paste(path_shared, master_data_noRT, sep = ""), stringsAsFactors = FALSE) 
+
 
 # twitter_merged.master <- flag_india(twitter_merged.master) # one time fix (used 2019/09/06)
 # twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix (used 2019/09/06)
@@ -208,6 +210,8 @@ twitter_merged_new <- rbind(twitter_merged.master, twitterAPI_new)
 twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 
 # Re-exporting new merged dataset to master csv
+
 write.csv(twitter_merged_new, file.path(path_shared, master_data), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
 write.csv(twitter_merged_noRTnew, file.path(path_shared, master_data_noRT),  row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+
 
