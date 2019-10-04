@@ -348,9 +348,9 @@ flag_india <- function(data) {
   results <- data %>% 
     mutate(
       is_india = case_when(
-        str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar") ~ 1,
-        str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1,
-        str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1))
+        str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar|sadhgurujv|rallyforrivers") ~ 1,
+        str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|sadhgurujv|rallyforrivers") ~ 1,
+        str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|sadhguru|rallyforrivers") ~ 1))
   
   #replace na w/ 0 to indicate non-india related tweets
   results$is_india[is.na(results$is_india)] <- 0
@@ -358,4 +358,44 @@ flag_india <- function(data) {
   return(results)
 }
 
+################################################
+##            clean data                      ##
+################################################
+
+#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+#' Clean data
+#' i.e remove extranious numbers,characters, and users (like the pope)
+#' 
+#' NOTE: this also runs flag_india() and filters out all india related tweets
+#'
+#' @param input tiwtter data frame - either RT or noRT
+#'
+#' @return same data frame with the 'text' column cleaned
+#' @export
+#'
+#' @examples
+clean_data <- function(input){
+  input_clean <- removeNumbers(input$text)
+  input_clean <- gsub("@\\w+","",input_clean)
+  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
+  input_clean <- gsub("#\\s+","", input_clean)
+  input_clean <- gsub("amp", "", input_clean)
+  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
+  
+  input$text <- input_clean
+  input <- input %>% 
+    filter(source != "Twittascope") 
+  
+  # to remove the pope
+  input <- input %>%
+    arrange(-retweet_count) %>%
+    filter(screen_name != "Pontifex")
+  
+  # to remove all india related tweets
+  input_india <- flag_india(input)
+  input_no_india <- input_india %>% 
+    filter(is_india == 0) 
+  
+  return(input_no_india)
+}
 
