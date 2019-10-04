@@ -28,33 +28,6 @@ source("../text_analysis_functions.R")
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
 ```
 
-```{r, include=FALSE}
-#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
-clean_data <- function(input){
-  input_clean <- removeNumbers(input$text)
-  input_clean <- gsub("@\\w+","",input_clean)
-  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
-  input_clean <- gsub("#\\s+","", input_clean)
-  input_clean <- gsub("amp", "", input_clean)
-  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
-
-  input$text <- input_clean
-  input <- input %>% 
-  filter(source != "Twittascope") 
-
-  # to remove the pope
-  input <- input %>%
-    arrange(-retweet_count) %>%
-    filter(screen_name != "Pontifex")
-
-  # to remove all india related tweets
-  input_india <- flag_india(input)
-  input_no_india <- input_india %>% 
-    filter(is_india == 0) 
-  
-  return(input_no_india)
-}
-```
 
 ```{r, include=FALSE}
 # select top 25 and 100 tweets based on their retweet count
