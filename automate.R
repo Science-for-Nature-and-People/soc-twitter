@@ -165,7 +165,7 @@ charnull_set <- function(x){
 }
 
 # Text bits to search through # keywords = query words
-keywords <- paste0(tag_list, collapse = "|")
+keywords <- paste0(keyword_list, collapse = "|")
 
 # Store the matches as a new columns with words seprated by `;`
 twitterAPI_new <- twitterAPI_new %>%
@@ -210,3 +210,4 @@ twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 # Re-exporting new merged dataset to master csv
 write.csv(twitter_merged_new, file.path(path_shared, master_data), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
 write.csv(twitter_merged_noRTnew, file.path(path_shared, master_data_noRT),  row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
+
