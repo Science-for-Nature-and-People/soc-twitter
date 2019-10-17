@@ -1,0 +1,153 @@
+---
+title: "location_summary"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### from Automate.R:
+```{r}
+library(tidyverse)
+library(rtweet)
+library(countrycode)
+library(lubridate)
+library(magrittr)
+library(jsonlite)
+library(streamR)
+library(httr)
+
+source("text_analysis_functions.R")
+
+
+
+
+## DO NOT run the write.csv lines when making edits to script ----
+# (make a seperate path in your own home folder on aurora)  
+
+path <- '/home/shares/soilcarbon/Twitter' # LOCATION OF MASTER FILES
+
+
+
+
+## READ PREVIOUS (MASTER) DATA ----
+
+# twitter_merged.master <- read.csv(file.path(path, 'Merged_v3/twitter_merged_v3.csv'), stringsAsFactors = FALSE) 
+# twitter_merged_noRT.master <- read.csv(file.path(path, 'Merged_v3/twitter_merged_noRT_v3.csv'), stringsAsFactors = FALSE) 
+# 
+# # twitter_merged.master <- flag_india(twitter_merged.master) # one time fix (used 2019/09/06)
+# # twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix (used 2019/09/06)
+# 
+# 
+# ## **QUERY** TWITTER API FOR LAST 6-9 DAYS OF TWEET DATA ----
+# 
+# # Create token
+# twitter_token <- readRDS('twitter_token.rds')
+# 
+# # Import tag_list.csv (this contains the words to be used in search query of twitter data)
+# tag_file <- read.csv('tag_list.csv', stringsAsFactors = FALSE)
+# 
+# # Create a list from tag_list.csv
+# tag_list <- as.character(tag_file$tag_list)
+# 
+# # Take tag_list and put quotes around each element for the twitterAPI search below
+# q <- unname(sapply(tag_list, function(x) toString(dQuote(x))))
+# 
+# # Searching tweets with query above (THIS CODE SEARCHES TWITTER FOR TERMS LISTED IN tag_list OVER THE LAST 6-9 DAYS)
+# twitterAPI_new <- search_tweets2(q, n = 100000, retryonratelimit = T)
+# 
+# 
+# 
+# 
+# ## CLEAN NEW DATA ----
+# 
+# # Make it a data frame
+# twitterAPI_new <- as.data.frame(twitterAPI_new, stringsAsFactors = FALSE)
+```
+
+```{r}
+unique(twitterAPI_new$geo_coords)
+```
+
+```{r}
+unique(twitterAPI_new$coords_coords)
+```
+
+```{r}
+length(unique(twitterAPI_new$bbox_coords))
+```
+
+```{r}
+unique(twitterAPI_new$location)
+```
+
+
+
+
+### from rw_data_proccessing.R:
+```{r}
+
+library(tidyverse)
+library(jsonlite)
+library(streamR)
+library(devtools)
+library(googledrive)
+library(ndjson)
+library(dplyr)
+library(tidytext)
+library(stringr)
+library(rtweet)
+library(rjson)
+library(skimr)
+library(janitor)
+library(gtools)
+library(magrittr)
+library(data.table)
+library(lubridate)
+library(ids)
+library(countrycode)
+
+
+# 
+# ##### CONSTANTS ####
+# 
+# # folder containing the data downloaded from the API
+# dir_fix_tweet <- "./API_csv"
+# 
+# ## Aurora path
+# main_path <- "/home/shares/soilcarbon/Twitter"
+# 
+# 
+# 
+# ########### I. READING_DATA #############################
+# 
+# # 1/ Reading json(ARC)/API twitter archival datasets ####
+# 
+# # a. Read in ARC    #####
+# snapp_twitterdata_raw <- stream_in(file.path(main_path,"twitter.json"))
+# 
+# #' The \code{stream_in} and \code{stream_out} functions implement line-by-line processing
+# #' of JSON data over a \code{\link{connection}}, such as a socket, url, file or pipe. JSON
+# #' streaming requires the \href{http://ndjson.org}{ndjson} format, which slightly differs
+# #' from \code{\link{fromJSON}} and \code{\link{toJSON}}, see details.
+# #' 
+# #' Notes: termed twitter.json as Archived (ARC) dataset in script
+# #' (1) Ensure path is linked to the soil-carbon twitter file
+# #' (2) VERY LARGE DF: avoid viewing - 3480 columns, 96553 obs.
+# 
+# ## remove all NA rows  
+# snapp_twitterdata <- snapp_twitterdata_raw %>% 
+#   filter(!is.na(body))
+```
+
+```{r}
+names(snapp_twitterdata)
+```
+
+
+
+
+
+
+

@@ -12,23 +12,24 @@ users <- unique(tmp$user_id)
 
 friends <- list()
 
-# start loop
-for (i in 1:length(ids)){
-  friends[[i]] <- get_friends(users[i])
-  
-  # pause if divisible by 15
-  if (i %% 15 == 0){
-    print(Sys.time())
-    Sys.sleep(15*61) 
-  }
-}
+# # start loop
+# for (i in 1:length(users)){
+#   friends[[i]] <- get_friends(users[i])
+#   
+#   # pause if divisible by 15
+#   if (i %% 15 == 0){
+#     print(Sys.time())
+#     Sys.sleep(15*61) 
+#   }
+# }
+
+friends <- get_friends(users, retryonratelimit = T)
+
 
 # Combine data tables in list
 friends <- bind_rows(friends) %>% 
   rename(friend = user_id)
 
-friends <- bind_rows(friend_list) %>% 
-  rename(friend = user_id)
 
 write.csv(friends, "content_creator_friends.csv")
 

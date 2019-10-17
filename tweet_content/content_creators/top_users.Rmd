@@ -25,7 +25,7 @@ library(NLP)
 library(quanteda)
 library(SnowballC)
 library(dplyr)
-source("../text_analysis_functions.R")
+source("../../text_analysis_functions.R")
 
 # load data
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
@@ -86,8 +86,8 @@ nrow(top_user[top_user$n > 10,]) # ~60% of these have had more than 10 tweets
 ### create list based on combo of total number of tweets AND total retweets
 ```{r}
 ### define parameters:
-num_tweet_limit <- 20
-ratio_limit <- 3
+num_tweet_limit <- 10
+ratio_limit <- 2
 
 content_creator <- all_counts %>% 
   filter(n >= num_tweet_limit & ratio >= ratio_limit) %>% 

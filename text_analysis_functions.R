@@ -8,6 +8,7 @@ library(stringr)
 library(igraph)
 library(ggraph)
 library(SnowballC)
+library(plyr)
 
 
 
@@ -398,4 +399,27 @@ clean_data <- function(input){
   
   return(input_no_india)
 }
+
+
+
+########################################
+####        Find RT                 ####
+########################################
+
+
+find_rt <- function(rank, noRT_dataset, RT_dataset) {
+  result_rt <- RT_dataset %>% 
+    filter(substring(RT_dataset$text, 1, 30) == substring(noRT_dataset$text[rank], 1, 30))
+  # aggregate tweets by date
+  result.df <- ddply(result_rt, .(date(result_rt$created_at), result_rt$query), nrow)
+  names(result.df) <- c("Date", "Query", "Number")
+  result.df <- result.df %>% arrange (result.df$Date)
+  # calculate day_since based on the original tweet (noRT) date
+  result.df$time_since <- result.df$Date - date(noRT_dataset$created_at[rank])
+  result.df$content <- substring(result_rt$text[1], 1, 30)
+  names(result.df) <- c("date", "query", "number", "time_since", "content")
+  result.df$id <- rank
+  return(result.df)
+}
+
 

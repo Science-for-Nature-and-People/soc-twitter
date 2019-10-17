@@ -29,8 +29,8 @@ library(ggplot2)
 source("../text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
-RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv",stringsAsFactors = FALSE)
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
 ```
 
 
@@ -48,8 +48,9 @@ RT_no_india <- clean_data(RT)
 input <- noRT_no_india
 
 # SoilSummit19 is used by three conferences (Soil Health Summit 19, TCM Soil Summit, Red River Soil Health Summit)
+#!!!!! could not reproduce this using "soilsummit19" => removed the 19
 SHS19 <- input %>% 
-  filter(str_detect(tolower(text), "soilsummit19"))
+  dplyr::filter(str_detect(tolower(text), "soilsummit"))
 # to remove possible tweets from two other conferences also using this hashtag
 SHS19 <- SHS19 %>% filter(date(SHS19$created_at) < "2019-01-25")
 
@@ -59,7 +60,7 @@ SHS19_n <- SHS19 %>% filter(retweet_count > 1)
 
 
 # select the RT of SHS19
-SHS19_RT <- RT_no_india %>% filter(str_detect(tolower(text), "soilsummit19"))
+SHS19_RT <- RT_no_india %>% filter(str_detect(tolower(text), "soilsummit"))
 SHS19_RT <- SHS19_RT %>% filter (is_retweet == TRUE)
 SHS19_RT <- SHS19_RT  %>% filter (retweet_count > 1)
 
