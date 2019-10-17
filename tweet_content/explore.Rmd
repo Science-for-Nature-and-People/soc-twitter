@@ -1,0 +1,210 @@
+----
+title: "time_series"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+# load packages
+source("../text_analysis_functions.R")
+library(tidyverse)
+library(RColorBrewer)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(lubridate)
+library(dplyr)
+library(ggmap)
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
+```
+
+```{r}
+noRT_clean <- clean_data(noRT)
+RT_clean <- clean_data(RT)
+```
+
+#### time series
+```{r time series}
+noRT_clean$M_Y <- format(as.Date(noRT_clean$created_at), "%Y-%m")
+
+
+query <- noRT_clean %>% 
+  filter(!str_detect(tolower(query), "range|rangeland")) %>% 
+    mutate(query = str_replace_all(query, "#| |\"", "")) %>% 
+  select(M_Y, query)
+
+ggplot(query, aes(x = M_Y, fill = query)) +
+  geom_bar() +
+  labs(
+    x = "month",
+    title = "monthly count for each search tearm"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+counts <- noRT_clean %>% 
+  mutate(query = str_replace_all(query, "#| |\"", "")) %>% 
+  filter(query %in% c("soilhealth","regenerativeagriculture")) %>% 
+  group_by(M_Y, query) %>% 
+  tally() %>% 
+  ungroup
+
+tot_counts <- counts
+
+ggplot(counts, aes(x = M_Y, y = n, group = query)) +
+  geom_line(aes(color = query)) +
+  labs(
+    x = "month",
+    title = "monthly count for each search tearm"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+
+################
+
+full <- noRT_clean %>% 
+  mutate(query = str_replace_all(query, "#| |\"", "")) %>% 
+  group_by(M_Y, query) %>% 
+  tally() %>% 
+  ungroup()
+
+all_counts <- full %>% 
+  group_by(M_Y) %>% 
+  dplyr::summarise(
+    n = sum(n),
+    query = "all_terms"
+  )
+
+RA_SH <- full %>% 
+  filter(query %in% c("soilhealth","regenerativeagriculture"))
+
+bind <- bind_rows(RA_SH, all_counts)
+
+
+ggplot(bind, aes(x = M_Y, y = n)) +
+  geom_line(aes(color = query, group = query)) +
+  labs(
+    x = "month",
+    title = "monthly count for each search tearm"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+counts_all <- noRT_clean %>% 
+  mutate(query = str_replace_all(query, "#| |\"", "")) %>% 
+  group_by(M_Y, query) %>% 
+  tally() %>% 
+  ungroup() %>% 
+  group_by(M_Y) %>% 
+  dplyr::mutate(monthly_total = sum(n)) %>% 
+    ungroup() %>% 
+  mutate(prop = n/monthly_total) %>% 
+  filter(query %in% c("soilhealth","regenerativeagriculture"))
+
+
+
+ggplot(counts_all, aes(as.factor(M_Y), prop)) +
+  geom_line(aes(color = query, group = query)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "month",
+       y = "proportion of all tweets",
+       title = "'Regenerative Ag' & 'Soil health' as a proportion of all tweets over time")
+
+```
+
+#### decay
+```{r decay}
+
+rt_limit <- noRT_clean %>% 
+  filter(retweet_count > 30)
+
+decay <- list()
+
+for (i in 1:nrow(rt_limit)) {
+  tmp <- find_rt(i, rt_limit, RT_clean)
+  tmp <- tmp %>% 
+    mutate(
+      prop = round(Number/sum(Number),4)
+    )
+  decay[[i]] <- tmp
+  
+}
+
+test <- bind_rows(decay)
+
+summ <- test %>% 
+  group_by(Time_since) %>% 
+  filter(Time_since <= 31 & Time_since >= 0) %>% 
+  dplyr::summarise(
+    mean = round(mean(prop),4),
+    sd = round(sd(prop),2)
+  )
+
+ggplot(summ, aes(as.factor(Time_since), mean)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+                 position=position_dodge(.9)) +
+  labs(x = "days since first tweet",
+       y = "proportion of total retweets",
+       title = "Average retweet decay over 1 month")
+
+
+box <- test %>% 
+  filter(Time_since <= 31 & Time_since >= 0) %>% 
+    mutate(query = str_replace_all(Query, "#| |\"", ""))
+  
+
+ggplot(box, aes(as.factor(Time_since), prop)) +
+  geom_boxplot() +
+  facet_wrap(~query) +
+  labs(x = "days since first tweet",
+       y = "proportion of total retweets",
+       title = "Average retweet decay over 1 month by query term")
+
+
+ggplot(box, aes(as.factor(Time_since), prop)) +
+  geom_boxplot() +
+  labs(x = "days since first tweet",
+       y = "proportion of total retweets",
+       title = "Average retweet decay over 1 month")
+```
+
+
+
+### for network analysis
+```{r network}
+RT_limit <- RT_clean %>% 
+  filter(retweet_count > 500 &
+           !str_detect(tolower(text), "a joyful soul"))
+
+tt <- data.frame(RT_limit$text, RT_limit$screen_name)
+names(tt) <- c("text", "retweet_user")
+tt$author <- noRT_clean$screen_name[match(tt$text, noRT_clean$text)]
+
+# filter out the ones w/o authors
+network <- tt %>% 
+  filter(author != "NA")
+
+```
+
+
+
+
