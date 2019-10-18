@@ -8,6 +8,7 @@ library(stringr)
 library(igraph)
 library(ggraph)
 library(SnowballC)
+library(plyr)
 
 
 
@@ -348,9 +349,9 @@ flag_india <- function(data) {
   results <- data %>% 
     mutate(
       is_india = case_when(
-        str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar") ~ 1,
-        str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1,
-        str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1))
+        str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar|sadhgurujv|rallyforrivers") ~ 1,
+        str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|sadhgurujv|rallyforrivers") ~ 1,
+        str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|sadhguru|rallyforrivers") ~ 1))
   
   #replace na w/ 0 to indicate non-india related tweets
   results$is_india[is.na(results$is_india)] <- 0
@@ -358,4 +359,99 @@ flag_india <- function(data) {
   return(results)
 }
 
+################################################
+##            clean data                      ##
+################################################
 
+#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+#' Clean data
+#' i.e remove extranious numbers,characters, and users (like the pope)
+#' 
+#' NOTE: this also runs flag_india() and filters out all india related tweets
+#'
+#' @param input tiwtter data frame - either RT or noRT
+#'
+#' @return same data frame with the 'text' column cleaned
+#' @export
+#'
+#' @examples
+clean_data <- function(input){
+  input_clean <- removeNumbers(input$text)
+  input_clean <- gsub("@\\w+","",input_clean)
+  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
+  input_clean <- gsub("#\\s+","", input_clean)
+  input_clean <- gsub("amp", "", input_clean)
+  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
+  
+  input$text <- input_clean
+  input <- input %>% 
+    filter(source != "Twittascope") 
+  
+  # to remove the pope
+  input <- input %>%
+    arrange(-retweet_count) %>%
+    filter(screen_name != "Pontifex")
+  
+  # to remove all india related tweets
+  input_india <- flag_india(input)
+  input_no_india <- input_india %>% 
+    filter(is_india == 0) 
+  
+  return(input_no_india)
+}
+
+
+
+########################################
+####        Find RT                 ####
+########################################
+
+
+find_rt <- function(rank, noRT_dataset, RT_dataset) {
+  result_rt <- RT_dataset %>% 
+    filter(substring(RT_dataset$text, 1, 30) == substring(noRT_dataset$text[rank], 1, 30))
+  # aggregate tweets by date
+  result.df <- ddply(result_rt, .(date(result_rt$created_at), result_rt$query), nrow)
+  names(result.df) <- c("Date", "Query", "Number")
+  result.df <- result.df %>% arrange (result.df$Date)
+  # calculate day_since based on the original tweet (noRT) date
+  result.df$time_since <- result.df$Date - date(noRT_dataset$created_at[rank])
+  result.df$content <- substring(result_rt$text[1], 1, 30)
+  names(result.df) <- c("date", "query", "number", "time_since", "content")
+  result.df$id <- rank
+  return(result.df)
+}
+
+#####################################
+###       Phrases                 ###
+#####################################
+
+# function detect phrases
+# input as dataset
+# min as minimum count number limit
+
+phrases <- function(input, min){
+  toks_full <- tokens(input$text)
+  
+  # remove punctuation, symbols, numbers, and spaces
+  toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
+  # remove the stop words
+  toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('english'), selection = 'remove')
+  # covert to stem words
+  toks_nostop_full <- tokens_wordstem(toks_nostop_full)
+  
+  tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
+                                  valuetype = 'regex', 
+                                  case_insensitive = T, 
+                                  padding = TRUE) %>% 
+    textstat_collocations(min_count = min)
+  #textstat_collocations(min_count =  min, size = 3) # to create collocations of 3 words
+  
+  # remove all search terms in result
+  tstat_col_caps <- tstat_col_caps %>% arrange(desc(count)) %>% 
+    filter(collocation != "soil health" & collocation != "healthi soil" & 
+             collocation != "regen agricultur" & collocation != "soil fertil" & 
+             collocation != "soil qualiti"& collocation != "rangeland health" & 
+             collocation != "healthi rangeland")
+  return(tstat_col_caps)
+}

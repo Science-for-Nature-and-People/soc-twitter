@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # load packages
 library(tidyverse)
+library(RColorBrewer)
 library(tidytext)
 library(stringr)
 library(ggraph)
@@ -28,38 +29,10 @@ library(ggplot2)
 source("../text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
-RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_v2.csv",stringsAsFactors = FALSE)
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
 ```
 
-
-```{r, include=FALSE}
-#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
-clean_data <- function(input){
-  #input_clean <- removeNumbers(input$text)
-  input_clean <- gsub("@\\w+","",input$text)
-  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
-  input_clean <- gsub("#\\s+","", input_clean)
-  input_clean <- gsub("amp", "", input_clean)
-  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
-
-  input$text <- input_clean
-  input <- input %>% 
-  filter(source != "Twittascope") 
-
-  # to remove the pope
-  input <- input %>%
-    arrange(-retweet_count) %>%
-    filter(screen_name != "Pontifex")
-
-  # to remove all india related tweets
-  input_india <- flag_india(input)
-  input_no_india <- input_india %>% 
-    filter(is_india == 0) 
-  
-  return(input_no_india)
-}
-```
 
 ### noRT dataset
 ```{r}
@@ -75,8 +48,9 @@ RT_no_india <- clean_data(RT)
 input <- noRT_no_india
 
 # SoilSummit19 is used by three conferences (Soil Health Summit 19, TCM Soil Summit, Red River Soil Health Summit)
+#!!!!! could not reproduce this using "soilsummit19" => removed the 19
 SHS19 <- input %>% 
-  filter(str_detect(tolower(text), "soilsummit19"))
+  dplyr::filter(str_detect(tolower(text), "soilsummit"))
 # to remove possible tweets from two other conferences also using this hashtag
 SHS19 <- SHS19 %>% filter(date(SHS19$created_at) < "2019-01-25")
 
@@ -86,7 +60,7 @@ SHS19_n <- SHS19 %>% filter(retweet_count > 1)
 
 
 # select the RT of SHS19
-SHS19_RT <- RT_no_india %>% filter(str_detect(tolower(text), "soilsummit19"))
+SHS19_RT <- RT_no_india %>% filter(str_detect(tolower(text), "soilsummit"))
 SHS19_RT <- SHS19_RT %>% filter (is_retweet == TRUE)
 SHS19_RT <- SHS19_RT  %>% filter (retweet_count > 1)
 
@@ -139,11 +113,16 @@ find_rt <- function(rank, noRT_dataset, RT_dataset) {
 ```
 
 ```{r}
+SHS19_n <- SHS19_n %>% 
+  arrange(-favorite_count)
+pal <- colorRampPalette(c("blue", "red"))
+cols <- pal(nrow(SHS19_n))
+
 # find all retweet decay for SHS19
 test <- find_rt(1, SHS19_n, SHS19_RT)
 
 #plot the first tweet
-g <- ggplot() + geom_line(data = test, aes(x = Time_since, y = Number)) + xlim(0,3) + 
+g <- ggplot() + geom_line(data = test, aes(x = Time_since, y = Number, color = Content), color = cols[1]) + xlim(0,3) + 
   xlab("Time Since (days)") + ylab("Number of tweets")
 
 # a loop to find all retweets for SHS19 tweets and plot decay
@@ -151,13 +130,14 @@ i <- 2
 while(i < nrow(SHS19_n)){
   tmp <- find_rt(i, SHS19_n, SHS19_RT)
   # plot a line for retweet decay in each loop 
-  g <- g + geom_line(data = tmp, aes(x = Time_since, y = Number)) + xlim(0,3)
+  g <- g + geom_line(data = tmp, aes(x = Time_since, y = Number, color = Content), color = cols[i+1]) + xlim(0,3)
   test <- rbind(test, tmp)
   i = i + 1
 }
 
 g + ggtitle("Retweet decay during SHS 2019")
 ```
+
 
 
 -------------------------------------------------------
@@ -200,6 +180,7 @@ colnames(edges)[5] <- "to"
 edges <- select(edges, from, to, weight)
 edges
 ```
+
 ```{r}
 # interactive diagram
 library(visNetwork)
