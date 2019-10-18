@@ -422,4 +422,36 @@ find_rt <- function(rank, noRT_dataset, RT_dataset) {
   return(result.df)
 }
 
+#####################################
+###       Phrases                 ###
+#####################################
 
+# function detect phrases
+# input as dataset
+# min as minimum count number limit
+
+phrases <- function(input, min){
+  toks_full <- tokens(input$text)
+  
+  # remove punctuation, symbols, numbers, and spaces
+  toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
+  # remove the stop words
+  toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('english'), selection = 'remove')
+  # covert to stem words
+  toks_nostop_full <- tokens_wordstem(toks_nostop_full)
+  
+  tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
+                                  valuetype = 'regex', 
+                                  case_insensitive = T, 
+                                  padding = TRUE) %>% 
+    textstat_collocations(min_count = min)
+  #textstat_collocations(min_count =  min, size = 3) # to create collocations of 3 words
+  
+  # remove all search terms in result
+  tstat_col_caps <- tstat_col_caps %>% arrange(desc(count)) %>% 
+    filter(collocation != "soil health" & collocation != "healthi soil" & 
+             collocation != "regen agricultur" & collocation != "soil fertil" & 
+             collocation != "soil qualiti"& collocation != "rangeland health" & 
+             collocation != "healthi rangeland")
+  return(tstat_col_caps)
+}
