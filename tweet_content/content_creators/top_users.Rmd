@@ -1,0 +1,177 @@
+---
+title: "Network"
+author: "Meilin"
+date: "9/11/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### This Markdown aims to create a list of top 500 users based on:
+- the number of total retweets of all their tweets (called top_users)
+- the ratio of number of tweets to total retweets, based on some limit (called content creators)
+
+```{r, include=FALSE}
+# load packages
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(SnowballC)
+library(dplyr)
+source("../../text_analysis_functions.R")
+
+theme_set(theme_bw())
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
+```
+
+
+### Create a list of top 500 users in terms of num of total retweets of all their tweets
+```{r, include=FALSE}
+# data cleaning
+noRT_no_india <- clean_data(noRT)
+
+
+# create a list with username, text and retweet_count
+user.df <- noRT_no_india %>% 
+  select(screen_name, text, retweet_count, user_id)
+
+user.df$text <- substring(user.df$text, 1, 30)
+
+# remove duplicate usernames/text combos
+user.df <- user.df[!duplicated(user.df[1:2]),]
+
+# sum up retweet_count based on username
+user_counts <- aggregate(user.df$retweet_count, by=list(Users = user.df$screen_name), FUN = sum)
+names(user_counts) <- c("screen_name", "tot_retweet_count")
+
+
+```
+
+# caclulate the total # of tweets each of these top users have created
+```{r}
+tweet_count <- user.df %>% 
+  group_by(screen_name) %>% 
+  tally()
+  
+all_counts <- dplyr::left_join(user_counts, tweet_count, by = "screen_name")
+
+all_counts$ratio <- round(all_counts$tot_retweet_count/all_counts$n,2)
+
+```
+
+### create lists of top users based on total number of retweets
+```{r}
+## based soley on retweet counts 
+top_user <- all_counts %>% 
+  arrange(-tot_retweet_count) %>% 
+  head(500)
+
+
+###explore this list a bit:
+
+hist(top_user$tot_retweet_count)
+hist(top_user$n)
+
+
+nrow(top_user[top_user$n > 10,]) # ~60% of these have had more than 10 tweets
+```
+
+### create list based on combo of total number of tweets AND total retweets
+```{r}
+### define parameters:
+num_tweet_limit <- 10
+ratio_limit <- 2
+
+content_creator <- all_counts %>% 
+  filter(n >= num_tweet_limit & ratio >= ratio_limit) %>% 
+  arrange(-tot_retweet_count)
+
+
+```
+
+
+
+```{r}
+par(mfrow=c(2,2))
+hist(top_user$tot_retweet_count)
+hist(top_user$n)
+hist(content_creator$tot_retweet_count)
+hist(content_creator$n)
+```
+
+
+
+####adding in steves manually coded grouping
+```{r groups}
+coded <- read_csv("top_user_coded.csv") 
+
+noRT_clean <- clean_data(noRT)
+
+joined <- left_join(noRT_clean[,c(2,4,5,7,8)], coded) %>% 
+  filter(!is.na(`indiv-org`))
+
+```
+
+
+```{r explore groups}
+
+type_count <- joined %>% 
+  group_by(type) %>% 
+  dplyr::summarise(
+    count = n()
+  ) %>% 
+  ungroup()
+
+type_count$type <- factor(type_count$type, levels = type_count$type[order(desc(type_count$count))])
+
+ggplot(type_count, aes(x = as.factor(type), y = count)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = "user type",
+    title = "number of tweets from by top users - sorted by 'type'"
+  )
+```
+
+
+```{r all phrases}
+all_phrases <- phrases(joined, 10)
+head(all_phrases, 10)
+```
+
+
+```{r phrase-type}
+## phrases for top 5 user types
+
+non_prof <- phrases(filter(joined, type == "non-profit"), 10)
+head(non_prof, 10)
+
+author <- phrases(filter(joined, type == "author"), 10)
+head(author, 10)
+
+small_comp <- phrases(filter(joined, type == "small-company"), 10)
+head(small_comp, 10)
+
+extension <- phrases(filter(joined, type == "extension"), 10)
+head(extension, 10)
+
+govt <- phrases(filter(joined, type == "government"), 10)
+head(govt, 10)
+
+
+```
+
+
+
+
+
+

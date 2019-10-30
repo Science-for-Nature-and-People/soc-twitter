@@ -1,0 +1,197 @@
+---
+title: "phrases"
+author: "Meilin"
+date: "7/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##### This markdown visualizes the common flow of words in tweets by using quanteda package to catch phrases. These visualizations are separated into: the full noRT dataset, top 25 tweets, top 100 tweets, tweets excluding top 100, and then repeat this by breaking out phrases by search terms: soil health | soil fertility | soil quality | rangeland health | regenerative agriculture.
+
+```{r, include=FALSE}
+# load packages
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(SnowballC)
+source("../text_analysis_functions.R")
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+```
+
+
+```{r, include=FALSE}
+# select top 25 and 100 tweets based on their retweet count
+# use a sample in the following code
+
+noRT_no_india <- clean_data(noRT)
+
+top_25_noRT <- noRT_no_india %>%
+  arrange(-retweet_count) %>%
+  head(25)
+
+top_100_noRT <- noRT_no_india %>% 
+  arrange(-retweet_count) %>% 
+  head(100)
+
+rest_noRT <- noRT_no_india %>% 
+  arrange(-retweet_count) %>%
+  slice(101:n())
+```
+
+***
+# collocation analysis
+```{r}
+# function detect phrases
+# input as dataset
+# min as minimum count number limit
+
+phrases <- function(input, min){
+  toks_full <- tokens(input$text)
+
+  # remove punctuation, symbols, numbers, and spaces
+  toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
+  # remove the stop words
+  toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('english'), selection = 'remove')
+  # covert to stem words
+  toks_nostop_full <- tokens_wordstem(toks_nostop_full)
+
+  tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
+                                valuetype = 'regex', 
+                                case_insensitive = T, 
+                                padding = TRUE) %>% 
+  textstat_collocations(min_count = min)
+  #textstat_collocations(min_count =  min, size = 3) # to create collocations of 3 words
+  
+  # remove all search terms in result
+  tstat_col_caps <- tstat_col_caps %>% arrange(desc(count)) %>% 
+    filter(collocation != "soil health" & collocation != "healthi soil" & 
+             collocation != "regen agricultur" & collocation != "soil fertil" & 
+             collocation != "soil qualiti"& collocation != "rangeland health" & 
+             collocation != "healthi rangeland")
+  return(tstat_col_caps)
+}
+```
+
+# detect phrases using the full noRT dataset
+```{r}
+tstat_col_caps <- phrases(noRT_no_india, 100)
+
+head(tstat_col_caps, 100)
+```
+
+# Compare the phrases from the top 25, top 100 to the rest
+```{r}
+# top 25 noRT
+tstat_col_caps_25 <- phrases(top_25_noRT, 2)
+
+head(tstat_col_caps_25, 50) 
+```
+
+```{r}
+# top 100 noRT
+tstat_col_caps_100 <- phrases(top_100_noRT, 2)
+
+head(tstat_col_caps_100, 50) 
+```
+
+```{r}
+# compared to the rest (exclude the top 100)
+tstat_col_caps_rest <- phrases(rest_noRT, 100)
+
+head(tstat_col_caps_rest, 100)
+```
+
+***
+---------------------------------------------
+# Break out the common phrases by search term
+
+```{r}
+### creating dataset for each seach term
+#### soil health
+input <- noRT_no_india
+
+soil_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil health","#soilhealth","healthy soil","#healthysoil"), collapse = '|')))
+soil_health_tweets$hits <- "soil health"
+
+#### soil quality
+soil_quality_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil quality","#soilquality"),collapse = '|')))
+soil_quality_tweets$hits <- "soil quality"
+
+### soil fertility
+soil_fertility_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil fertility","#soilfertility"),collapse = '|')))
+soil_fertility_tweets$hits <- "soil fertility"
+
+#### rangeland health
+rangeland_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("rangeland health","#rangelandhealth","healthy rangelands", "#healthyrangelands"),
+                                      collapse = '|')))
+rangeland_health_tweets$hits <- "rangeland health"
+
+#### regenerative agriculture
+regen_agri_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("regenerative agriculture","#regenerativeagriculture"), collapse = '|')))
+regen_agri_tweets$hits <- "regenerative agriculture"
+
+```
+
+```{r}
+# detect phrases based on search term
+# soil health | soil quality | soil fertility | rangeland health | regenerative agriculture
+# creat tokens with the search term dataset
+
+# soil health
+
+soil_health_col_caps <- phrases(soil_health_tweets, 200)
+
+head(soil_health_col_caps, 100)
+```
+
+```{r}
+# soil quality
+
+soil_quality_col_caps <- phrases(soil_quality_tweets, 20)
+
+head(soil_quality_col_caps, 100)
+```
+
+```{r}
+# soil fertility
+
+soil_fertility_col_caps <- phrases(soil_fertility_tweets, 20)
+
+head(soil_fertility_col_caps, 100)
+```
+
+```{r}
+# rangeland health
+
+range_health_col_caps <- phrases(rangeland_health_tweets, 2)
+
+head(range_health_col_caps, 100)
+```
+
+```{r}
+# regenerative agriculture
+
+regen_agri_col_caps <- phrases(regen_agri_tweets, 50)
+
+head(regen_agri_col_caps, 100)
+```

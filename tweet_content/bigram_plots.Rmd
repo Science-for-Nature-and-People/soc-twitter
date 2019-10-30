@@ -21,11 +21,58 @@ source("../text_analysis_functions.R")
 # load data
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
 
-# select top 100 tweets based on their RT count
+```
+
+```{r, include=FALSE}
+#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+clean_data <- function(input){
+  input_clean <- removeNumbers(input$text)
+  input_clean <- gsub("@\\w+","",input_clean)
+  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
+  input_clean <- gsub("#\\s+","", input_clean)
+  input_clean <- gsub("amp", "", input_clean)
+  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
+
+  input$text <- input_clean
+  input <- input %>% 
+  filter(source != "Twittascope") 
+
+  # to remove the pope
+  input <- input %>%
+    arrange(-retweet_count) %>%
+    filter(screen_name != "Pontifex")
+
+  # to remove all india related tweets
+  input_india <- flag_india(input)
+  input_no_india <- input_india %>% 
+    filter(is_india == 0) 
+  
+  return(input_no_india)
+}
+```
+
+
+### TEST top 100 w/o numbers, usernames and website
+```{r}
+noRT <- clean_data(noRT)
 top_100_noRT <- noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
 ```
+
+
+```{r}
+# select top 100 tweets based on their likes count
+top_100_noRT_likes <- noRT %>% 
+  arrange(-favorite_count) %>% 
+  head(100)
+
+# select top 100 tweets based on the combined count
+top_100_noRT_combined <- noRT %>% 
+  arrange(-(favorite_count+retweet_count)) %>% 
+  head(100)
+```
+
 
 
 ### Full dataset (noRT)
@@ -36,6 +83,7 @@ noRT_bigram <- create_bigram(noRT, "", group = TRUE, stem = TRUE) # `group = T` 
 # the indexed value here (65) ensures that, at most, 65 bigrams will be included in the gram network plot. This number is somewhat arbitrary and was determined based on how cluttered/filled in the resulting graphs were.
 # these numbers (for this and all other bigram plots) can be tweaked if you want to add/remove words from the plot -- setting the index to somehwere between 60-70 seems to work best though
 limit <- noRT_bigram$n[75]
+
 gram_network(noRT_bigram,limit)
 ```
 
@@ -122,15 +170,33 @@ gram_network(biod_bigram, limit)
 ***
 ***
 
-## top 100 noRT  
+## top 100 noRT clean
+```{r, echo=F, fig.width=12}
+###full (top100)
+
+top_100_bigram <- create_bigram(top_100_noRT, group = T, stem = T)
+limit <- top_100_bigram$n[70]
+
+gram_network(top_100_bigram, limit)
+```
+
+## top 100 noRT based on likes
 
 ```{r, echo=F, fig.width=12}
 ###full (top100)
-top_100_bigram <- create_bigram(top_100_noRT, group = T, stem = T)
-limit <- top_100_bigram$n[70]
-gram_network(top_100_bigram, limit)
+top_100_bigram_likes <- create_bigram(top_100_noRT_likes, group = T, stem = T)
+limit <- top_100_bigram_likes$n[70]
+gram_network(top_100_bigram_likes, limit)
 ```
-  
+## top 100 noRT based on combined
+
+```{r, echo=F, fig.width=12}
+###full (top100)
+top_100_bigram_combined <- create_bigram(top_100_noRT_combined, group = T, stem = T)
+limit <- top_100_bigram_combined$n[70]
+gram_network(top_100_bigram_combined, limit)
+```
+
 ### filtered for "soil"
 
 ```{r, echo=F, fig.width=12}
@@ -138,18 +204,4 @@ gram_network(top_100_bigram, limit)
 soil_100_bigram <- create_bigram(top_100_noRT, "soil", group = T, stem = T)
 limit <- soil_100_bigram$n[70]
 gram_network(soil_100_bigram, limit)
-```
-  
-  ***  
-  
-### top 100 noRT (inda excluded)
-
-```{r,echo=F, fig.width=12}
-noRT_india <- flag_india(noRT)
-top_no_india <- noRT_india %>% 
-  filter(is_india == 0) %>% 
-  arrange(-retweet_count)
-top_noIndia_bigram <- create_bigram(top_no_india, group = T, stem = T)
-limit <- top_noIndia_bigram$n[70]
-gram_network(top_noIndia_bigram, limit)
 ```

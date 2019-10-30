@@ -1,0 +1,81 @@
+---
+title: "map"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggmap)
+library(sf)
+library(raster)
+library(dplyr)
+library(spData)
+library(tmap)
+
+
+
+
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
+```
+
+
+#### get location data
+```{r map}
+RT_sub <- RT %>% 
+  dplyr::select(provenance, created_at, screen_name, favorite_count, retweet_count, query, place_name, country) %>% 
+  filter(!is.na(place_name)) %>% 
+  mutate(
+    place_full = paste(place_name, country, sep = ", ")
+  )
+
+unique_loc <- unique(RT_sub$place_full)
+
+# coords <- geocode(unique_loc)
+
+# coord_loc <- data.frame(place_full = unique_loc, coords)
+
+# locations <- left_join(RT_sub, coord_loc)
+
+# write_csv(locations, "locations.csv")
+
+locations <- read_csv("locations.csv")
+
+locations <- locations %>% 
+  mutate(query = tolower(str_replace_all(query, "#| |\"", "")))
+  
+```
+
+
+```{r}
+
+max_lat <- max(locations$lat)
+min_lat <- min(locations$lat)
+max_lon <- max(locations$lon)
+min_lon <- min(locations$lon)
+
+myLocations <- c(min_lon,min_lat,max_lon,max_lat)
+
+map <- get_map(source = "stamen", maptype = "toner", location = c(-160,-50, 180,70))
+
+
+### map based on provenance
+ggmap(map) +
+  geom_point(data = locations, aes(x = lon, y = lat, color = provenance), size = .35) +
+  theme_void()
+
+
+### map based on query
+
+
+ggmap(map) +
+  geom_point(data = locations, aes(x = lon, y = lat, color = query), size = .35) +
+  theme_void()
+
+## one thing to consider: is the counts of our query terms representative of the whole dataset
+```
+
