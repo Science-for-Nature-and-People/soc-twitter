@@ -3,6 +3,7 @@
 library(rtweet)
 library(tidygraph)
 library(ggraph)
+library(here)
 
 ### use `content_creator` variable from the top_users.Rmd scripts
 
@@ -10,44 +11,25 @@ library(ggraph)
 tmp <- left_join(content_creator, noRT_no_india, by = "screen_name")
 users <- unique(tmp$user_id)
 
-friends <- list()
 
-# # start loop
+
+
+##### this was outside of aurora (on local R machine) to avoid issues associated w/ the rcurl package
 # for (i in 1:length(users)){
-#   friends[[i]] <- get_friends(users[i])
+#   if (i == 1){
+#     friends <- get_friends(users[i])
+#   } else {
+#     tmp <- get_friends(users[i])
+#     friends <- rbind(friends, tmp)
+#   }
+#   
 #   
 #   # pause if divisible by 15
 #   if (i %% 15 == 0){
+#     write_csv(friends, "user_friends.csv")
 #     print(Sys.time())
-#     Sys.sleep(15*61) 
+#     Sys.sleep(15*61)
 #   }
 # }
 
-friends <- get_friends(users, retryonratelimit = T)
 
-
-# Combine data tables in list
-friends <- bind_rows(friends) %>% 
-  rename(friend = user_id)
-
-
-write.csv(friends, "content_creator_friends.csv")
-
-
-# net <- friends %>% 
-#   group_by(friend) %>% 
-#   mutate(count = n()) %>% 
-#   ungroup() %>% 
-#   filter(count > 1)
-# 
-# 
-# g <- net %>% 
-#   select(user, friend) %>%  # drop the count column
-#   as_tbl_graph()
-# 
-# 
-# 
-# ggraph(g) +
-#   geom_edge_link() +
-#   geom_node_point(size = 3, colour = 'steelblue') +
-#   theme_graph()
