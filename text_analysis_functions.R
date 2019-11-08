@@ -9,6 +9,7 @@ library(igraph)
 library(ggraph)
 library(SnowballC)
 library(plyr)
+library(tm)
 
 
 
@@ -139,7 +140,7 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
   
   # create tokens
   text_words <- terms %>% 
-    select(text) %>% 
+    dplyr::select(text) %>% 
     mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remvove anything associated with hyperlinks
     mutate(text = tolower(text)) %>% #make all lower case
     unnest_tokens(word, text, token = "regex", pattern = reg_words) %>% # unnest words based on the regex defined above
@@ -153,7 +154,7 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
   
   #get word counts and arrange in decending order
   text_words %>% 
-    count(word, sort=TRUE) 
+    dplyr::count(word, sort=TRUE) 
 }
 
 
@@ -249,7 +250,7 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   reg_words <- "([^A-Za-z_\u0900-\u097F\\d@']|'(?![A-Za-z_\u0900-\u097F\\d@]))" # regex expresions that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ 
   
   bigrams_separated <- terms %>%
-    select(text, user_id) %>% 
+    dplyr::select(text, user_id) %>% 
     mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remove anything associated with a hyperlink
     unnest_tokens(word, text, token = "regex", pattern = reg_words) %>%
     mutate(next_word = lead(word)) %>% #creates a new column that has the next word for each respective row (this creates the bigrams)
@@ -266,8 +267,8 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   #combine the two columns into a single bigram term, then count
   bigrams_united <- bigrams_separated %>% 
     unite(bigram, word, next_word, sep = ' ') %>%
-    select(bigram)  %>% 
-    count(bigram, sort = TRUE) 
+    dplyr::select(bigram)  %>% 
+    dplyr::count(bigram, sort = TRUE) 
   
 }
 
@@ -304,6 +305,7 @@ gram_network <- function(data, limit) {
   
   # defining the arrow asthetics
   a <- grid::arrow(type = "closed", length = unit(.15, "inches"))  
+
   
   #filter bigrams based on their counts
   bigrams <- data %>% 
@@ -312,9 +314,9 @@ gram_network <- function(data, limit) {
   
   #count each word so we can size the nodes based on their count
   counts <- bigrams %>% 
-    gather(item, word, word1, word2) %>% 
-    group_by(word) %>% 
-    summarise(n = sum(n))
+    tidyr::gather(item, word, word1, word2) %>% 
+    dplyr::group_by(word) %>% 
+    dplyr::summarise(n = sum(n))
   
   #generates a an igraph graph (resembiling a table) showing direction of terms (see roxygen notes for link to where i got this code)
   bigrams %>% 
@@ -375,29 +377,35 @@ flag_india <- function(data) {
 #' @export
 #'
 #' @examples
-clean_data <- function(input){
+clean_data <- function(input, rm_pope =TRUE, rm_india=TRUE){
   input_clean <- removeNumbers(input$text)
   input_clean <- gsub("@\\w+","",input_clean)
   input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
   input_clean <- gsub("#\\s+","", input_clean)
   input_clean <- gsub("amp", "", input_clean)
   input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
+  input_clean <- gsub("RT : ", "", input_clean)
+  
   
   input$text <- input_clean
-  input <- input %>% 
+  out <- input %>% 
     filter(source != "Twittascope") 
   
+  if (rm_pope) {
   # to remove the pope
-  input <- input %>%
+  out <- out %>%
     arrange(-retweet_count) %>%
     filter(screen_name != "Pontifex")
+  }
   
+  if (rm_india) {
   # to remove all india related tweets
-  input_india <- flag_india(input)
-  input_no_india <- input_india %>% 
+  input_india <- flag_india(out)
+  out <- input_india %>% 
     filter(is_india == 0) 
+  }
   
-  return(input_no_india)
+  return(out)
 }
 
 
@@ -431,7 +439,7 @@ find_rt <- function(rank, noRT_dataset, RT_dataset) {
 # min as minimum count number limit
 
 phrases <- function(input, min){
-  toks_full <- tokens(input$text)
+  toks_full <- tokens(tolower(input$text))
   
   # remove punctuation, symbols, numbers, and spaces
   toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
