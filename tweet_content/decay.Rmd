@@ -227,14 +227,14 @@ ggraph(routes_tidy, layout = "graphopt") +
 ##### Kyles additions:
 
 ### network for top 4 tweets
-```{r}
-RT_clean <- clean_data(RT, rm_pope = F, rm_india = F)
-noRT_clean <- clean_data(noRT, rm_pope = F, rm_india = F)
+```{r, fig.width=12, fig.height=12}
+RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
 
 
 top100 <- noRT_clean %>% 
   arrange(desc(retweet_count)) %>% 
-  slice(2:101) %>% 
+  head(100) %>% 
   select(text, screen_name) %>% 
   dplyr::rename("author" = "screen_name")
 
@@ -284,92 +284,51 @@ library(ggraph)
 
 routes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
 
-routes_tidy %>% 
-  activate(edges) %>% 
-  dplyr::arrange(desc(weight))
-
-ggraph(routes_tidy, layout = "graphopt") +
-  geom_node_point() +
-  geom_edge_link() +
-  #scale_edge_width(range = c(0.1, 0.5)) +
-  #geom_node_text(aes(label = label), label.size = 0.25, repel = TRUE) +
-  labs(edge_width = "Number") +
-  theme_graph()
-
-ggraph(routes_tidy, layout = 'linear', circular = TRUE) + 
-    geom_edge_arc()
-```
-
-```{r, fig.width = 12, fig.height=12}
-
-cols_f <- colorRampPalette(RColorBrewer::brewer.pal(11, 'Spectral'))
-
-
 
 test <- routes_tidy %>% 
   mutate(community = group_walktrap(weights = weight)) %>% 
   mutate(centrality = centrality_degree(weights = weight)) %>% 
-  arrange(community, centrality) %>% 
+  arrange(community, centrality) 
+
+labs <- test %>% 
   mutate(ranking = row_number()) %>% 
   dplyr::top_n(500, centrality) %>% 
-  mutate(node_label = if_else(centrality > 350, label, "")) %>% 
-  mutate(node_size = if_else(centrality > 350, centrality, 0)) 
+  mutate(node_label = if_else(centrality > 150, label, "")) %>% 
+  mutate(node_size = if_else(centrality > 150, centrality, 0)) 
 
-test %>% 
-  activate(nodes) %>% 
-  arrange(desc(community))
+test %>%
+  activate(nodes) %>%
+  arrange(desc(centrality))
 
-colfunc <- colorRampPalette(c("blue", "yellow"))
 
-ggraph(test, layout = 'linear', circular = TRUE, sort.by = 'community') + 
+ggraph(labs, layout = 'linear', circular = TRUE) + 
   geom_edge_arc(alpha=0.05, 
                 aes(col = factor(weight), edge_width = weight)) +
   geom_node_label(aes(label=node_label, 
-                      size=10, 
+                      size=node_size, 
                       col = factor(community)),
                   label.size=0, 
                   fill="#ffffff66", 
                   segment.colour="slateblue",
                   color="black", 
                   repel=TRUE, 
-                  fontface="bold", 
+                  #fontface="bold", 
                   show.legend = FALSE) +
   coord_fixed() +
   scale_size_area(trans="sqrt") +
-  labs(title="R Twitter Activity", 
-       subtitle="Retweets and mentions between key members of the community") +
+  labs(title="Retweet Network", 
+       subtitle="most central users associated with the 100 most RTed tweets") +
   theme_graph() +
   guides(edge_width = FALSE, 
-         edge_colour = guide_legend(title = NULL,
+         edge_colour = guide_legend(title = "Edge weights",
                                     override.aes = list(edge_alpha = 1))) +
   theme(legend.position="bottom", 
         plot.title = element_text(size = rel(3)),
         plot.subtitle = element_text(size = rel(2)),
         legend.text = element_text(size = rel(2)))
 
-  
-  
-  
-ggraph(test, layout = 'linear', circular = TRUE, sort.by = 'ranking') + 
-  geom_edge_arc(alpha=0.05, aes(col = factor(weight), edge_width = weight)) +
-  geom_node_label(aes(label=node_label, size=node_size, col = factor(community)),
-                  label.size=0, fill="#ffffff66", segment.colour="slateblue",
-                  color="black", repel=TRUE, fontface="bold", 
-                  show.legend = FALSE) +
-  coord_fixed() +
-  scale_size_area(trans="sqrt") +
-  labs(title="Retweet Network", 
-       subtitle="Retweets and mentions between key members of the community",
-       col = "weight") +
-  theme_graph() +
-  guides(edge_width = FALSE, 
-         edge_colour = guide_legend(title = NULL,
-                                    override.aes = list(edge_alpha = 1))) +
-  theme(legend.position="bottom", 
-        plot.title = element_text(size = rel(3)),
-        plot.subtitle = element_text(size = rel(2)),
-        legend.text = element_text(size = rel(2)))
 ```
+
 
 
 #### decay
