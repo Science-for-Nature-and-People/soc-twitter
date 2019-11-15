@@ -226,7 +226,7 @@ ggraph(routes_tidy, layout = "graphopt") +
 
 ##### Kyles additions:
 
-### network for top 4 tweets
+### network for top 100 tweets
 ```{r, fig.width=12, fig.height=12}
 RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
 noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
@@ -237,12 +237,6 @@ top100 <- noRT_clean %>%
   head(100) %>% 
   select(text, screen_name) %>% 
   dplyr::rename("author" = "screen_name")
-
-top_regen <- noRT %>% 
-  filter(query == "regenerative agriculture") %>% 
-  select(text, screen_name) %>% 
-  dplyr::rename("author" = "screen_name")
-
 
 
 retweets <- RT_clean %>% 
@@ -285,23 +279,23 @@ library(ggraph)
 routes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
 
 
-test <- routes_tidy %>% 
+top100_comm <- routes_tidy %>% 
   mutate(community = group_walktrap(weights = weight)) %>% 
   mutate(centrality = centrality_degree(weights = weight)) %>% 
   arrange(community, centrality) 
 
-labs <- test %>% 
+top100_labs <- top100_comm %>% 
   mutate(ranking = row_number()) %>% 
   dplyr::top_n(500, centrality) %>% 
   mutate(node_label = if_else(centrality > 150, label, "")) %>% 
   mutate(node_size = if_else(centrality > 150, centrality, 0)) 
 
-test %>%
+top100_labs %>%
   activate(nodes) %>%
   arrange(desc(centrality))
 
 
-ggraph(labs, layout = 'linear', circular = TRUE) + 
+ggraph(top100_labs, layout = 'linear', circular = TRUE) + 
   geom_edge_arc(alpha=0.05, 
                 aes(col = factor(weight), edge_width = weight)) +
   geom_node_label(aes(label=node_label, 
@@ -329,6 +323,253 @@ ggraph(labs, layout = 'linear', circular = TRUE) +
 
 ```
 
+### network for top 100 tweets, including india
+```{r, fig.width=12, fig.height=12}
+RT_clean <- clean_data(RT, rm_pope = T, rm_india = F)
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = F)
+
+
+top100 <- noRT_clean %>% 
+  arrange(desc(retweet_count)) %>% 
+  head(100) %>% 
+  select(text, screen_name) %>% 
+  dplyr::rename("author" = "screen_name")
+
+
+retweets <- RT_clean %>% 
+  filter(is_retweet == TRUE & retweet_count > 1) %>% 
+  select(screen_name, text)
+
+joined <- dplyr::left_join(retweets, top100)
+
+
+network <- filter(joined, !is.na(author))
+
+authors <- network %>% dplyr::distinct(author) 
+names(authors) <- "label"
+retweet_users <- network %>% dplyr::distinct(screen_name) 
+names(retweet_users) <- "label"
+
+nodes <- rbind(authors, retweet_users)
+nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
+nodes <- nodes %>% rowid_to_column("id")
+
+# generate edge list
+library(plyr)
+per_route <- ddply(network, .(network$author, network$screen_name), nrow)
+names(per_route) <- c("label", "retweet_users", "weight")
+
+edges <- per_route %>% 
+  dplyr::left_join(nodes)
+
+colnames(edges)[4] <- "from"
+edges <- edges %>% 
+  left_join(nodes, by = c("retweet_users" = "label"))
+colnames(edges)[5] <- "to"
+
+edges <- dplyr::select(edges, from, to, weight)
+
+
+library(tidygraph)
+library(igraph)
+library(ggraph)
+
+india_graph <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+
+
+top_india <- india_graph %>% 
+  mutate(community = group_walktrap(weights = weight)) %>% 
+  mutate(centrality = centrality_degree(weights = weight)) %>% 
+  arrange(community, centrality) 
+
+india_labs <- top_india %>% 
+  mutate(ranking = row_number()) %>% 
+  dplyr::top_n(500, centrality) %>% 
+  mutate(node_label = if_else(centrality > 150, label, "")) %>% 
+  mutate(node_size = if_else(centrality > 150, centrality, 0)) %>% 
+  mutate(color = )
+
+india_labs %>%
+  activate(edges) %>%
+  arrange(desc(weight))
+
+
+ggraph(india_labs, layout = 'linear', circular = TRUE) + 
+  geom_edge_arc(alpha=0.05, 
+                aes(col = ifelse(weight > 1, ">1", "1"), 
+                    edge_width = weight)) +
+  geom_node_label(aes(label=node_label, 
+                      size=node_size, 
+                      col = factor(community)),
+                  label.size=0, 
+                  fill="#ffffff66", 
+                  segment.colour="slateblue",
+                  color="black", 
+                  repel=TRUE, 
+                  fontface="bold", 
+                  show.legend = FALSE) +
+  coord_fixed() +
+  scale_size_area(trans="sqrt") +
+  scale_edge_color_manual(
+    values = c(">1" = "red", "1" = "black")) +
+  labs(title="Retweet Network", 
+       subtitle="most central users associated with the 100 most RTed tweets") +
+  theme_graph() +
+  guides(edge_width = FALSE, 
+         edge_colour = guide_legend(title = "Edge weights",
+                                    override.aes = list(edge_alpha = 1))) +
+  theme(legend.position="bottom", 
+        plot.title = element_text(size = rel(3)),
+        plot.subtitle = element_text(size = rel(2)),
+        legend.text = element_text(size = rel(2)))
+
+```
+
+### network for specific user groups
+```{r, fig.width=12, fig.height=12}
+RT_clean <- clean_data(RT, rm_pope = T, rm_india = F)
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = F)
+
+### get coded users 
+coded <- read_csv("content_creators/top_user_coded.csv")
+
+farmers <- coded %>% 
+  filter(
+    str_detect(type, "farmer")
+  )
+
+farmer_tweets <- noRT_clean %>% 
+  filter(screen_name %in% farmers$screen_name) %>% 
+  select(text, screen_name) %>% 
+  dplyr::rename("author" = "screen_name")
+
+
+
+
+retweets <- RT_clean %>% 
+  filter(is_retweet == TRUE & retweet_count > 1) %>% 
+  select(screen_name, text)
+
+joined <- dplyr::left_join(retweets, farmer_tweets)
+
+
+network <- filter(joined, !is.na(author))
+
+authors <- network %>% dplyr::distinct(author) 
+names(authors) <- "label"
+retweet_users <- network %>% dplyr::distinct(screen_name) 
+names(retweet_users) <- "label"
+
+nodes <- rbind(authors, retweet_users)
+nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
+nodes <- nodes %>% rowid_to_column("id")
+
+# generate edge list
+library(plyr)
+per_route <- ddply(network, .(network$author, network$screen_name), nrow)
+names(per_route) <- c("label", "retweet_users", "weight")
+
+edges <- per_route %>% 
+  dplyr::left_join(nodes)
+
+colnames(edges)[4] <- "from"
+edges <- edges %>% 
+  left_join(nodes, by = c("retweet_users" = "label"))
+colnames(edges)[5] <- "to"
+
+edges <- dplyr::select(edges, from, to, weight)
+
+
+library(tidygraph)
+library(igraph)
+library(ggraph)
+
+india_graph <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+
+
+top_india <- india_graph %>% 
+  mutate(community = group_walktrap(weights = weight)) %>% 
+  mutate(centrality = centrality_degree(weights = weight)) %>% 
+  arrange(community, centrality) 
+
+india_labs <- top_india %>% 
+  mutate(ranking = row_number()) %>% 
+  dplyr::top_n(500, centrality) %>% 
+  mutate(node_label = if_else(centrality > 50, label, "")) %>% 
+  mutate(node_size = if_else(centrality > 50, 10, 0)) 
+
+india_labs %>%
+  activate(nodes) %>%
+  arrange(desc(centrality)) 
+
+
+ggraph(india_labs, layout = 'linear', circular = TRUE) +
+  geom_edge_arc(alpha=0.05,
+                aes(col = factor(weight),
+                    edge_width = weight)) +
+  geom_node_label(aes(label=node_label,
+                      size=node_size,
+                      col = factor(community)),
+                  label.size=0,
+                  fill="#ffffff66",
+                  segment.colour="slateblue",
+                  color="black",
+                  repel=TRUE,
+                  fontface="bold",
+                  show.legend = FALSE) +
+  coord_fixed() +
+  scale_size_area(trans="sqrt") +
+  labs(title="Retweet Network for farmers among top users",
+       subtitle="most central users associated with the top farmers") +
+  theme_graph() +
+  guides(edge_width = FALSE,
+         edge_colour = guide_legend(title = "Edge weights",
+                                    override.aes = list(edge_alpha = 1))) +
+  theme(legend.position="bottom",
+        plot.title = element_text(size = rel(3)),
+        plot.subtitle = element_text(size = rel(2)),
+        legend.text = element_text(size = rel(2)))
+
+
+ggraph(india_labs, layout = "graphopt") + 
+  geom_node_point() +
+  geom_edge_link(aes(width = weight), alpha = 0.5) + 
+  scale_edge_width(range = c(0.1, 0.5)) +
+  geom_node_label(aes(label= node_label, 
+                      size= node_size, 
+                      col = factor(community)),
+                  label.size=0, 
+                  fill="white", 
+                  segment.colour="slateblue",
+                  color="black", 
+                  repel=TRUE, 
+                  fontface="bold", 
+                  show.legend = FALSE) +
+  labs(edge_width = "Number") +
+  theme_graph()
+
+
+test <- india_labs %>% 
+  activate(nodes) %>% 
+  filter(centrality > 1)
+
+ggraph(test, layout = "graphopt") + 
+  geom_node_point() +
+  geom_edge_link(aes(width = weight), alpha = 0.5) + 
+  scale_edge_width(range = c(0.1, 0.5)) +
+  geom_node_label(aes(label= node_label, 
+                      size= node_size, 
+                      col = factor(community)),
+                  label.size=0, 
+                  fill="white", 
+                  segment.colour="slateblue",
+                  color="black", 
+                  repel=TRUE, 
+                  fontface="bold", 
+                  show.legend = FALSE) +
+  labs(title = "filtered for centrality > 1") +
+  theme_graph()
+```
 
 
 #### decay
