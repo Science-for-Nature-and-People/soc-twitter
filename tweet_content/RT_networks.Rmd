@@ -1,0 +1,208 @@
+---
+title: "RT_network"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(plyr)
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(tidygraph)
+library(igraph)
+library(ggraph)
+
+
+source("../text_analysis_functions.R")
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
+
+RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
+
+# RT_india <- clean_data(RT, rm_pope = T, rm_india = F)
+# noRT_india <- clean_data(noRT, rm_pope = T, rm_india = F)
+
+coded <- read_csv("content_creators/top_user_coded.csv")
+
+```
+
+### network for top 100 tweets
+```{r, fig.width=12, fig.height=12}
+
+top100 <- noRT_clean %>% 
+  arrange(desc(retweet_count)) %>% 
+  head(100) 
+
+### determines the centrality threshold for labeling nodes
+lab_limit <- 150
+
+retweet_network(users = top100, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+
+
+
+```
+
+### farmers
+```{r, fig.width= 12, fig.height=14}
+farmers <- coded %>% 
+  filter(
+    str_detect(type, "farmer")
+  )
+
+lab_limit <- 50
+
+retweet_network(users = farmers, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+
+
+```
+
+### author
+```{r, fig.width= 12, fig.height=14}
+
+authors <- coded %>% 
+  filter(
+    str_detect(type, "author")
+  )
+
+lab_limit <- 50
+
+retweet_network(users = authors, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+retweet_network(users = authors, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit, linear = F)
+
+
+
+```
+
+### non-profit
+```{r, fig.width= 12, fig.height=14}
+
+non_profit <- coded %>% 
+  filter(
+    str_detect(type, "non-profit")
+  )
+
+lab_limit <- 100
+
+retweet_network(users = non_profit, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+
+
+
+```
+
+### extension
+```{r, fig.width= 12, fig.height=14}
+
+extension <- coded %>% 
+  filter(
+    str_detect(type, "extension")
+  )
+
+lab_limit <- 50
+
+retweet_network(users = extension, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+retweet_network(users = extension, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit, linear = F)
+
+
+
+```
+
+
+### media
+```{r, fig.width= 12, fig.height=14}
+
+media <- coded %>% 
+  filter(
+    str_detect(type, "media")
+  )
+
+lab_limit <- 50
+
+retweet_network(users = media, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+
+
+```
+
+
+
+### political
+```{r, fig.width= 12, fig.height=14}
+
+poli <- coded %>% 
+  filter(
+    str_detect(type, "politician")
+  )
+
+lab_limit <- 50
+
+retweet_network(users = poli, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+
+poli <- coded %>% 
+  filter(
+    str_detect(type, "government")
+  )
+
+lab_limit <- 50
+
+retweet_network(users = poli, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+```
+
+
+##### top 100 soil health
+```{r, fig.width= 12, fig.height=14}
+SH <- c("soil health", "soilhealth", "healthy soil", "healthysoil", "#healthysoil", "#soilhealth")
+
+soil <- noRT_clean %>% 
+  filter(
+    str_detect(query, paste(SH, sep = "|")) 
+  ) %>% 
+  arrange(desc(retweet_count)) %>% 
+  head(100)
+
+lab_limit <- 200
+
+retweet_network(users = soil, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+
+```
+
+##### top 100 regen ag tweets
+```{r, fig.width= 12, fig.height=14}
+RA <- c("regenerativeagriculture", "#regenerativeagriculture")
+
+regen <- noRT_clean %>% 
+  filter(
+    str_detect(query, paste(RA, sep = "|")) 
+  ) %>% 
+  arrange(desc(retweet_count)) %>% 
+  head(100)
+
+lab_limit <- 100
+
+retweet_network(users = regen, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

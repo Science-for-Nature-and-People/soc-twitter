@@ -463,3 +463,114 @@ phrases <- function(input, min){
              collocation != "healthi rangeland")
   return(tstat_col_caps)
 }
+
+
+
+
+
+
+##############################
+##### retweet network   ######
+##############################
+
+retweet_network <- function(users, noRT_cleaned, RT_cleaned, lab_limit, linear = TRUE){
+  
+  selected_tweets <- noRT_cleaned %>% 
+    filter(screen_name %in% users$screen_name) %>% 
+    select(text, screen_name) %>% 
+    dplyr::rename("author" = "screen_name")
+  
+  
+  retweets <- RT_cleaned %>% 
+    dplyr::filter(is_retweet == TRUE & retweet_count > 1) %>% 
+    dplyr::select(screen_name, text)
+  
+  joined <- dplyr::left_join(retweets, selected_tweets)
+
+  
+  network <- dplyr::filter(joined, !is.na(author))
+  
+  authors <- network %>% dplyr::distinct(author) 
+  names(authors) <- "label"
+  retweet_users <- network %>% dplyr::distinct(screen_name) 
+  names(retweet_users) <- "label"
+  
+  nodes <- rbind(authors, retweet_users)
+  nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
+  nodes <- nodes %>% rowid_to_column("id")
+  
+  # generate edge list
+  per_route <- ddply(network, .(network$author, network$screen_name), nrow)
+  names(per_route) <- c("label", "retweet_users", "weight")
+  
+  edges <- per_route %>% 
+    dplyr::left_join(nodes)
+  
+  colnames(edges)[4] <- "from"
+  edges <- edges %>% 
+    left_join(nodes, by = c("retweet_users" = "label"))
+  colnames(edges)[5] <- "to"
+  
+  edges <- dplyr::select(edges, from, to, weight)
+  
+  
+  
+  tidy_graph <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+  
+  
+  centrality <- tidy_graph %>% 
+    dplyr::mutate(community = group_walktrap(weights = weight)) %>% 
+    dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
+    dplyr::arrange(community, centrality) %>% 
+    dplyr::mutate(ranking = row_number()) %>% 
+    dplyr::top_n(500, centrality) %>% 
+    dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>% 
+    dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0)) 
+  
+  
+  if (linear){
+    ggraph(centrality, layout = 'linear', circular = TRUE) +
+      geom_edge_arc(alpha=0.05,
+                    aes(col = ifelse(weight == 1, "1",
+                                     ifelse(weight > 1 & weight <= 5, "1-5", "5+")),
+                        edge_width = weight)) +
+      geom_node_label(aes(label=node_label,
+                          size=node_size,
+                          col = factor(community)),
+                      label.size=0,
+                      fill="#ffffff66",
+                      segment.colour="slateblue",
+                      color="black",
+                      repel=TRUE,
+                      fontface="bold",
+                      show.legend = FALSE) +
+      coord_fixed() +
+      scale_size_area(trans="sqrt") +
+      theme_graph() +
+      guides(edge_width = FALSE,
+             edge_colour = guide_legend(title = "Edge weights",
+                                        override.aes = list(edge_alpha = 1))) +
+      theme(
+            plot.title = element_text(size = rel(3)),
+            plot.subtitle = element_text(size = rel(2)),
+            legend.text = element_text(size = rel(2)))
+  } else {
+    ggraph(centrality, layout = "graphopt") + 
+      geom_node_point() +
+      geom_edge_link(aes(width = weight), alpha = 0.5) + 
+      scale_edge_width(range = c(0.1, 0.5)) +
+      geom_node_label(aes(label= node_label, 
+                          size= node_size, 
+                          col = factor(community)),
+                      label.size=0, 
+                      fill="white", 
+                      segment.colour="slateblue",
+                      color="black", 
+                      repel=TRUE, 
+                      fontface="bold", 
+                      show.legend = FALSE) +
+      labs(edge_width = "Number") +
+      theme_graph()
+  }
+  
+}
