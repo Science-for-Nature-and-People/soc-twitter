@@ -6,11 +6,10 @@
 
 
 ## LIBRARIES ----
-library(tidyverse)
+suppressPackageStartupMessages(library(tidyverse))
 library(rtweet)
 library(countrycode)
 library(lubridate)
-library(magrittr)
 library(jsonlite)
 library(streamR)
 library(httr)
