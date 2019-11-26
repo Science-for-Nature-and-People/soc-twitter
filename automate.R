@@ -203,7 +203,7 @@ uniqueRows_noRT <- !(do.call(paste0, twitter_merged_noRT.master[,c("created_at",
 twitter_merged_noRT.master <- twitter_merged_noRT.master[uniqueRows_noRT,]
 
 
-cat("<--------- Exporting data ---------->\n")
+message("<--------- Exporting data ---------->\n")
 
 ## MERGING AND **EXPORTING** DATA ----
 
@@ -216,4 +216,4 @@ twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
 write.csv(twitter_merged_new, file.path(path_shared, master_data), row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
 write.csv(twitter_merged_noRTnew, file.path(path_shared, master_data_noRT),  row.names = FALSE) # CHANGE NAME OF FILE TO YOUR MASTER FILE NAME
 
-cat("<--------- Run completed succesfully ---------->\n")
+message("<--------- Run completed succesfully ---------->\n")
