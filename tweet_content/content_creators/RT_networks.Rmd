@@ -18,7 +18,7 @@ library(igraph)
 library(ggraph)
 
 
-source("../text_analysis_functions.R")
+source("../../text_analysis_functions.R")
 
 # load data
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
@@ -30,7 +30,7 @@ noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
 # RT_india <- clean_data(RT, rm_pope = T, rm_india = F)
 # noRT_india <- clean_data(noRT, rm_pope = T, rm_india = F)
 
-coded <- read_csv("content_creators/top_user_coded.csv")
+coded <- read_csv("../content_creators/top_user_coded.csv")
 
 ```
 
@@ -44,6 +44,8 @@ top100 <- noRT_clean %>%
 ### determines the centrality threshold for labeling nodes
 lab_limit <- 150
 
+
+## see text analysis function.R for how this function works
 retweet_network(users = top100, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
 
 

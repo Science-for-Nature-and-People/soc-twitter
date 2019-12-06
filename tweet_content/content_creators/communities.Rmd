@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(fig.width=12, fig.height=10) 
 ```
 
+This code explores communites, based on different slices of the
 
 ```{r}
 library(plyr)
@@ -26,7 +27,7 @@ RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv"
 RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
 noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
 
-coded <- read_csv("tweet_content/content_creators/top_user_coded.csv")
+coded <- read_csv("top_user_coded.csv")
 
 ```
 
@@ -34,25 +35,30 @@ coded <- read_csv("tweet_content/content_creators/top_user_coded.csv")
 ```{r}
 create_network <- function(users) {
   
+  
+  ## get tweets from desired users
   selected_tweets <- noRT_clean %>% 
   filter(screen_name %in% users$screen_name) %>% 
   select(text, screen_name) %>% 
   dplyr::rename("author" = "screen_name")
 
-
+# filter down the the full RT dataset
 retweets <- RT_clean%>% 
   dplyr::filter(is_retweet == TRUE & retweet_count > 1) %>% 
   dplyr::select(screen_name, text)
 
+# join together by text, this should give us all retweet instances of each author
 joined <- dplyr::left_join(retweets, selected_tweets)
 
 
 network <- dplyr::filter(joined, !is.na(author))
 
+# label distinct authors and retweeters to create nodes
 authors <- network %>% dplyr::distinct(author) 
 names(authors) <- "label"
 retweet_users <- network %>% dplyr::distinct(screen_name) 
 names(retweet_users) <- "label"
+
 
 nodes <- rbind(authors, retweet_users)
 nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
@@ -117,6 +123,7 @@ users <- noRT_clean %>%
 network <- create_network(users)
 
 ### calc centrality, find communities and set label limits for graph
+## i decided to do this outside of the function so we could explore how different degree and centrality algorithms affect our results
 centrality <- network %>% 
   dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
   dplyr::mutate(community = group_fast_greedy(weights = weight)) %>%
@@ -164,7 +171,7 @@ centrality_info <- network %>%
  
                 
 ##graph               
-graph_community(centrality)
+#graph_community(centrality)
 graph_community(centrality_info)
 ```
 
@@ -197,7 +204,7 @@ all_rts <- noRT_clean %>%
 network <- create_network(all_rts)
 
 centrality_info <- network %>% 
-  dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
+  dplyr::mutate(centrality = centrality_degree()) %>% 
   dplyr::mutate(community = group_infomap(weights = weight)) %>%
   dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>%
   dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0))
@@ -214,6 +221,105 @@ ggplot(cent, aes(ID, centrality)) +
   scale_x_continuous(limits = c(0,1000)) +
   scale_y_continuous(limits = c(0, 6000))
 
+#### investigating discrepancy between centrality and RT
+cover_coach <- filter(noRT_clean, screen_name == "CoverCropCoach")
+
+test <- noRT_clean %>% 
+  filter(
+    str_detect(text, paste(cover_coach$text, collapse = "|"))
+  ) 
+#### these ^ results are a little confusing... many different authors here with the same tweet, but we are not counting them as retweets... this 
+
+######### create csv of "top users"
+
+
+
+
+```
+
+
+##### communities of top 1000 user's friends based on updated
+```{r}
+# get list of all friends for the top 100 users (see )
+user_friends <- read_csv("/home/shares/soilcarbon/Twitter/Influencers/user_friends.csv")
+
+
+
+#### look only at friends who are present in our dataset
+friends_matched <- merge(user_friends, RT_clean[,c("screen_name", "user_id")])
+unique <- dplyr::distinct(friends_matched)
+
+
+
+network <- unique %>% 
+  dplyr::select(user, screen_name) %>% 
+  rename("author" = "user")
+
+authors <- network %>% dplyr::distinct(author) 
+names(authors) <- "label"
+retweet_users <- network %>% dplyr::distinct(screen_name) 
+names(retweet_users) <- "label"
+
+nodes <- rbind(authors, retweet_users)
+nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
+nodes <- nodes %>% rowid_to_column("id")
+
+# generate edge list
+per_route <- ddply(network, .(network$author, network$screen_name), nrow)
+names(per_route) <- c("label", "retweet_users", "weight")
+
+edges <- per_route %>% 
+  dplyr::left_join(nodes)
+
+colnames(edges)[4] <- "from"
+edges <- edges %>% 
+  left_join(nodes, by = c("retweet_users" = "label"))
+colnames(edges)[5] <- "to"
+
+edges <- dplyr::select(edges, from, to, weight)
+
+
+
+tidy_graph <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
+
+lab_limit <- 1000
+
+centrality_info <- tidy_graph %>% 
+  dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
+  dplyr::mutate(community = group_infomap(weights = weight)) %>%
+  dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>%
+  dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0))
+
+
+creators <- centrality_info %>% 
+  activate(nodes) %>% 
+  filter(centrality > 100)
+
+    ggraph(creators, layout = 'linear', circular = TRUE) +
+      geom_edge_arc(alpha=0.05,
+                    aes(col = ifelse(weight == 1, "1",
+                                     ifelse(weight > 100 & weight <= 500, "1-5", "5+")),
+                        edge_width = weight)) +
+      geom_node_label(aes(label=node_label,
+                          size=node_size,
+                          col = factor(community)),
+                      label.size=0,
+                      fill="#ffffff66",
+                      segment.colour="slateblue",
+                      color="black",
+                      repel=TRUE,
+                      fontface="bold",
+                      show.legend = FALSE) +
+      coord_fixed() +
+      scale_size_area(trans="sqrt") +
+      theme_graph() +
+      guides(edge_width = FALSE,
+             edge_colour = guide_legend(title = "Edge weights",
+                                        override.aes = list(edge_alpha = 1))) +
+      theme(
+            plot.title = element_text(size = rel(3)),
+            plot.subtitle = element_text(size = rel(2)),
+            legend.text = element_text(size = rel(2)))
 
 
 ```
