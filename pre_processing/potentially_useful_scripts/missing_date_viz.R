@@ -51,11 +51,11 @@ RT_unique_viz <- ggplot(RT_unique, aes(x = created_at_day)) +
         axis.title = element_blank(),
         axis.text.y = element_blank(),
         axis.text.x  = element_text(angle=90, vjust=0.5),
-        axis.ticks.y = element_blank()) 
-        # text = element_text(size=10))
+        axis.ticks.y = element_blank(), 
+        text = element_text(size=14))
 
 RT_unique_viz
-ggsave(RT_unique_viz, file = "./Figures/days_with_tweets.png", dpi = 300, width=10, height=4)
+ggsave(RT_unique_viz, file = "./Figures/days_with_tweets.png", dpi = 300, width=8, height=4)
 
 
 
