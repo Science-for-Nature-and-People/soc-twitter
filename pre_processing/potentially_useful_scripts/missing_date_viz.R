@@ -93,34 +93,34 @@ RT_count_viz
 #   theme_classic()
 
 
-# extra code
-twitter_merged_rm <- twitter_merged %>% 
-  flag_india() %>% 
-  filter(is_india == 0)
-
-df_big <- as.data.frame(table(ymd(round_date(ymd_hms(twitter_merged_rm$created_at), unit = "day"))))
-df <- df_big[df_big$Freq >= 1000,]
-
-#df1 <- twitter_merged[ymd(df$Var1) %in% ymd(round_date(ymd_hms(twitter_merged$created_at), unit = "day")), ]
-
-df1 <- twitter_merged_rm %>% 
-    filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == as.character(df$Var1[1]))
-
-df_i <- twitter_merged %>% 
-  filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == as.character(df$Var1[i]))
-
-
-
-
-
-
-
-pope_francis_RTs = twitter_merged %>% 
-  filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == "2018-01-10")
-
-narendra_modi_RTs = twitter_merged %>% 
-  filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == "2017-08-22")
-
-twittascope_RTs = twitter_merged %>% 
-  filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == "2019-07-06"|
-           ymd(floor_date(ymd_hms(created_at), unit = "day")) == "2019-07-07")
+# # extra code
+# twitter_merged_rm <- twitter_merged %>% 
+#   flag_india() %>% 
+#   filter(is_india == 0)
+# 
+# df_big <- as.data.frame(table(ymd(round_date(ymd_hms(twitter_merged_rm$created_at), unit = "day"))))
+# df <- df_big[df_big$Freq >= 1000,]
+# 
+# #df1 <- twitter_merged[ymd(df$Var1) %in% ymd(round_date(ymd_hms(twitter_merged$created_at), unit = "day")), ]
+# 
+# df1 <- twitter_merged_rm %>% 
+#     filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == as.character(df$Var1[1]))
+# 
+# df_i <- twitter_merged %>% 
+#   filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == as.character(df$Var1[i]))
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# pope_francis_RTs = twitter_merged %>% 
+#   filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == "2018-01-10")
+# 
+# narendra_modi_RTs = twitter_merged %>% 
+#   filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == "2017-08-22")
+# 
+# twittascope_RTs = twitter_merged %>% 
+#   filter(ymd(floor_date(ymd_hms(created_at), unit = "day")) == "2019-07-06"|
+#            ymd(floor_date(ymd_hms(created_at), unit = "day")) == "2019-07-07")
