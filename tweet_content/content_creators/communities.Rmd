@@ -32,6 +32,7 @@ coded <- read_csv("top_user_coded.csv")
 ```
 
 ### functions
+
 ```{r}
 create_network <- function(users) {
   
@@ -110,7 +111,8 @@ graph_community <- function(community) {
 ```
 
 
-##rangeland network
+## rangeland network
+
 ```{r}
 lab_limit <- 50
 
@@ -210,7 +212,7 @@ centrality_info <- network %>%
   dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0))
  
 
-nodes <- as_data_frame(centrality_info, "vertices")     
+nodes <- igraph::as_data_frame(centrality_info, "vertices")     
 
 cent <- nodes %>% 
   arrange(desc(centrality)) %>% 
@@ -239,6 +241,7 @@ test <- noRT_clean %>%
 
 
 ##### communities of top 1000 user's friends based on updated
+
 ```{r}
 # get list of all friends for the top 100 users (see )
 user_friends <- read_csv("/home/shares/soilcarbon/Twitter/Influencers/user_friends.csv")
