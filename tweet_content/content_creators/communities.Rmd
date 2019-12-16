@@ -278,11 +278,15 @@ colnames(edges)[5] <- "to"
 
 edges <- dplyr::select(edges, from, to, weight)
 
+##### include only edges of weight >1
+
+edges_weighted <- filter(edges, weight > 1)
+
+tidy_graph <- tbl_graph(nodes = nodes, edges = edges_weighted, directed = FALSE)
+
+lab_limit <- 1
 
 
-tidy_graph <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
-
-lab_limit <- 1000
 
 centrality_info <- tidy_graph %>% 
   dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
@@ -291,9 +295,10 @@ centrality_info <- tidy_graph %>%
   dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0))
 
 
-creators <- centrality_info %>% 
-  activate(nodes) %>% 
-  filter(centrality > 100)
+creators <- centrality_info 
+# %>% 
+#   activate(nodes) %>%
+#   filter(centrality > 100)
 
     ggraph(creators, layout = 'linear', circular = TRUE) +
       geom_edge_arc(alpha=0.05,
