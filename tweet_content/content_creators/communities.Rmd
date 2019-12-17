@@ -143,6 +143,18 @@ centrality_info <- network %>%
 graph_community(centrality)
 graph_community(centrality_info)
 
+
+### repeating using new approach of eliminating non-central nodes
+centrality <- network %>% 
+  dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
+  dplyr::mutate(community = group_fast_greedy(weights = weight)) %>% 
+  dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>%
+  dplyr::mutate(node_size = 10) %>%
+    dplyr::arrange(community, centrality) %>% 
+    dplyr::top_n(20, centrality)
+
+graph_community(centrality)
+
 ```
 
 ```{r}
@@ -156,29 +168,25 @@ users <- noRT_clean %>%
 
 network <- create_network(users)
 
-centrality <- network %>% 
-  dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
-  dplyr::mutate(community = group_fast_greedy(weights = weight)) %>%
-  dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>%
-  dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0))
+
  
 centrality_info <- network %>% 
   dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
   dplyr::mutate(community = group_infomap(weights = weight)) %>%
   dplyr::arrange(centrality) %>% 
-  dplyr::mutate(ranking = row_number()) %>% 
-  dplyr::top_n(500, centrality) %>% 
+  dplyr::top_n(50, centrality) %>% 
   dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>%
   dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0))
  
-                
-##graph               
-#graph_community(centrality)
+
 graph_community(centrality_info)
+
+
 ```
 
 ```{r}
 lab_limit <- 250
+user_limit <- 20
 
 users <- coded %>% 
   filter(str_detect(type,"farmer"))
@@ -188,7 +196,9 @@ network <- create_network(users)
 
 centrality_info <- network %>% 
   dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
-  dplyr::mutate(community = group_infomap(weights = weight)) %>%
+  dplyr::mutate(community = group_infomap(weights = weight)) %>% 
+    dplyr::arrange(centrality) %>% 
+  dplyr::top_n(user_limit, centrality) %>% 
   dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>%
   dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0))
 
@@ -238,100 +248,6 @@ test <- noRT_clean %>%
 
 
 ```
-
-
-##### communities of top 1000 user's friends based on updated
-
-```{r}
-# get list of all friends for the top 100 users (see )
-user_friends <- read_csv("/home/shares/soilcarbon/Twitter/Influencers/user_friends.csv")
-
-
-
-#### look only at friends who are present in our dataset
-friends_matched <- merge(user_friends, RT_clean[,c("screen_name", "user_id")])
-unique <- dplyr::distinct(friends_matched)
-
-
-
-network <- unique %>% 
-  dplyr::select(user, screen_name) %>% 
-  rename("author" = "user")
-
-authors <- network %>% dplyr::distinct(author) 
-names(authors) <- "label"
-retweet_users <- network %>% dplyr::distinct(screen_name) 
-names(retweet_users) <- "label"
-
-nodes <- rbind(authors, retweet_users)
-nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
-nodes <- nodes %>% rowid_to_column("id")
-
-# generate edge list
-per_route <- ddply(network, .(network$author, network$screen_name), nrow)
-names(per_route) <- c("label", "retweet_users", "weight")
-
-edges <- per_route %>% 
-  dplyr::left_join(nodes)
-
-colnames(edges)[4] <- "from"
-edges <- edges %>% 
-  left_join(nodes, by = c("retweet_users" = "label"))
-colnames(edges)[5] <- "to"
-
-edges <- dplyr::select(edges, from, to, weight)
-
-##### include only edges of weight >1
-
-edges_weighted <- filter(edges, weight > 1)
-
-tidy_graph <- tbl_graph(nodes = nodes, edges = edges_weighted, directed = FALSE)
-
-lab_limit <- 1
-
-
-
-centrality_info <- tidy_graph %>% 
-  dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
-  dplyr::mutate(community = group_infomap(weights = weight)) %>%
-  dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>%
-  dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0))
-
-
-creators <- centrality_info 
-# %>% 
-#   activate(nodes) %>%
-#   filter(centrality > 100)
-
-    ggraph(creators, layout = 'linear', circular = TRUE) +
-      geom_edge_arc(alpha=0.05,
-                    aes(col = ifelse(weight == 1, "1",
-                                     ifelse(weight > 100 & weight <= 500, "1-5", "5+")),
-                        edge_width = weight)) +
-      geom_node_label(aes(label=node_label,
-                          size=node_size,
-                          col = factor(community)),
-                      label.size=0,
-                      fill="#ffffff66",
-                      segment.colour="slateblue",
-                      color="black",
-                      repel=TRUE,
-                      fontface="bold",
-                      show.legend = FALSE) +
-      coord_fixed() +
-      scale_size_area(trans="sqrt") +
-      theme_graph() +
-      guides(edge_width = FALSE,
-             edge_colour = guide_legend(title = "Edge weights",
-                                        override.aes = list(edge_alpha = 1))) +
-      theme(
-            plot.title = element_text(size = rel(3)),
-            plot.subtitle = element_text(size = rel(2)),
-            legend.text = element_text(size = rel(2)))
-
-
-```
-
 
 
 
