@@ -16,14 +16,14 @@ knitr::opts_chunk$set(echo = FALSE, fig.width=12, fig.height=10, warning = F, me
 3) graph of specific "communities"
 
 ```{r}
-library(plyr)
+source("../../text_analysis_functions.R")
 library(tidyverse)
 library(tidytext)
 library(stringr)
 library(tidygraph)
 library(igraph)
 library(ggraph)
-source("../../text_analysis_functions.R")
+
 
 # load data
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
@@ -32,87 +32,86 @@ RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv"
 RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
 noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
 
+# first batch of coded users
 coded <- read_csv("top_user_coded.csv")
+# updated list based on centrality scores
+coded_v2 <- read_csv("top_central_users_v2.csv") %>% 
+  rename("screen_name" = "user_id")
 
-coded_noNA <- filter(coded, !is.na(type)) %>% 
-  select(-tot_retweet_count, -n, -ratio)
+coded_noNA <- bind_rows(coded, coded_v2) %>% 
+  select(screen_name, type) %>% 
+  filter(!is.na(type)) %>% 
+  distinct()
 
 # get list of all friends for the top 1000 users 
-user_friends <- read_csv("/home/shares/soilcarbon/Twitter/Influencers/user_friends.csv")
+user_friends <- read_csv("/home/shares/soilcarbon/Twitter/Influencers/user_friends.csv") %>% 
+  filter(user != "covercropcoach") # get rid of duplicate CoverCropCoach
 
 
 ```
 
 
 
-```{r generate full network}
+```{r generate filtered network}
 #### generate full network
 
 
 #### look only at friends who are present in our dataset
 friends_matched <- merge(user_friends, RT_clean[,c("screen_name", "user_id")])
-unique <- dplyr::distinct(friends_matched)
+edges_tmp <- dplyr::distinct(friends_matched) %>% 
+  select(user, screen_name)
 
 
+names(edges_tmp) <- c("from_id","to_id")
 
-network <- unique %>% 
-  dplyr::select(user, screen_name) %>% 
-  rename("author" = "user")
-
-authors <- network %>% dplyr::distinct(author) 
-names(authors) <- "label"
-retweet_users <- network %>% dplyr::distinct(screen_name) 
-names(retweet_users) <- "label"
-
-nodes <- rbind(authors, retweet_users)
-nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
-nodes <- nodes %>% rowid_to_column("id")
+nodes_df <- tibble(user_id = unique(c(edges_tmp$from_id, edges_tmp$to_id))) %>% 
+  dplyr::mutate(ID = row_number()) %>% 
+  dplyr::left_join(coded_noNA, by = c("user_id" = "screen_name")) 
 
 # generate edge list
-per_route <- ddply(network, .(network$author, network$screen_name), nrow)
-names(per_route) <- c("label", "retweet_users", "weight")
+edges_df <- edges_tmp %>% 
+  dplyr::left_join(nodes_df, by = c('from_id' = 'user_id')) %>% 
+  dplyr::rename('from' = 'ID') %>% 
+  dplyr::left_join(nodes_df, by = c('to_id' = 'user_id')) %>% 
+  dplyr::rename('to' = 'ID') %>% 
+  dplyr::select(from, to)
 
-edges <- per_route %>% 
-  dplyr::left_join(nodes)
-
-colnames(edges)[4] <- "from"
-edges <- edges %>% 
-  left_join(nodes, by = c("retweet_users" = "label"))
-colnames(edges)[5] <- "to"
-
-edges <- dplyr::select(edges, from, to, weight)
-
-
-tidy_graph_filt <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
+tidy_graph_filt <- tbl_graph(nodes = nodes_df, edges = edges_df, directed = FALSE)
 
 
 
 ```
 
 ### exploring the full dataset based on friends that are present within our total dataset 
-```{r explore}
+```{r explore filt}
 
-
+#### calculate centrality and communities
 centrality_info_filt <- tidy_graph_filt %>% 
   dplyr::mutate(centrality = centrality_degree()) %>% 
   dplyr::mutate(community = group_infomap())
 
+## get nodes data with calculated communities and centrality
 nodes_df <- centrality_info_filt %>% 
   activate(nodes) %>% 
   as_tibble() 
 
+# count number w/in each community
 central <- nodes_df %>% 
   group_by(community) %>% 
   summarise(
     count = n()
   )
 
+# plot community counts
 ggplot(central, aes(community, count)) +
   geom_col() +
   labs(
     title = "number of users within each 'community' as defined by the group_infomap algorithm"
   )
 
+### histogram of centrality
+
+# first filter, so that graph isn't so heavily weighted towards the small centrality (i.e make more interesting)
 tmp <- filter(nodes_df, centrality > 100)
 
 ggplot(tmp, aes(centrality)) +
@@ -121,6 +120,19 @@ ggplot(tmp, aes(centrality)) +
     title = "histogram of centrality values for the full dataset (for users with centrality > 100)"
   )
 
+#### counts of number of connections each author has (not suprisingly this has the same trend as seen with centrality)
+counts <- centrality_info_filt %>% 
+  activate(edges) %>% 
+  as_tibble() %>% 
+  group_by(from) %>% 
+  count()
+
+
+counts$from <- factor(counts$from, levels = counts$from[order(-counts$n)], ordered=T)
+
+
+ggplot(counts, aes(from, n)) + 
+  geom_col()
 ```
 
 ## network of top 20 users 
@@ -128,31 +140,25 @@ this shows the linkages (i.e who is friends with who) among the the top 20 users
   
 ```{r}
 
-coded_noNA <- filter(coded, !is.na(type)) %>% 
-  select(-tot_retweet_count, -n, -ratio)
-
-
 #select number of users to display (filters for top # based on centrality)
 top_number <- 20
 
+
 labels <- centrality_info_filt %>% 
-  dplyr::mutate(node_label = label) %>% 
+  dplyr::mutate(node_label = user_id) %>% # add label
     dplyr::arrange(community, centrality) %>% 
-    dplyr::mutate(ranking = row_number()) %>% 
-    dplyr::top_n(top_number, centrality) %>% 
-    dplyr::mutate(node_label = label) %>% 
-  activate(nodes) %>% 
-  left_join(coded_noNA, by = c("label" = "screen_name")) ## add in coded types as defined by Steve
+    dplyr::top_n(top_number, centrality) %>% # select top "#"  based on centrality
+  activate(nodes) %>% # activate nodes to be joined in with the coded data
+  left_join(coded_noNA, by = c("user_id" = "screen_name")) ## add in coded types as defined by Steve
 
 
 ggraph(labels, layout = "graphopt") + 
-      geom_node_point(aes(col = factor(type), size = 10)) +
+      geom_node_point(aes(col = factor(type.x), size = 10)) + # color nodes based on type
       geom_edge_link(alpha = .5) + 
       geom_node_label(aes(label= node_label, 
-                          col = community),
+                          col = factor(type.x)), # color labels based on type
                       fill="white", 
                       segment.colour="slateblue",
-                      color="black", 
                       repel=TRUE, 
                       fontface="bold", 
                       show.legend = FALSE) +
@@ -219,6 +225,19 @@ ggplot(tmp, aes(centrality)) +
     title = "histogram of centrality values for the full dataset (for users with centrality > 10,000)"
   )
 
+
+
+### counts of connections
+counts <- centrality_info %>% 
+  activate(edges) %>% 
+  as_tibble() %>% 
+  group_by(from) %>% 
+  count()
+
+counts$from <- factor(counts$from, levels = counts$from[order(-counts$n)], ordered=T)
+
+ggplot(counts, aes(from, n)) + 
+  geom_col()
 ```
 that lone user with the very high centrality is: *EWestway*  
 
@@ -229,13 +248,13 @@ top_number <- 20
 
 labels <- centrality_info %>% 
     dplyr::arrange(centrality) %>% 
-    dplyr::mutate(ranking = row_number()) %>% 
     dplyr::top_n(top_number, centrality) %>% 
     dplyr::mutate(node_label = user_id) %>% 
   activate(nodes) %>% 
   left_join(coded_noNA, by = c("user_id" = "screen_name")) ## add in coded types as defined by Steve
 
-set.seed(123)
+
+
 ggraph(labels, layout = "graphopt") + 
       geom_node_point(aes(size = 10, 
                           col = factor(type.x))) +
@@ -245,16 +264,15 @@ ggraph(labels, layout = "graphopt") +
                       fill="white", 
                       segment.colour="slateblue",
                       repel=TRUE, 
-                      fontface="bold", 
-                      show.legend = FALSE) +
+                      fontface="bold") +
       labs(title = "Top 20: unfiltered") +
       theme_graph()
 
+### trying a different (circular) layout
 top_number <- 20
 
 labels <- centrality_info %>% 
     dplyr::arrange(centrality) %>% 
-    dplyr::mutate(ranking = row_number()) %>% 
     dplyr::top_n(top_number, centrality) %>% 
     dplyr::mutate(node_label = user_id) %>% 
   activate(nodes) %>% 
@@ -264,17 +282,69 @@ ggraph(labels, layout = 'linear', circular = TRUE) +
       geom_edge_arc(alpha=0.05) +
       geom_node_label(aes(label=node_label, 
                           col = factor(type.x)),
-                      fill="#ffffff66",
+                      fill="white",
                       segment.colour="slateblue",
                       repel=TRUE,
-                      fontface="bold",
-                      show.legend = FALSE) +
+                      fontface="bold") +
       coord_fixed() +
       scale_size_area(trans="sqrt") +
       theme_graph() 
+
+
+
+
 ```
 once again, "single tweet" top-users like AOC are not included (in fact she is even further down the centrality list by this approach)
-    
+     
+      
+repeating above but using eigen vector to calculate centrality (this gives gives extra weight to a user for being connected to other well connected users)
+```{r}
+
+#### calculate centrality and communities
+centrality_eigen <- tidy_graph %>% 
+  dplyr::mutate(centrality = eigen_centrality(.)$vector) 
+
+## get nodes data with calculated communities and centrality
+nodes_df <- centrality_eigen %>% 
+  activate(nodes) %>% 
+  as_tibble() 
+
+
+### histogram of centrality
+
+# first filter, so that graph isn't so heavily weighted towards the small centrality (i.e make more interesting)
+tmp <- filter(nodes_df, centrality > .02)
+
+ggplot(tmp, aes(centrality)) +
+  geom_histogram() +
+  labs(
+    title = "histogram of centrality values for the full dataset (for users with centrality > 100)"
+  )
+
+
+labels <- centrality_eigen %>% 
+    dplyr::arrange(centrality) %>% 
+    dplyr::top_n(top_number, centrality) %>% 
+    dplyr::mutate(node_label = user_id) %>% 
+  activate(nodes) %>% 
+  left_join(coded_noNA, by = c("user_id" = "screen_name")) ## add in coded types as defined by Steve
+
+
+
+ggraph(labels, layout = "graphopt") + 
+      geom_node_point(aes(size = 10, 
+                          col = factor(type.x))) +
+      geom_edge_link(alpha = .5) + 
+      geom_node_label(aes(label= node_label,
+                           col = factor(type.x)),
+                      fill="white", 
+                      segment.colour="slateblue",
+                      repel=TRUE, 
+                      fontface="bold") +
+      labs(title = "Top 20: unfiltered based on eigen vector centrality") +
+      theme_graph()
+```
+ 
 ***  
 ***  
 ***
@@ -283,28 +353,27 @@ once again, "single tweet" top-users like AOC are not included (in fact she is e
 node colors represent their communities, label color is their manually coded type 
 note: there are 600 "communities" 
 ```{r}
-top_number <- 30
+top_number <- 20
 
 labels <- centrality_info_filt %>% 
-  dplyr::mutate(node_label = label)
+  dplyr::mutate(node_label = user_id)
 
 #### create list of communities to view
 community_list <- c(1,2,3)
 
 creators <- labels %>%
     filter(community %in% community_list) %>% 
-    dplyr::arrange(community, centrality) %>% 
-    dplyr::mutate(ranking = row_number()) %>% 
+    dplyr::arrange(centrality) %>% 
     dplyr::top_n(top_number, centrality) %>% 
   activate(nodes) %>% 
-  left_join(coded_noNA, by = c("label" = "screen_name"))
+  left_join(coded_noNA, by = c("user_id" = "screen_name"))
 
 ggraph(creators, layout = "graphopt") + 
       geom_node_point(aes(col = factor(community)), size = 5) +
       geom_edge_link(alpha = .5) + 
       scale_edge_width(range = c(0.1, 0.5)) +
       geom_node_label(aes(label= node_label,
-                          col = type),
+                          col = factor(type.x)),
                       label.size=0, 
                       fill="white", 
                       segment.colour="slateblue", 
@@ -336,23 +405,22 @@ obviously the color scheme here needs alot of work if we decided to use somethin
 top_number <- 20
 
 labels_all <- centrality_info_filt %>% 
-  dplyr::mutate(node_label = label)
+  dplyr::mutate(node_label = user_id)
 
 #### create list of communities to view
 
 creators_all <- labels_all %>%
-    dplyr::arrange(community, centrality) %>% 
-    dplyr::mutate(ranking = row_number()) %>% 
+    dplyr::arrange(centrality) %>% 
     dplyr::top_n(top_number, centrality) %>% 
   activate(nodes) %>% 
-  left_join(coded_noNA, by = c("label" = "screen_name"))
+  left_join(coded_noNA, by = c("user_id" = "screen_name"))
 
     ggraph(creators_all, layout = "graphopt") + 
       geom_node_point(aes(col = factor(community)), size = 10) +
       geom_edge_link(alpha = .5) + 
       scale_edge_width(range = c(0.1, 0.5)) +
       geom_node_label(aes(label= node_label,
-                          col = type),
+                          col = factor(type.x)),
                       label.size=0, 
                       fill="white", 
                       segment.colour="slateblue", 
@@ -364,4 +432,84 @@ creators_all <- labels_all %>%
 
 ```
 
+
+### exploring the full dataset based on friends that are present within our total dataset 
+```{r explore filtered}
+
+#### calculate centrality and communities
+centrality_eigen <- tidy_graph %>% 
+  dplyr::mutate(centrality = eigen_centrality(.)$vector) 
+
+## get nodes data with calculated communities and centrality
+nodes_df <- centrality_eigen %>% 
+  activate(nodes) %>% 
+  as_tibble() 
+
+
+### histogram of centrality
+
+# first filter, so that graph isn't so heavily weighted towards the small centrality (i.e make more interesting)
+tmp <- filter(nodes_df, centrality > .02)
+
+ggplot(tmp, aes(centrality)) +
+  geom_histogram() +
+  labs(
+    title = "histogram of centrality values for the full dataset (for users with centrality > 100)"
+  )
+
+
+labels <- centrality_eigen %>% 
+    dplyr::arrange(centrality) %>% 
+    dplyr::top_n(top_number, centrality) %>% 
+    dplyr::mutate(node_label = user_id) %>% 
+  activate(nodes) %>% 
+  left_join(coded_noNA, by = c("user_id" = "screen_name")) ## add in coded types as defined by Steve
+
+
+
+ggraph(labels, layout = "graphopt") + 
+      geom_node_point(aes(size = 10, 
+                          col = factor(type.x))) +
+      geom_edge_link(alpha = .5) + 
+      geom_node_label(aes(label= node_label,
+                           col = factor(type.x)),
+                      fill="white", 
+                      segment.colour="slateblue",
+                      repel=TRUE, 
+                      fontface="bold") +
+      labs(title = "Top 20: unfiltered based on eigen vector centrality") +
+      theme_graph()
+
+```
+
+## network of top 20 users 
+this shows the linkages (i.e who is friends with who) among the the top 20 users of our dataset. "top user" here is defined by centrality as calculated by degree centrality  
+  
+```{r}
+
+#select number of users to display (filters for top # based on centrality)
+top_number <- 20
+
+
+labels <- centrality_info_filt %>% 
+  dplyr::mutate(node_label = user_id) %>% # add label
+    dplyr::arrange(community, centrality) %>% 
+    dplyr::top_n(top_number, centrality) %>% # select top "#"  based on centrality
+  activate(nodes) %>% # activate nodes to be joined in with the coded data
+  left_join(coded_noNA, by = c("user_id" = "screen_name")) ## add in coded types as defined by Steve
+
+
+ggraph(labels, layout = "graphopt") + 
+      geom_node_point(aes(col = factor(type.x), size = 10)) + # color nodes based on type
+      geom_edge_link(alpha = .5) + 
+      geom_node_label(aes(label= node_label, 
+                          col = factor(type.x)), # color labels based on type
+                      fill="white", 
+                      segment.colour="slateblue",
+                      repel=TRUE, 
+                      fontface="bold", 
+                      show.legend = FALSE) +
+      labs(title = "Top 20") +
+      theme_graph()
+```
 
