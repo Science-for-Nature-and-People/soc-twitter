@@ -522,7 +522,6 @@ retweet_network <- function(users, noRT_cleaned, RT_cleaned, lab_limit, linear =
     dplyr::mutate(community = group_walktrap(weights = weight)) %>% 
     dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
     dplyr::arrange(community, centrality) %>% 
-    dplyr::mutate(ranking = row_number()) %>% 
     dplyr::top_n(500, centrality) %>% 
     dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>% 
     dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0)) 
