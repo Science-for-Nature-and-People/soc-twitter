@@ -36,8 +36,8 @@ RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv"
 
 ### noRT dataset
 ```{r}
-noRT_no_india <- clean_data(noRT)
-RT_no_india <- clean_data(RT)
+noRT_no_india <- clean_data(noRT, rm_pope = T, rm_india = T)
+RT_no_india <- clean_data(RT, rm_pope = T, rm_india = T)
 ```
 
 ### select the SHS 2019 conference
@@ -144,8 +144,8 @@ g + ggtitle("Retweet decay during SHS 2019")
 ### Network Diagram
 ```{r}
 # select input
-# limiting the tweets for retweet_count > 5
-SHS19_RT <- SHS19_RT %>% filter(SHS19_RT$retweet_count > 5)
+# limiting the tweets for retweet_count > 1
+SHS19_RT <- SHS19_RT %>% filter(SHS19_RT$retweet_count > 2)
 tt <- data.frame(SHS19_RT$text, SHS19_RT$screen_name)
 names(tt) <- c("text", "retweet_user")
 tt$author <- SHS19$screen_name[match(tt$text, SHS19$text)]
@@ -177,8 +177,8 @@ edges <- edges %>%
   left_join(nodes, by = c("retweet_users" = "label"))
 colnames(edges)[5] <- "to"
 
-edges <- select(edges, from, to, weight)
-edges
+edges <- dplyr::select(edges, from, to, weight)
+
 ```
 
 ```{r}
@@ -211,7 +211,7 @@ routes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
 
 routes_tidy %>% 
   activate(edges) %>% 
-  arrange(desc(weight))
+  dplyr::arrange(desc(weight))
 
 ggraph(routes_tidy, layout = "graphopt") + 
   geom_node_point(aes(size = value)) +
@@ -224,5 +224,120 @@ ggraph(routes_tidy, layout = "graphopt") +
 ```
 
 
+#### decay
+```{r decay data, fig.width=12}
+
+noRT_no_india <- clean_data(noRT, rm_pope = T, rm_india = T)
+RT_no_india <- clean_data(RT, rm_pope = T, rm_india = T)
 
 
+## set limit for number of retweets
+rt_limit <- 10
+
+rt_limit <- noRT_clean %>% 
+  filter(retweet_count > rt_limit)
+
+
+
+decay <- list()
+
+## identify rts
+# this will take a while what rt_limit is set
+for (i in 1:nrow(rt_limit)) {
+  tmp <- find_rt(i, rt_limit, RT_clean)
+  tmp <- tmp %>% 
+    mutate(
+      prop = round(number/sum(number),4)
+    )
+  decay[[i]] <- tmp
+  
+}
+
+test <- bind_rows(decay)
+
+summ <- test %>% 
+  group_by(time_since) %>% 
+  filter(time_since <= 31 & time_since >= 0) %>% 
+  dplyr::summarise(
+    mean = round(mean(prop),4),
+    sd = round(sd(prop),2)
+  )
+
+```
+
+```{r decay box, fig.width=12, fig.height=5}
+ggplot(summ, aes(as.factor(time_since), mean)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+                 position=position_dodge(.9)) +
+  labs(x = "days since first tweet",
+       y = "proportion of total retweets",
+       title = "Average retweet decay over 1 month")
+
+### get only one month and remove spaces and hashtags
+box <- test %>% 
+  filter(time_since <= 31 & time_since >= 0) %>% 
+    mutate(query = str_replace_all(query, "#| |\"", ""))
+
+###combining soilhealth and healthysoil
+box$query[box$query == "healthysoil"] <- "soilhealth"
+
+# define which search terms you want to include
+terms <- c("soilhealth", "rangelandhealth", "regenerativeagriculture")
+
+box_sub <- filter(box, query %in% terms)
+
+ggplot(box_sub, aes(as.factor(time_since), prop)) +
+  geom_boxplot(outlier.shape = NA) +
+  scale_x_discrete(breaks=pretty(box$time_since,n=10)) +
+  facet_wrap(~query) +
+  labs(x = "days since first tweet",
+       y = "proportion of total retweets",
+       title = "Average retweet decay over 1 month for tweets with >10 RTs") +
+  theme_bw()
+  
+
+
+ggplot(box, aes(as.factor(time_since), prop)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(x = "days since first tweet",
+       y = "proportion of total retweets",
+       title = "Average retweet decay over 1 month")
+
+
+```
+
+
+## average for all tweets (with regression/CI):
+```{r decay line, fig.width=12}
+### finding standard error
+se <- test %>% 
+  group_by(time_since) %>% 
+  filter(time_since <= 31 & time_since >= 0) %>% 
+  dplyr::summarise(
+    mean = round(mean(prop),4),
+    se = round(sqrt(var(prop)/length(prop)), 2)
+  )
+
+##plotting SE
+ggplot(se, aes(time_since, mean)) +
+  geom_point() +
+  geom_line() +
+  geom_ribbon(aes(ymin = mean-2*se, ymax = mean+2*se), alpha = .3) +
+  labs(x = "days since first tweet",
+       y = "proportion of total retweets",
+       title = "Average retweet decay over 1 month") +
+  scale_y_continuous(expand = c(0,0), limits = c(0,1)) +
+    scale_x_continuous(expand = c(0,0), breaks=pretty(summ$time_since,n=10)) 
+
+## LOESS model
+ggplot(summ, aes(time_since, mean)) +
+  geom_smooth(method = "loess", linetype = 0) +
+  geom_line() +
+  geom_point() +
+  labs(x = "days since first tweet",
+       y = "proportion of total retweets",
+       title = "Average retweet decay over 1 month") +
+  scale_x_continuous(expand = c(0,0), breaks=pretty(summ$time_since,n=10)) +
+  coord_cartesian(ylim = c(0, .6), expand = c(0,0)) 
+```

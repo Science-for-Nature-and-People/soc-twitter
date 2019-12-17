@@ -1,53 +1,42 @@
-#### generate data for network analysis on content creators
-
+#### generate data for network analysis for followers of top 1000 users
 library(rtweet)
-library(tidygraph)
-library(ggraph)
+library(tidyverse)
+source("text_analysis_functions.R")
 
-### use `content_creator` variable from the top_users.Rmd scripts
-
-## get user_id's from screen names
-tmp <- left_join(content_creator, noRT_no_india, by = "screen_name")
-users <- unique(tmp$user_id)
-
-friends <- list()
-
-# # start loop
-# for (i in 1:length(users)){
-#   friends[[i]] <- get_friends(users[i])
-#   
-#   # pause if divisible by 15
-#   if (i %% 15 == 0){
-#     print(Sys.time())
-#     Sys.sleep(15*61) 
-#   }
-# }
-
-friends <- get_friends(users, retryonratelimit = T)
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
 
 
-# Combine data tables in list
-friends <- bind_rows(friends) %>% 
-  rename(friend = user_id)
+## get top 1000 users based on total number of retweets per user
+top_RT <- noRT %>% 
+  filter(is_india == 0 & screen_name != "Pontifex") %>% 
+group_by(screen_name) %>% 
+  dplyr::summarise(
+    total_RT = sum(retweet_count)
+  ) %>% 
+  arrange(desc(total_RT)) %>% 
+  head(1000)
+
+users <- top_RT$screen_name
+# wrtie to csv for use on local R
+# users <- as.data.frame(users)
+# write_csv(users, "user_list.csv")
+
+#### code for getting friends
+for (i in 1:length(users)){
+  if (i == 1){
+    friends <- get_friends(users[i])
+  } else {
+    tmp <- get_friends(users[i])
+    friends <- rbind(friends, tmp)
+  }
 
 
-write.csv(friends, "content_creator_friends.csv")
+  # pause if divisible by 15
+  if (i %% 15 == 0){
+    write_csv(friends, "user_friends.csv")
+    print(paste("last i =", i, "------", round((1000-i)/15*4,2), "hours remaing"))
+    Sys.sleep(15*61)
+  }
+}
 
 
-# net <- friends %>% 
-#   group_by(friend) %>% 
-#   mutate(count = n()) %>% 
-#   ungroup() %>% 
-#   filter(count > 1)
-# 
-# 
-# g <- net %>% 
-#   select(user, friend) %>%  # drop the count column
-#   as_tbl_graph()
-# 
-# 
-# 
-# ggraph(g) +
-#   geom_edge_link() +
-#   geom_node_point(size = 3, colour = 'steelblue') +
-#   theme_graph()

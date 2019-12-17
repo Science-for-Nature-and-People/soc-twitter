@@ -1,0 +1,88 @@
+---
+title: "network"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+# load packages
+library(tidytext)
+library(ggraph)
+library(igraph)
+library(tidygraph)
+library(tidyverse)
+library(netrankr)
+source("../../text_analysis_functions.R")
+
+theme_set(theme_bw())
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
+```
+
+
+```{r network analysis}
+#read in data (see gen_data.R for detail)
+top_users <- read_csv("top_user_ratio.csv") %>% 
+  arrange(desc(ratio)) %>% 
+  head(50) %>% 
+  dplyr::left_join(noRT[,c("screen_name", "user_id")])
+
+
+options(scipen = 999)
+friends <- read_csv("user_friends.csv")
+names(friends) <- c("screen_name", "friend")
+
+## get user_ids in addition to screen names
+friend_id <- inner_join(noRT[,c("screen_name", "user_id")], friends)
+## this lead to duplicates, so:
+friend_id <- distinct(friend_id)
+
+edges_tmp <- friend_id %>% 
+  select(user_id, friend)
+names(edges_tmp) <- c("to_id", "from_id")
+
+
+nodes_df <- tibble(user_id = unique(c(edges_tmp$from_id, edges_tmp$to_id))) %>%
+  dplyr::mutate(ID = dplyr::row_number()) %>% 
+  dplyr::left_join(noRT[,c("screen_name", "user_id")]) %>% 
+  select(ID, user_id, screen_name) %>% 
+  distinct(ID, .keep_all = T)
+
+
+
+edges_df <- edges_tmp %>%
+  dplyr::left_join(nodes_df, by = c('from_id' = 'user_id')) %>%
+  dplyr::rename('from' = 'ID') %>%
+  dplyr::left_join(nodes_df, by = c('to_id' = 'user_id')) %>%
+  dplyr::rename('to' = 'ID') %>%
+  select(from, to) %>% 
+  distinct()
+
+graph <- graph_from_data_frame(d = edges_df, vertices = nodes_df) %>%
+  as_tbl_graph() %>%
+  filter(user_id %in% top_users$user_id) 
+graph
+
+
+filtered_graph <- graph %>% 
+  dplyr::mutate(community = group_walktrap()) %>% 
+  dplyr::mutate(centrality = centrality_random_walk()) %>% 
+  dplyr::arrange(desc(centrality)) %>% 
+  slice(1:15)
+
+ggraph(filtered_graph, layout = 'kk') +
+  geom_edge_fan(aes(alpha = ..index..)) +
+  geom_node_point(aes(col = as.factor(community))) +
+  geom_node_text(aes(label = user_id), repel = TRUE, color = "red",
+                 segment.colour = 'slateblue', fontface = "bold") +
+  theme_graph() +
+  theme(legend.position = 'none') +
+  labs(title = 'Follower Network',
+       subtitle = 'Top 15 active users (based on ratio of tweets to RTs, and centrality)')
+```
+

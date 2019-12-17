@@ -25,7 +25,7 @@ library(SnowballC)
 source("../text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE) 
 ```
 
 
@@ -33,58 +33,26 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_
 # select top 25 and 100 tweets based on their retweet count
 # use a sample in the following code
 
-noRT_no_india <- clean_data(noRT)
+noRT_clean <- clean_data(noRT, rm_pope = F, rm_india = F)
 
-top_25_noRT <- noRT_no_india %>%
+top_25_noRT <- noRT_clean %>%
   arrange(-retweet_count) %>%
   head(25)
 
-top_100_noRT <- noRT_no_india %>% 
+top_100_noRT <- noRT_clean %>% 
   arrange(-retweet_count) %>% 
   head(100)
 
-rest_noRT <- noRT_no_india %>% 
+rest_noRT <- noRT_clean %>% 
   arrange(-retweet_count) %>%
   slice(101:n())
 ```
 
 ***
-# collocation analysis
-```{r}
-# function detect phrases
-# input as dataset
-# min as minimum count number limit
-
-phrases <- function(input, min){
-  toks_full <- tokens(input$text)
-
-  # remove punctuation, symbols, numbers, and spaces
-  toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
-  # remove the stop words
-  toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('english'), selection = 'remove')
-  # covert to stem words
-  toks_nostop_full <- tokens_wordstem(toks_nostop_full)
-
-  tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
-                                valuetype = 'regex', 
-                                case_insensitive = T, 
-                                padding = TRUE) %>% 
-  textstat_collocations(min_count = min)
-  #textstat_collocations(min_count =  min, size = 3) # to create collocations of 3 words
-  
-  # remove all search terms in result
-  tstat_col_caps <- tstat_col_caps %>% arrange(desc(count)) %>% 
-    filter(collocation != "soil health" & collocation != "healthi soil" & 
-             collocation != "regen agricultur" & collocation != "soil fertil" & 
-             collocation != "soil qualiti"& collocation != "rangeland health" & 
-             collocation != "healthi rangeland")
-  return(tstat_col_caps)
-}
-```
 
 # detect phrases using the full noRT dataset
 ```{r}
-tstat_col_caps <- phrases(noRT_no_india, 100)
+tstat_col_caps <- phrases(noRT_clean, 100)
 
 head(tstat_col_caps, 100)
 ```
@@ -118,7 +86,7 @@ head(tstat_col_caps_rest, 100)
 ```{r}
 ### creating dataset for each seach term
 #### soil health
-input <- noRT_no_india
+input <- noRT_clean
 
 soil_health_tweets <- input %>% 
   filter(
