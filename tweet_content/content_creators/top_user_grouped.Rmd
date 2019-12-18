@@ -1,0 +1,86 @@
+---
+title: "groups"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### this script uses the manually coded user groupings that Steve created to look at phrase associations for each group
+
+
+```{r, include=FALSE}
+# load packages
+library(tidyverse)
+library(tm)
+source("../../text_analysis_functions.R")
+
+theme_set(theme_bw())
+
+# load data
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
+```
+
+
+
+####adding in steves manually coded grouping
+```{r groups}
+coded <- read_csv("top_user_coded.csv")
+
+noRT_clean <- clean_data(noRT)
+
+joined <- left_join(noRT_clean[,c(2,4,5,7,8)], coded) %>%
+  filter(!is.na(`indiv-org`))
+
+```
+
+
+
+```{r explore groups}
+
+type_count <- joined %>%
+  group_by(type) %>%
+  dplyr::summarise(
+    count = n()
+  ) %>%
+  ungroup()
+
+type_count$type <- factor(type_count$type, levels = type_count$type[order(desc(type_count$count))])
+
+ggplot(type_count, aes(x = as.factor(type), y = count)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = "user type",
+    title = "number of tweets by top users - sorted by 'type'"
+  )
+```
+
+
+```{r all phrases}
+all_phrases <- phrases(joined, 10)
+head(all_phrases, 10)
+```
+
+
+```{r phrase-type}
+## phrases for top 5 user types
+
+non_prof <- phrases(filter(joined, type == "non-profit"), 10)
+head(non_prof, 10)
+
+author <- phrases(filter(joined, type == "author"), 10)
+head(author, 10)
+
+small_comp <- phrases(filter(joined, type == "small-company"), 10)
+head(small_comp, 10)
+
+extension <- phrases(filter(joined, type == "extension"), 10)
+head(extension, 10)
+
+govt <- phrases(filter(joined, type == "government"), 10)
+head(govt, 10)
+
+
+```

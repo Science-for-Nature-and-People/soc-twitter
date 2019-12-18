@@ -8,6 +8,8 @@ library(stringr)
 library(igraph)
 library(ggraph)
 library(SnowballC)
+library(plyr)
+library(tm)
 
 
 
@@ -138,7 +140,7 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
   
   # create tokens
   text_words <- terms %>% 
-    select(text) %>% 
+    dplyr::select(text) %>% 
     mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remvove anything associated with hyperlinks
     mutate(text = tolower(text)) %>% #make all lower case
     unnest_tokens(word, text, token = "regex", pattern = reg_words) %>% # unnest words based on the regex defined above
@@ -152,7 +154,7 @@ prepare_text <- function(data, group = FALSE, stem = FALSE) {
   
   #get word counts and arrange in decending order
   text_words %>% 
-    count(word, sort=TRUE) 
+    dplyr::count(word, sort=TRUE) 
 }
 
 
@@ -248,7 +250,7 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   reg_words <- "([^A-Za-z_\u0900-\u097F\\d@']|'(?![A-Za-z_\u0900-\u097F\\d@]))" # regex expresions that we want to retain when creating tokens. includes all roman and hindi characters, and retains @ 
   
   bigrams_separated <- terms %>%
-    select(text, user_id) %>% 
+    dplyr::select(text, user_id) %>% 
     mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|http://[A-Za-z\\d]+|&amp;|&lt;|&gt;|RT|https", "")) %>% # remove anything associated with a hyperlink
     unnest_tokens(word, text, token = "regex", pattern = reg_words) %>%
     mutate(next_word = lead(word)) %>% #creates a new column that has the next word for each respective row (this creates the bigrams)
@@ -265,8 +267,8 @@ create_bigram <- function(data, filter_by = "", group = FALSE, stem = FALSE) {
   #combine the two columns into a single bigram term, then count
   bigrams_united <- bigrams_separated %>% 
     unite(bigram, word, next_word, sep = ' ') %>%
-    select(bigram)  %>% 
-    count(bigram, sort = TRUE) 
+    dplyr::select(bigram)  %>% 
+    dplyr::count(bigram, sort = TRUE) 
   
 }
 
@@ -303,6 +305,7 @@ gram_network <- function(data, limit) {
   
   # defining the arrow asthetics
   a <- grid::arrow(type = "closed", length = unit(.15, "inches"))  
+
   
   #filter bigrams based on their counts
   bigrams <- data %>% 
@@ -311,9 +314,9 @@ gram_network <- function(data, limit) {
   
   #count each word so we can size the nodes based on their count
   counts <- bigrams %>% 
-    gather(item, word, word1, word2) %>% 
-    group_by(word) %>% 
-    summarise(n = sum(n))
+    tidyr::gather(item, word, word1, word2) %>% 
+    dplyr::group_by(word) %>% 
+    dplyr::summarise(n = sum(n))
   
   #generates a an igraph graph (resembiling a table) showing direction of terms (see roxygen notes for link to where i got this code)
   bigrams %>% 
@@ -348,9 +351,9 @@ flag_india <- function(data) {
   results <- data %>% 
     mutate(
       is_india = case_when(
-        str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar") ~ 1,
-        str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1,
-        str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi") ~ 1))
+        str_detect(tolower(text), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|managed to feed 1.25 billion people|akshaykumar|sadhgurujv|rallyforrivers") ~ 1,
+        str_detect(tolower(screen_name), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|sadhgurujv|rallyforrivers") ~ 1,
+        str_detect(tolower(hashtags), "[\u0900-\u097F]+|india|crore|health card|rupee|narendramodi|sadhguru|rallyforrivers") ~ 1))
   
   #replace na w/ 0 to indicate non-india related tweets
   results$is_india[is.na(results$is_india)] <- 0
@@ -358,4 +361,215 @@ flag_india <- function(data) {
   return(results)
 }
 
+################################################
+##            clean data                      ##
+################################################
 
+#function clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
+#' Clean data
+#' i.e remove extranious numbers,characters, and users (like the pope)
+#' 
+#' NOTE: this also runs flag_india() and filters out all india related tweets
+#'
+#' @param input tiwtter data frame - either RT or noRT
+#'
+#' @return same data frame with the 'text' column cleaned
+#' @export
+#'
+#' @examples
+clean_data <- function(input, rm_pope =TRUE, rm_india=TRUE){
+  input_clean <- removeNumbers(input$text)
+  input_clean <- gsub("@\\w+","",input_clean)
+  input_clean <- gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", input_clean)
+  input_clean <- gsub("#\\s+","", input_clean)
+  input_clean <- gsub("amp", "", input_clean)
+  input_clean <- gsub("[^\x01-\x7F]", "", input_clean)
+  input_clean <- gsub("RT : ", "", input_clean)
+  
+  
+  input$text <- input_clean
+  out <- input %>% 
+    filter(source != "Twittascope") 
+  
+  if (rm_pope) {
+  # to remove the pope
+  out <- out %>%
+    arrange(-retweet_count) %>%
+    filter(screen_name != "Pontifex")
+  }
+  
+  if (rm_india) {
+  # to remove all india related tweets
+  input_india <- flag_india(out)
+  out <- input_india %>% 
+    filter(is_india == 0) 
+  }
+  
+  return(out)
+}
+
+
+
+########################################
+####        Find RT                 ####
+########################################
+
+
+find_rt <- function(rank, noRT_dataset, RT_dataset) {
+  result_rt <- RT_dataset %>% 
+    filter(substring(RT_dataset$text, 1, 30) == substring(noRT_dataset$text[rank], 1, 30))
+  # aggregate tweets by date
+  result.df <- ddply(result_rt, .(date(result_rt$created_at), result_rt$query), nrow)
+  names(result.df) <- c("Date", "Query", "Number")
+  result.df <- result.df %>% arrange (result.df$Date)
+  # calculate day_since based on the original tweet (noRT) date
+  result.df$time_since <- result.df$Date - date(noRT_dataset$created_at[rank])
+  result.df$content <- substring(result_rt$text[1], 1, 30)
+  names(result.df) <- c("date", "query", "number", "time_since", "content")
+  result.df$id <- rank
+  return(result.df)
+}
+
+#####################################
+###       Phrases                 ###
+#####################################
+
+# function detect phrases
+# input as dataset
+# min as minimum count number limit
+
+phrases <- function(input, min){
+  toks_full <- tokens(tolower(input$text))
+  
+  # remove punctuation, symbols, numbers, and spaces
+  toks_full <- tokens(toks_full, remove_punct = T, remove_symbols = T, remove_numbers = T)
+  # remove the stop words
+  toks_nostop_full <- tokens_select(toks_full, pattern = stopwords('english'), selection = 'remove')
+  # covert to stem words
+  toks_nostop_full <- tokens_wordstem(toks_nostop_full)
+  
+  tstat_col_caps <- tokens_select(toks_nostop_full, pattern = '^[A-Z]', 
+                                  valuetype = 'regex', 
+                                  case_insensitive = T, 
+                                  padding = TRUE) %>% 
+    textstat_collocations(min_count = min)
+  #textstat_collocations(min_count =  min, size = 3) # to create collocations of 3 words
+  
+  # remove all search terms in result
+  tstat_col_caps <- tstat_col_caps %>% arrange(desc(count)) %>% 
+    filter(collocation != "soil health" & collocation != "healthi soil" & 
+             collocation != "regen agricultur" & collocation != "soil fertil" & 
+             collocation != "soil qualiti"& collocation != "rangeland health" & 
+             collocation != "healthi rangeland")
+  return(tstat_col_caps)
+}
+
+
+
+
+
+
+##############################
+##### retweet network   ######
+##############################
+
+retweet_network <- function(users, noRT_cleaned, RT_cleaned, lab_limit, linear = TRUE){
+  
+  selected_tweets <- noRT_cleaned %>% 
+    filter(screen_name %in% users$screen_name) %>% 
+    select(text, screen_name) %>% 
+    dplyr::rename("author" = "screen_name")
+  
+  
+  retweets <- RT_cleaned %>% 
+    dplyr::filter(is_retweet == TRUE & retweet_count > 1) %>% 
+    dplyr::select(screen_name, text)
+  
+  joined <- dplyr::left_join(retweets, selected_tweets)
+
+  
+  network <- dplyr::filter(joined, !is.na(author))
+  
+  authors <- network %>% dplyr::distinct(author) 
+  names(authors) <- "label"
+  retweet_users <- network %>% dplyr::distinct(screen_name) 
+  names(retweet_users) <- "label"
+  
+  nodes <- rbind(authors, retweet_users)
+  nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
+  nodes <- nodes %>% rowid_to_column("id")
+  
+  # generate edge list
+  per_route <- ddply(network, .(network$author, network$screen_name), nrow)
+  names(per_route) <- c("label", "retweet_users", "weight")
+  
+  edges <- per_route %>% 
+    dplyr::left_join(nodes)
+  
+  colnames(edges)[4] <- "from"
+  edges <- edges %>% 
+    left_join(nodes, by = c("retweet_users" = "label"))
+  colnames(edges)[5] <- "to"
+  
+  edges <- dplyr::select(edges, from, to, weight)
+  
+  
+  
+  tidy_graph <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+  
+  
+  centrality <- tidy_graph %>% 
+    dplyr::mutate(community = group_walktrap(weights = weight)) %>% 
+    dplyr::mutate(centrality = centrality_degree(weights = weight)) %>% 
+    dplyr::arrange(community, centrality) %>% 
+    dplyr::top_n(500, centrality) %>% 
+    dplyr::mutate(node_label = if_else(centrality > lab_limit, label, "")) %>% 
+    dplyr::mutate(node_size = if_else(centrality > lab_limit, centrality, 0)) 
+  
+  
+  if (linear){
+    ggraph(centrality, layout = 'linear', circular = TRUE) +
+      geom_edge_arc(alpha=0.05,
+                    aes(col = ifelse(weight == 1, "1",
+                                     ifelse(weight > 1 & weight <= 5, "1-5", "5+")),
+                        edge_width = weight)) +
+      geom_node_label(aes(label=node_label,
+                          size=node_size,
+                          col = factor(community)),
+                      label.size=0,
+                      fill="#ffffff66",
+                      segment.colour="slateblue",
+                      color="black",
+                      repel=TRUE,
+                      fontface="bold",
+                      show.legend = FALSE) +
+      coord_fixed() +
+      scale_size_area(trans="sqrt") +
+      theme_graph() +
+      guides(edge_width = FALSE,
+             edge_colour = guide_legend(title = "Edge weights",
+                                        override.aes = list(edge_alpha = 1))) +
+      theme(
+            plot.title = element_text(size = rel(3)),
+            plot.subtitle = element_text(size = rel(2)),
+            legend.text = element_text(size = rel(2)))
+  } else {
+    ggraph(centrality, layout = "graphopt") + 
+      geom_node_point() +
+      geom_edge_link(aes(width = weight), alpha = 0.5) + 
+      scale_edge_width(range = c(0.1, 0.5)) +
+      geom_node_label(aes(label= node_label, 
+                          size= node_size, 
+                          col = factor(community)),
+                      label.size=0, 
+                      fill="white", 
+                      segment.colour="slateblue",
+                      color="black", 
+                      repel=TRUE, 
+                      fontface="bold", 
+                      show.legend = FALSE) +
+      labs(edge_width = "Number") +
+      theme_graph()
+  }
+  
+}

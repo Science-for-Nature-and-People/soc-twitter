@@ -1,0 +1,193 @@
+---
+title: "map"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = F, message=F, warning=F}
+library(tidyverse)
+library(ggmap)
+library(sf)
+library(raster)
+library(dplyr)
+library(spData)
+library(tmap)
+
+
+
+
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
+```
+
+
+
+```{r geolocate, echo = F, message=F}
+
+### code for bringing in geolocation lat/long data
+
+RT_sub <- RT %>% 
+  dplyr::select(provenance, created_at, screen_name, favorite_count, retweet_count, query, place_name, country) %>% 
+  filter(!is.na(place_name)) %>% 
+  mutate(
+    place_full = paste(place_name, country, sep = ", ")
+  )
+
+unique_loc <- unique(RT_sub$place_full)
+
+# coords <- geocode(unique_loc)
+
+# coord_loc <- data.frame(place_full = unique_loc, coords)
+
+# locations <- left_join(RT_sub, coord_loc)
+
+# write_csv(locations, "locations.csv")
+
+locations <- read_csv("locations.csv")
+
+#remove spaces and hashtags from query terms
+locations <- locations %>% 
+  mutate(query = tolower(str_replace_all(query, "#| |\"", "")))
+  
+```
+
+
+```{r wrangle data, echo = F, message=F, fig.width=12, fig.height=6}
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# basemap
+worldmap <- ne_countries(scale = 'medium', type = 'map_units',
+                         returnclass = 'sf')
+
+#remove NA lat longs
+locations <- locations %>% 
+  filter(!is.na(lon) & !is.na(query))
+
+## turn into sf object
+locs_sf <- st_as_sf(locations, coords = c("lon", "lat"), crs = 4326)
+#add lat longs back as indivdual columns
+locs_full <- cbind(locs_sf, st_coordinates(locs_sf))
+
+#combining "soil health" and "healthy soil"
+locs_full$query[locs_full$query == "healthysoil"] <- "soilhealth"
+locs_full$query[locs_full$query == "healthyrangelands"] <- "rangelandhealth"
+
+
+
+## select only query terms of interest
+SH_RA_locs <- filter(locs_full, query %in% c("soilhealth", "regenerativeagriculture"))
+
+#filter by date which we started searching for regen ag
+SH_RA_filt <- filter(SH_RA_locs, created_at >= as.Date('2018-10-01'))
+
+
+
+###number of data points from API vs ARC
+prov_count <- locs_full %>% 
+  group_by(provenance) %>% 
+  tally()
+### as of 10/23/19
+#~ API = 4334
+#~ ARC = 1123
+
+
+
+
+```
+
+
+
+NOTE::locations are approximate 1) because of jitter, but more importantly 2) because of the resolution at which some locations are given (i.e "western australia, Australia" vs "perth, australia)
+
+
+```{r prov map}
+### of API vs original database
+world_prov <- ggplot() +
+    geom_sf(data = worldmap) +
+    geom_jitter(data = locs_full, aes(X, Y, color = provenance), size = .5, alpha = .5, width = 1, height = 1) +
+  coord_sf(xlim = c(-165, 180), ylim= c(-60, 70)) +
+    theme_void()
+```
+
+
+```{r regional difs, echo = F, message=F}
+### world map of all query terms
+world_query <- ggplot() +
+    geom_sf(data = worldmap) +
+    geom_jitter(data = locs_full, aes(X, Y, color = query), size = .5, alpha = .5,  width = 1, height = 1) +
+    scale_color_manual(values=c("#999999","#F8766D", "#7CAE00", "#00BFC4", "#E69F00")) +
+    coord_sf(xlim = c(-165, 180), ylim= c(-60, 70)) +
+    theme_void()
+
+
+#### looking at regional differences comparing soilhealth to regenerative ag
+## if you want to look at all query terms, use data = locs_full instead of SH_RA_filt
+
+
+world_query_filt <- ggplot() +
+  geom_sf(data = worldmap) +
+  geom_jitter(data = SH_RA_filt, aes(X, Y, color = query), size = .5, alpha = .5,  width = 1, height = 1)+
+  coord_sf(xlim = c(-165, 180), ylim= c(-60, 70)) +
+  theme_void()
+
+
+NorthAm_query <- ggplot() +
+  geom_sf(data = worldmap) +
+  geom_jitter(data = SH_RA_filt, mapping = aes(X, Y, color = query), size = .5, alpha = .5, width = 1, height = 1) +
+  coord_sf(xlim = c(-165, -60), ylim= c(10, 70)) +
+  theme_void()
+NorthAm_query
+
+
+SouthAm_query <- ggplot() +
+  geom_sf(data = worldmap) +
+  geom_jitter(data = SH_RA_filt, mapping = aes(X, Y, color = query), size = .5, alpha = .5, width = 1, height = 1) +
+  coord_sf(xlim = c(-90, -30), ylim= c(-55, 10)) +
+  theme_void()
+SouthAm_query
+
+
+Africa_query <- ggplot() +
+  geom_sf(data = worldmap) +
+  geom_jitter(data = SH_RA_filt, mapping = aes(X, Y, color = query), size = .5, alpha = .5, width = 1, height = 1) +
+  coord_sf(xlim = c(-20, 60), ylim= c(-35, 35)) +
+  theme_void()
+Africa_query
+
+
+europe_query <- ggplot() +
+  geom_sf(data = worldmap) +
+  geom_jitter(data = SH_RA_filt, mapping = aes(X, Y, color = query), size = .5, alpha = .5, width = 1, height = 1) +
+  coord_sf(xlim = c(-15, 30), ylim= c(35, 60)) +
+  theme_void()
+europe_query
+
+asia_query <- ggplot() +
+  geom_sf(data = worldmap) +
+  geom_jitter(data = SH_RA_filt, mapping = aes(X, Y, color = query), size = .5, alpha = .5, width = 1, height = 1) +
+  coord_sf(xlim = c(30, 160), ylim= c(10, 80)) +
+  theme_void()
+asia_query
+
+
+australia_query <- ggplot() +
+  geom_sf(data = worldmap) +
+  geom_jitter(data = SH_RA_filt, mapping = aes(X, Y, color = query), size = .5, alpha = .5, width = 1, height = 1) +
+  coord_sf(xlim = c(110, 180), ylim= c(-50, -5)) +
+  theme_void()
+
+australia_query
+
+test <- ggplot() +
+  geom_sf(data = worldmap) +
+  geom_bin2d(data = SH_RA_filt, mapping = aes(X, Y, fill = query, color = query), binwidth = c(2, 2)) +
+  coord_sf(xlim = c(110, 180), ylim= c(-50, -5)) +
+  theme_void()
+
+test
+```
+
