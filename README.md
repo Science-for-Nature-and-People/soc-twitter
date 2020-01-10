@@ -25,7 +25,7 @@ Two different data sources are used:
 
 For the archive data:
 
-- Main: [raw_data_processing.R](raw_data_processing.R):
+- Main: [raw_data_processing.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/pre_processing/raw_data_processing.R):
   - read raw twitter datasets from different sources (Json or csv format) 
   - clean and standardize to enable a merge
   - simple analysis of what the data looks like 
