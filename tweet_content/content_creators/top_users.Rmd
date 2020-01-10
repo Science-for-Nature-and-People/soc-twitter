@@ -9,22 +9,17 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### This Markdown aims to create a list of top 500 users based on:
-- the number of total retweets of all their tweets (called top_users)
-- the ratio of number of tweets to total retweets, based on some limit (called content creators)
+### This Markdown aims to create a list of top users based on:
+1. the number of total retweets of all their tweets (called top_users)
+2. the ratio of number of tweets to total retweets, based on some limit (called top_user_ratio)
 
 ```{r, include=FALSE}
 # load packages
 library(tidyverse)
-library(tidytext)
-library(stringr)
-library(ggraph)
-library(igraph)
+library(magick)
+library(knitr)
+library(kableExtra)
 library(tm)
-library(NLP)
-library(quanteda)
-library(SnowballC)
-library(dplyr)
 source("../../text_analysis_functions.R")
 
 theme_set(theme_bw())
@@ -33,15 +28,24 @@ theme_set(theme_bw())
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
 ```
 
+#### **** IMPORTANT DECISION STEP: *****
+#### clean text and decided to include pope and/or india
+#### decide how many users to show in table
+```{r}
+# data cleaning 
+# set rm_pope & rm_india to FALSE to keep both the pope and india tweets respectively
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
+# number of users to include in tables:
+num_users <- 10
+```
+
+
 
 ### Create a list of top 500 users in terms of num of total retweets of all their tweets
-```{r, include=FALSE}
-# data cleaning
-noRT_no_india <- clean_data(noRT)
-
+```{r RT counts, include=FALSE}
 
 # create a list with username, text and retweet_count
-user.df <- noRT_no_india %>% 
+user.df <- noRT_clean %>% 
   select(screen_name, text, retweet_count, user_id)
 
 user.df$text <- substring(user.df$text, 1, 30)
@@ -56,119 +60,153 @@ names(user_counts) <- c("screen_name", "tot_retweet_count")
 
 ```
 
+
 # caclulate the total # of tweets each of these top users have created
-```{r}
+```{r ratio}
 tweet_count <- user.df %>% 
   group_by(screen_name) %>% 
   tally()
   
 all_counts <- dplyr::left_join(user_counts, tweet_count, by = "screen_name")
 
+## get ratio of number of tweets from a user to number of retweets
 all_counts$ratio <- round(all_counts$tot_retweet_count/all_counts$n,2)
 
 ```
 
 ### create lists of top users based on total number of retweets
-```{r}
-## based soley on retweet counts 
+```{r paper table top_user, fig.width=12}
+
+## creating Table 2 for paper (top_users)
+
+#select top users
 top_user <- all_counts %>% 
+  select(-n, -ratio) %>% 
   arrange(-tot_retweet_count) %>% 
-  head(500)
+  head(num_users)
 
 
-###explore this list a bit:
+#### add in their most retweeted tweet and RT count for it
+top_tweets <- noRT %>% 
+  filter(screen_name %in% top_user$screen_name) %>% 
+  group_by(screen_name) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  select(screen_name, retweet_count, text)
 
-hist(top_user$tot_retweet_count)
-hist(top_user$n)
+top_user_info <- left_join(top_user, top_tweets)
+names(top_user_info) <- c("User name", "Total number of RTs", "RT count for most RTed tweet", "Most RTed tweet")
+
+### create table
+kable(top_user_info) %>%
+  kable_styling(bootstrap_options = "striped") %>%
+  column_spec(2,width = "1in") %>%
+  column_spec(3,width = "1in") %>% 
+  as_image(file = "count_table.png") ## saves table
 
 
-nrow(top_user[top_user$n > 10,]) # ~60% of these have had more than 10 tweets
 ```
 
-### create list based on combo of total number of tweets AND total retweets
+### repeat above, using RT:Tweet ratio as metric
 ```{r}
 ### define parameters:
 num_tweet_limit <- 10
-ratio_limit <- 2
+ratio_limit <- 2 
 
-content_creator <- all_counts %>% 
+top_user_ratio <- all_counts %>% 
   filter(n >= num_tweet_limit & ratio >= ratio_limit) %>% 
-  arrange(-tot_retweet_count)
+  select(screen_name, tot_retweet_count) %>% 
+  arrange(-tot_retweet_count) %>% 
+  head(num_users) ## defined on line 86
 
+top_tweets_ratio <- noRT %>% 
+  filter(screen_name %in% top_user_ratio$screen_name) %>% 
+  group_by(screen_name) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  select(screen_name, retweet_count, text)
+
+
+top_ratio_info <- left_join(top_user_ratio, top_tweets_ratio)
+names(top_ratio_info) <- c("User name", "Total number of RTs", "RT count for most RTed tweet", "Most RTed tweet")
+
+### create table
+kable(top_ratio_info) %>%
+  kable_styling(bootstrap_options = "striped") %>%
+  column_spec(2,width = "1in") %>%
+  column_spec(3,width = "1in") %>% 
+  as_image(file = "ratio_table.png") ### saves table
+```
+
+
+#### full dataset (not cleaned) based on total retweet 
+## this is the figure that was posted on Slack on 10/25/19
+```{r top rt table, fig.width=6}
+#table of top RT
+
+top_10 <- noRT %>%
+  dplyr::select(screen_name,retweet_count, text) %>%
+  arrange(-retweet_count) %>%
+  head(10)
+
+library(kableExtra)
+library(knitr)
+
+kable(top_10) %>%
+  kable_styling(bootstrap_options = "striped")
 
 ```
 
 
 
-```{r}
-par(mfrow=c(2,2))
-hist(top_user$tot_retweet_count)
-hist(top_user$n)
-hist(content_creator$tot_retweet_count)
-hist(content_creator$n)
+
+
+
+```{r sentiment}
+#top 10
+
+## clean text and format (words w/ counts)
+tidy_counts <- prepare_text(top_10)
+
+## get sentiment for each lexicon
+nrc <- tidytext::get_sentiments("nrc")
+bing <- tidytext::get_sentiments("bing")
+afin <- tidytext::get_sentiments("afinn")
+lough <- tidytext::get_sentiments("loughran")
+
+top_10_nrc <- inner_join(tidy_counts, nrc)
+top_10_bing <- inner_join(tidy_counts, bing)
+top_10_afin <- inner_join(tidy_counts, afin)
+top_10_lough <- inner_join(tidy_counts, lough)
+
+#~~ bing seems to be the
+top_100 <- noRT %>%
+  dplyr::select(screen_name,retweet_count, text) %>%
+  arrange(-retweet_count) %>%
+  head(100)
+
+tidy_100 <- prepare_text(top_100)
+
+top_100_bing <- inner_join(tidy_100, bing)
+
+bing_100_sum <- top_100_bing %>%
+  group_by(sentiment, word) %>%
+  dplyr::summarise(n = sum(n)) %>%
+  filter(n > 1)
+
+ggplot(bing_100_sum, aes(sentiment, n)) +
+  geom_col()
+## top
 ```
 
 
 
-####adding in steves manually coded grouping
-```{r groups}
-coded <- read_csv("top_user_coded.csv") 
-
-noRT_clean <- clean_data(noRT)
-
-joined <- left_join(noRT_clean[,c(2,4,5,7,8)], coded) %>% 
-  filter(!is.na(`indiv-org`))
-
-```
 
 
-```{r explore groups}
-
-type_count <- joined %>% 
-  group_by(type) %>% 
-  dplyr::summarise(
-    count = n()
-  ) %>% 
-  ungroup()
-
-type_count$type <- factor(type_count$type, levels = type_count$type[order(desc(type_count$count))])
-
-ggplot(type_count, aes(x = as.factor(type), y = count)) +
-  geom_col() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(
-    x = "user type",
-    title = "number of tweets from by top users - sorted by 'type'"
-  )
-```
 
 
-```{r all phrases}
-all_phrases <- phrases(joined, 10)
-head(all_phrases, 10)
-```
 
 
-```{r phrase-type}
-## phrases for top 5 user types
-
-non_prof <- phrases(filter(joined, type == "non-profit"), 10)
-head(non_prof, 10)
-
-author <- phrases(filter(joined, type == "author"), 10)
-head(author, 10)
-
-small_comp <- phrases(filter(joined, type == "small-company"), 10)
-head(small_comp, 10)
-
-extension <- phrases(filter(joined, type == "extension"), 10)
-head(extension, 10)
-
-govt <- phrases(filter(joined, type == "government"), 10)
-head(govt, 10)
 
 
-```
 
 
 
