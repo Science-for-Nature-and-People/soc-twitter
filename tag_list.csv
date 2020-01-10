@@ -1,17 +1,17 @@
-﻿tag_list
-soil health
-healthy soil
-#soilhealth
-#healthysoil
-soil quality
-soil fertility
-#soilquality
-#soilfertility
-rangeland health
-#rangelandhealth
-healthy rangelands
-#healthyrangelands
-regenerative agriculture
-#regenerativeagriculture
-sustainable agriculture
-#SustainableAgriculture
+﻿tag_list,tag_category
+soil health,soil health
+healthy soil,soil health
+#soilhealth,soil health
+#healthysoil,soil health
+soil quality,soil quality
+soil fertility,soil fertility
+#soilquality,soil quality
+#soilfertility,soil fertility
+rangeland health,rangeland health
+#rangelandhealth,rangeland health
+healthy rangelands,rangeland health
+#healthyrangelands,rangeland health
+regenerative agriculture,regenrative agriculture
+#regenerativeagriculture,regenrative agriculture
+sustainable agriculture,sustainable agriculture
+#SustainableAgriculture,sustainable agriculture
