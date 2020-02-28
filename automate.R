@@ -74,7 +74,7 @@ q <- unname(sapply(keyword_list$tag_list, function(x) toString(dQuote(x))))
 twitterAPI_new <- search_tweets2(q, n = 100000, token=twitter_token, retryonratelimit = T)
 
 # Write the raw API response as a csv (including quoted tweet)
-filename_raw <- paste0(path_shared, '/API_csv/rawdata_', Sys.Date(), '.csv')
+filename_raw <- paste0(path_shared, "/API_csv/raw_api_data/rawdata_", Sys.Date(), '.csv')
 write_as_csv(x = twitterAPI_new, file_name = filename_raw)
 
 
