@@ -1,0 +1,146 @@
+---
+title: "Data Version Check"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(magrittr)
+library(fuzzyjoin)
+```
+
+Read in data
+```{r}
+v3 <- read_csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv")
+v4 <- read_csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv")
+```
+
+
+```{r}
+tribble(
+  ~v3, ~v4,
+  dim(v3),
+  dim(v4)
+) %>%
+  unnest
+```
+
+Important columns: `text`, `user_id`, and `created_at`, `is_retweet`
+```{r}
+cols_of_interest <- c("user_id", "created_at", "text", "is_retweet")
+v3_sub <- v3 %>%
+  select(cols_of_interest) %>%
+  distinct()
+
+v4_sub <- v4 %>%
+  select(cols_of_interest) %>%
+  distinct()
+
+# shared rows
+inner_join(v3_sub, v4_sub)
+```
+
+```{r}
+# columns that are only in one dataframe
+v4_only <- anti_join(v4_sub, v3_sub)
+v3_only <- anti_join(v3_sub, v4_sub)
+
+nrow(v4_only)
+nrow(v3_only)
+
+```
+
+```{r}
+# compare date range
+v4_only %>%
+  pull(created_at) %>%
+  summary()
+
+v3_only %>% 
+  pull(created_at) %>%
+  summary()
+
+
+```
+ 
+ We notice that the end datetimes for both dataframes are identical, indicating that they might be a match with slight differences. let's check it out
+```{r}
+v4_only %>%
+  arrange(desc(created_at))
+
+v3_only %>%
+  arrange(desc(created_at))
+
+```
+ 
+Comparing the texts, it looks like the differences are in quotes and in RT.. Let's remove and try the join again
+```{r}
+v3_fixed <- v3_only %>%
+  mutate(text = #str_replace_all(text, '\"', '') %>%
+           str_replace_all(text, "^RT @\\w+: ", "")
+         )
+
+v3_fixed %>%
+  arrange(desc(created_at)) %>%
+  select(text, everything())
+
+
+# see the improvement. we were able to match all but 88 of these (69 unique)! below contains the leftovers
+(v3_only_fixed <- v3_fixed %>%
+  anti_join(v4_only) %>%
+  arrange(desc(created_at)) %>%
+  distinct(text, .keep_all = T)
+)
+
+
+
+```
+
+let's see if we can do even better by ignoring text and looking at files that have the same datetime and user_id
+```{r}
+v3_only_fixed %>%
+  select(created_at, user_id, textv3 = text) %>%
+  inner_join(v4, by = c("created_at", "user_id")) %>%
+  select(created_at, user_id, textv4 = text, textv3) %>%
+  mutate(textdiff = stringdist::stringdist(textv4, textv3))
+
+
+```
+
+It's looking like a common theme is the shortend twitter links keep changing.. Let's get rid of them and see if it helps the match. These are normally at the end of a tweet so to be crude I'll just cut off everything after http.
+
+While we're at it, let's also remove newline characters and trailing/leading whitespace
+```{r}
+v3_only_fixed_nolink <- v3_only_fixed %>%
+  mutate(text = str_replace_all(text, "https://t.co.+", "") %>%
+           str_replace_all("\n", ""))
+  
+v4_nolink <- v4 %>%
+  mutate(text = str_replace_all(text, "https://t.co.+", "") %>%
+           str_replace_all("\n", ""))
+
+
+# now see how many are still unmatched.
+final_v3_unmatched <- v3_only_fixed_nolink %>% 
+  anti_join(v4_nolink, by = "text") %>%
+  distinct(text, .keep_all = T)
+
+
+
+# see if there are any that match userid/created by, but not text. The only difference is a SLIGHTLY earlier ..., which I think we can safely ignore.
+v3_only_fixed_nolink %>%
+  rename(text_v3 = text) %>%
+  inner_join(v4_nolink, by= c("created_at", "user_id")) %>%
+  select(text_v4 = text, text_v3) %>%
+  filter(text_v3 != text_v4)
+
+
+# see if we can find a match by fuzzymatching text. this takes forever to run..
+#stringdist_left_join(final_v3_unmatched, v4_nolink, by = "text")
+
+  
+```
+
+

@@ -359,9 +359,10 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
                  "hashtags",
                  "place_name",
                  "country_code",
+                 "is_retweet",
                  # "id",
-                 "query",
-                 "is_retweet")) 
+                 "query"
+                 )) 
 
 
 # c. Remove id:twitter.com in user id
@@ -433,7 +434,7 @@ twitter_API_merge$user_id <- as.character(twitter_API_merge$user_id) # char --> 
 str(twitter_API_merge)
 str(snapp_twitterdata_merge)
   # matching_querywords <- sample_n(snapp_twitterdata_merge, 100)
-  # querywords <- unique(twitter_API_merge$query)
+  # querywords <- unique(twitter_API_merge$query) 
 
   # twitter_API$retweet_count[which(is.na(twitter_API_merge$retweet_count))]
   # class(twitter_API_merge$retweet_count)
