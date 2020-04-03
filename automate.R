@@ -22,11 +22,14 @@ library(httr)
 ## CONSTANTS ----
 
 # path to the master files
-path_shared <- '/home/shares/soilcarbon/Twitter/' # Location of the shared folder on aurora
+path_shared <- '/home/shares/soilcarbon/Twitter' # Location of the shared folder on aurora
 
 # master files
-master_data <- "Merged_v3/twitter_merged_v3.csv"
-master_data_noRT <-"/Merged_v3/twitter_merged_noRT_v3.csv"
+
+version = "4"          # v4 is the version that was rebuilt from all the API files using the new version of raw_data_processing.R
+
+master_data <- sprintf("Merged_v%s/twitter_merged_v%s.csv", version, version)
+master_data_noRT <- sprintf("Merged_v%s/twitter_merged_noRT_v%s.csv", version, version)
 
 # Get the path to folder for cron job
 args <- commandArgs(trailingOnly = TRUE)
@@ -49,8 +52,8 @@ source(paste0(path_local, "text_analysis_functions.R")) # use paste0 instead of 
 
 
 # Master files 
-twitter_merged.master <- read.csv(paste(path_shared, master_data, sep = ""), stringsAsFactors = FALSE) 
-twitter_merged_noRT.master <- read.csv(paste(path_shared, master_data_noRT, sep = ""), stringsAsFactors = FALSE) 
+twitter_merged.master <- read.csv(file.path(path_shared, master_data), stringsAsFactors = FALSE) 
+twitter_merged_noRT.master <- read.csv(file.path(path_shared, master_data_noRT), stringsAsFactors = FALSE) 
 
 
 # twitter_merged.master <- flag_india(twitter_merged.master) # one time fix (used 2019/09/06)
@@ -108,6 +111,7 @@ twitterAPI_new <- twitterAPI_new %>%
          query,
          is_retweet)
 
+
 # Remove row names
 rownames(twitterAPI_new) <- NULL
 
@@ -128,7 +132,7 @@ i <- sapply(twitterAPI_new, is.list)
 twitterAPI_new[i] <- lapply(twitterAPI_new[i], as.character)
 
 # Creating csv file
-write.csv(twitterAPI_new, file.name)
+write.csv(twitterAPI_new, file.name, row.names = FALSE)
 
 
 
@@ -136,8 +140,8 @@ write.csv(twitterAPI_new, file.name)
 ## PREPARE DATA FOR MERGE ----
 
 # Changing the type of specific columns
-twitter_merged.master$created_at <- as_datetime(twitter_merged.master$created_at)
-twitter_merged_noRT.master$created_at <- as_datetime(twitter_merged_noRT.master$created_at)
+# twitter_merged.master$created_at <- as_datetime(twitter_merged.master$created_at)
+# twitter_merged_noRT.master$created_at <- as_datetime(twitter_merged_noRT.master$created_at)
 
 # Creating provenance columns w/ value as API
 twitterAPI_new <- add_column(twitterAPI_new, provenance = "API", .before = 1)  
@@ -196,6 +200,7 @@ twitterAPI_new_noRT <- twitterAPI_new %>%
 # removing tweets from old df as to keep the most up-to-date tweets
 uniqueRows <- !(do.call(paste0, twitter_merged.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
                   do.call(paste0, twitterAPI_new[,c("created_at", "user_id", "screen_name", "text", "source")]))
+
 twitter_merged.master <- twitter_merged.master[uniqueRows,]
 
 uniqueRows_noRT <- !(do.call(paste0, twitter_merged_noRT.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
@@ -208,8 +213,8 @@ message("<--------- Exporting data ---------->\n")
 ## MERGING AND **EXPORTING** DATA ----
 
 # Merging datasets together using rbind 
-twitter_merged_new <- rbind(twitter_merged.master, twitterAPI_new)
-twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT)
+twitter_merged_new <- bind_rows(twitter_merged.master, twitterAPI_new)
+twitter_merged_noRTnew <- bind_rows(twitter_merged_noRT.master, twitterAPI_new_noRT)
 
 # Re-exporting new merged dataset to master csv
 
