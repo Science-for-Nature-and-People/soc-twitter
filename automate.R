@@ -55,7 +55,7 @@ source(paste0(path_local, "text_analysis_functions.R")) # use paste0 instead of 
 twitter_merged.master <- read.csv(file.path(path_shared, master_data), stringsAsFactors = FALSE) 
 twitter_merged_noRT.master <- read.csv(file.path(path_shared, master_data_noRT), stringsAsFactors = FALSE) 
 
-
+# Adding the is_india column
 # twitter_merged.master <- flag_india(twitter_merged.master) # one time fix (used 2019/09/06)
 # twitter_merged_noRT.master <- flag_india(twitter_merged_noRT.master) # one time fix (used 2019/09/06)
 
