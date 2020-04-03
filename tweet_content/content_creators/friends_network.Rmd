@@ -26,11 +26,22 @@ library(ggraph)
 
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
-RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_v4.csv",stringsAsFactors = FALSE)
 
-RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
-noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
+RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)%>% 
+  #### get rid of weird overlapping duplicates
+  group_by(created_at, screen_name, text) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  ungroup() %>% 
+  distinct()
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T) %>% 
+  #### get rid of weird overlapping duplicates
+  group_by(created_at, screen_name, text) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  ungroup() %>% 
+  distinct()
+
 
 # first batch of coded users
 coded <- read_csv("top_user_coded.csv")

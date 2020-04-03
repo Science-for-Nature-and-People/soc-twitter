@@ -19,7 +19,7 @@ library(igraph)
 source("../text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE) 
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE) 
 
 ```
 
@@ -27,7 +27,13 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_
 
 ### TEST top 100 w/o numbers, usernames and website
 ```{r}
-noRT <- clean_data(noRT)
+noRT <- clean_data(noRT) %>% 
+  #### get rid of weird overlapping duplicates
+  group_by(created_at, screen_name, text) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  ungroup() %>% 
+  distinct()
+
 top_100_noRT <- noRT %>% 
   arrange(-retweet_count) %>% 
   head(100)
@@ -69,7 +75,7 @@ gram_network(noRT_bigram,limit)
 ```{r, echo=F, fig.width=12, fig.height=9}
 ###soil
 soil_bigram <- create_bigram(noRT, "soil health", group = T, stem = T)
-limit <- soil_bigram$n[60]
+limit <- soil_bigram$n[65]
 gram_network(soil_bigram, limit)
 ```
 
@@ -148,7 +154,7 @@ gram_network(biod_bigram, limit)
 ###full (top100)
 
 top_100_bigram <- create_bigram(top_100_noRT, group = T, stem = T)
-limit <- top_100_bigram$n[70]
+limit <- top_100_bigram$n[120]
 
 gram_network(top_100_bigram, limit)
 ```
@@ -178,3 +184,54 @@ soil_100_bigram <- create_bigram(top_100_noRT, "soil", group = T, stem = T)
 limit <- soil_100_bigram$n[70]
 gram_network(soil_100_bigram, limit)
 ```
+
+
+
+```{r, fig.width=12}
+#### combined regen ag and soil health
+regen_bigram <- create_bigram(noRT, paste(c("regenerative","soil health"),collapse = "|"), group = T, stem = T)
+limit <- regen_bigram$n[70]
+gram_network(regen_bigram, limit)
+```
+### bigram by user group
+```{r, fig.width=12}
+# first batch of coded users
+coded <- read_csv("content_creators/top_user_coded.csv")
+# updated list based on centrality scores
+coded_v2 <- read_csv("content_creators/top_central_users_v2.csv") %>% 
+  dplyr::rename("screen_name" = "user_id")
+
+coded_noNA <- bind_rows(coded, coded_v2) %>% 
+  select(screen_name, type) %>% 
+  filter(!is.na(type)) %>% 
+  distinct()
+
+
+
+full_data_coded <- left_join(noRT, coded_noNA)
+
+farmers <- full_data_coded %>% 
+  filter(type == "farmer")
+
+farmer_bigram <- create_bigram(farmers, "", group = T, stem = T)
+limit <- farmer_bigram$n[60]
+gram_network(farmer_bigram, limit)
+
+
+governments <- full_data_coded %>% 
+  filter(type %in% c("government", "politician"))
+
+government_bigram <- create_bigram(governments, "", group = T, stem = T)
+limit <- government_bigram$n[60]
+gram_network(government_bigram, limit)
+
+authors <- full_data_coded %>% 
+  filter(type == "author")
+
+author_bigram <- create_bigram(authors, "", group = T, stem = T)
+limit <- author_bigram$n[60]
+gram_network(author_bigram, limit)
+
+```
+
+

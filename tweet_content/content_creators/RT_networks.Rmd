@@ -21,11 +21,21 @@ library(ggraph)
 source("../../text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
-RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_v4.csv",stringsAsFactors = FALSE)
 
-RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
-noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
+RT_clean <- clean_data(RT, rm_pope = T, rm_india = T) %>% 
+  #### get rid of weird overlapping duplicates
+  group_by(created_at, screen_name, text) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  ungroup() %>% 
+  distinct()
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T) %>% 
+  #### get rid of weird overlapping duplicates
+  group_by(created_at, screen_name, text) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  ungroup() %>% 
+  distinct()
 
 # RT_india <- clean_data(RT, rm_pope = T, rm_india = F)
 # noRT_india <- clean_data(noRT, rm_pope = T, rm_india = F)
@@ -77,7 +87,7 @@ authors <- coded %>%
 lab_limit <- 50
 
 retweet_network(users = authors, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
-retweet_network(users = authors, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit, linear = F)
+#retweet_network(users = authors, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit, linear = F)
 
 
 
@@ -110,7 +120,7 @@ extension <- coded %>%
 lab_limit <- 50
 
 retweet_network(users = extension, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit)
-retweet_network(users = extension, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit, linear = F)
+#retweet_network(users = extension, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, lab_limit = lab_limit, linear = F)
 
 
 
@@ -159,12 +169,10 @@ retweet_network(users = poli, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, 
 
 ##### top 100 soil health
 ```{r, fig.width= 12, fig.height=14}
-SH <- c("soil health", "soilhealth", "healthy soil", "healthysoil", "#healthysoil", "#soilhealth")
+SH <- c("soil health", "soilhealth", "healthy soil", "healthysoil", "#healthysoil", "#soilhealth", "“soil health”", "“soilhealth”")
 
 soil <- noRT_clean %>% 
-  filter(
-    str_detect(query, paste(SH, sep = "|")) 
-  ) %>% 
+  filter(query %in% SH) %>% 
   arrange(desc(retweet_count)) %>% 
   head(100)
 
@@ -176,14 +184,15 @@ retweet_network(users = soil, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean, 
 
 ##### top 100 regen ag tweets
 ```{r, fig.width= 12, fig.height=14}
-RA <- c("regenerativeagriculture", "#regenerativeagriculture")
+RA <- c("regenerativeagriculture", "#regenerativeagriculture", "regenerative agriculture", "“regenerative agriculture”", "“regenerativeagriculture”")
 
 regen <- noRT_clean %>% 
-  filter(
-    str_detect(query, paste(RA, sep = "|")) 
-  ) %>% 
+  filter(query %in% RA) %>% 
   arrange(desc(retweet_count)) %>% 
   head(100)
+
+test <- noRT_clean %>% 
+  filter(query %in% RA)
 
 lab_limit <- 100
 
@@ -194,6 +203,9 @@ retweet_network(users = regen, noRT_cleaned = noRT_clean, RT_cleaned = RT_clean,
 
 
 
+```{r}
+
+```
 
 
 
