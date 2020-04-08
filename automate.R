@@ -144,7 +144,7 @@ write.csv(twitterAPI_new, file.name, row.names = FALSE)
 # twitter_merged_noRT.master$created_at <- as_datetime(twitter_merged_noRT.master$created_at)
 
 twitterAPI_new$created_at <- as.character(twitterAPI_new$created_at) # should be more efficient
-
+twitterAPI_new$user_id <- as.character(twitterAPI_new$user_id)
 
 # Creating provenance columns w/ value as API
 twitterAPI_new <- add_column(twitterAPI_new, provenance = "API", .before = 1)  
