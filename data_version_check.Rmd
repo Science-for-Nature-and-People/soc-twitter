@@ -226,3 +226,29 @@ fuzzy_match_text %>%
 
 ```
 
+Looking at duplicates
+```{r}
+v3_dups <- v3 %>%
+  count(user_id,created_at, text, sort =T)
+  
+v4_dups <- v4 %>%
+  filter(created_at <= max(v3$created_at)) %>%
+  count(user_id, created_at, text, sort = T)
+
+
+v3_dups %>% 
+  filter(n > 1) %>% 
+  nrow
+  
+
+v4_dups %>% 
+  filter(created_at <= max(v3$created_at), n > 1) %>% 
+  nrow
+
+
+qplot(v3_dups %>% filter(n>1) %>% pull(n))
+
+
+```
+
+
