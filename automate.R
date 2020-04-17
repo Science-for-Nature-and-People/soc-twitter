@@ -199,31 +199,27 @@ twitterAPI_new_noRT <- twitterAPI_new %>%
 
 ## REMOVE OLD TWEETS THAT ARE DUPLICATES OF NEWLY SCRAPED TWEETS ----
 
-# Remove tweet duplicate from the API
+# -- Removing duplicates within each dataframe (merged and new api) --
 
-twitterAPI_new <- twitterAPI_new %>%
-  group_by(created_at, user_id, screen_name, text) %>% 
-  filter(retweet_count == max(retweet_count)) %>% 
-  ungroup() %>% 
-  distinct()
+# we only really care about created_at, screen_name, and text. 
+# take tweet with largest retweet count. if multiple, then pick the first one we see.
+twitter_merged.master_nodup <- rm_dups(twitter_merged.master)
+twitterAPI_new_nodup <- rm_dups(twitterAPI_new)
+twitter_merged_noRT.master_nodup <- rm_dups(twitter_merged_noRT.master)
+twitterAPI_new_noRT_nodup <- rm_dups(twitterAPI_new_noRT)
+
+  
+# -- Removing duplicates between the two dataframes -- 
 
 # looking through new tweets and comparing to old tweets in master data frame then
 # removing tweets from old df as to keep the most up-to-date tweets
-uniqueRows <- !(do.call(paste0, twitter_merged.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
-                  do.call(paste0, twitterAPI_new[,c("created_at", "user_id", "screen_name", "text", "source")]))
+uniqueRows <- !(do.call(paste0, twitter_merged.master_nodup[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
+                  do.call(paste0, twitterAPI_new_nodup[,c("created_at", "user_id", "screen_name", "text", "source")]))
+twitter_merged.master <- twitter_merged.master_nodup[uniqueRows,]
 
-twitter_merged.master <- twitter_merged.master[uniqueRows,]
-
-
-twitterAPI_new_noRT <- twitterAPI_new_noRT %>%
-  group_by(created_at, user_id, screen_name, text, source) %>% 
-  filter(retweet_count == max(retweet_count)) %>% 
-  ungroup() %>% 
-  distinct()
-
-uniqueRows_noRT <- !(do.call(paste0, twitter_merged_noRT.master[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
-                       do.call(paste0, twitterAPI_new_noRT[,c("created_at", "user_id", "screen_name", "text", "source")]))
-twitter_merged_noRT.master <- twitter_merged_noRT.master[uniqueRows_noRT,]
+uniqueRows_noRT <- !(do.call(paste0, twitter_merged_noRT.master_nodup[,c("created_at", "user_id", "screen_name", "text", "source")]) %in% 
+                       do.call(paste0, twitterAPI_new_noRT_nodup[,c("created_at", "user_id", "screen_name", "text", "source")]))
+twitter_merged_noRT.master <- twitter_merged_noRT.master_nodup[uniqueRows_noRT,]
 
 
 message("<--------- Exporting data ---------->\n")
@@ -231,8 +227,10 @@ message("<--------- Exporting data ---------->\n")
 ## MERGING AND **EXPORTING** DATA ----
 
 # Merging datasets together using rbind 
-twitter_merged_new <- bind_rows(twitter_merged.master, twitterAPI_new)
-twitter_merged_noRTnew <- bind_rows(twitter_merged_noRT.master, twitterAPI_new_noRT)
+
+twitter_merged_new <- rbind(twitter_merged.master, twitterAPI_new_nodup)
+twitter_merged_noRTnew <- rbind(twitter_merged_noRT.master, twitterAPI_new_noRT_nodup)
+
 
 # Re-exporting new merged dataset to master csv
 

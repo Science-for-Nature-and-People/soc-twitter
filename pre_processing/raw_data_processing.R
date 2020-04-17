@@ -40,6 +40,7 @@ library(lubridate)
 library(ids)
 library(countrycode)
 
+source("pre_processing/fix_old_retweets.R")
 
 
 ##### CONSTANTS ####
@@ -68,11 +69,14 @@ snapp_twitterdata_raw <- stream_in(file.path(main_path,"twitter.json"))
 #' (1) Ensure path is linked to the soil-carbon twitter file
 #' (2) VERY LARGE DF: avoid viewing - 3480 columns, 96553 obs.
 
-## remove all NA rows  
+## remove all NA rows and add is_retweet column.
 snapp_twitterdata <- snapp_twitterdata_raw %>% 
-  filter(!is.na(body))
+  filter(!is.na(body)) %>%
+  mutate(is_retweet = str_detect(body, "^RT @\\w+:"))
+
 # nrow(snapp_twitterdata)
 #> 73074
+
 
 # b. Read in API data  ####
 
@@ -342,7 +346,8 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
          retweetCount,
          hashtag_text,
          location.displayName,
-         location.country_code) %>%
+         location.country_code,
+         is_retweet) %>%
   mutate(query = NA) %>%  # to be populated in next step
   set_colnames(c("created_at",
                  "user_id",
@@ -354,8 +359,10 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
                  "hashtags",
                  "place_name",
                  "country_code",
+                 "is_retweet",
                  # "id",
-                 "query")) 
+                 "query"
+                 )) 
 
 
 # c. Remove id:twitter.com in user id
@@ -411,7 +418,8 @@ twitter_API_merge <- twitter_API %>%
          hashtags,
          place_name,
          country_code,
-         query)
+         query,
+         is_retweet)
 
 # names(twitter_API_merge)
 
@@ -426,7 +434,7 @@ twitter_API_merge$user_id <- as.character(twitter_API_merge$user_id) # char --> 
 str(twitter_API_merge)
 str(snapp_twitterdata_merge)
   # matching_querywords <- sample_n(snapp_twitterdata_merge, 100)
-  # querywords <- unique(twitter_API_merge$query)
+  # querywords <- unique(twitter_API_merge$query) 
 
   # twitter_API$retweet_count[which(is.na(twitter_API_merge$retweet_count))]
   # class(twitter_API_merge$retweet_count)
@@ -451,8 +459,8 @@ sprintf(head(unique(twitter_merged$place_name)), 10)
 is.na(twitter_merged$place_name) <- twitter_merged$place_name == ""
 sprintf(head(unique(twitter_merged$place_name), 10))
 
-countrycode(twitter_merged$country_code[i], origin = "iso2c", destination = "country.name")
-?countrycode
+#countrycode(twitter_merged$country_code[i], origin = "iso2c", destination = "country.name")
+#?countrycode
 # change country code to country name
 for (i in 1:length(twitter_merged$country_code)){
   if(twitter_merged$country_code[i] != "台灣" & nchar(twitter_merged$country_code[i]) <= 2 & !is.na(twitter_merged$country_code[i])) {
@@ -460,19 +468,24 @@ for (i in 1:length(twitter_merged$country_code)){
     }
 }
 # unique(twitter_merged$country_code)
-unique(twitter_merged$country_code)
-?codelist
+# unique(twitter_merged$country_code)
+# ?codelist
 
 # Rename country column as it is not a code anymore
 # names(twitter_merged)
 names(twitter_merged)[names(twitter_merged) == 'country_code'] <- 'country'
+
+# Replace old retweets that started with "RT @xxxx:" and ended with "..." because they were truncated by Twitter.
+twitter_merged <- fix_old_retweets(twitter_merged)
+
 
 # d. DF with RT removed
 # twitter_merged_noRT <- bind_rows(namelist, .id = "provenance") 
 twitter_merged_noRT <- twitter_merged %>% 
   # mutate(UID = id(twitter_merged_noRT, drop = FALSE)) %>%
   # mutate(query = gsub("\"", "", query)) %>% 
-  filter(!str_detect(text, "^RT")) # ^ used to select only RT at start of text. subs with "starts_with()"
+  filter(!is_retweet)
+  #filter(!str_detect(text, "^RT")) # ^ used to select only RT at start of text. subs with "starts_with()"
                                    #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
 
 str(twitter_merged_noRT)
@@ -542,6 +555,7 @@ View(head(twitter_merged, 20))
 # f. Write CSV!
 # saveRDS(twitter_merged, "/home/shares/soilcarbon/Twitter/twitter_merged")
 # saveRDS(twitter_merged_noRT, "/home/shares/soilcarbon/Twitter/twitter_merged_noRT")
+
 
 write.csv(twitter_merged, file = "/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_v4.csv", row.names = FALSE)
 write.csv(twitter_merged_noRT, file = "/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", row.names = FALSE)
