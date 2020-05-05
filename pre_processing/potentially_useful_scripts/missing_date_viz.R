@@ -4,6 +4,7 @@ library(tidyverse)
 library(lubridate)
 library(ggplot2)
 
+
 flag_india <- function(data) {
   
   results <- data %>% 
@@ -21,7 +22,7 @@ flag_india <- function(data) {
 
 path <- '/home/shares/soilcarbon/Twitter' # LOCATION OF MASTER FILES
 
-twitter_merged <- read.csv(file.path(path, 'Merged_v2/twitter_merged_v2.csv'), stringsAsFactors = FALSE) 
+twitter_merged <- read.csv(file.path(path, 'Merged_v4/twitter_merged_v4.csv'), stringsAsFactors = FALSE) 
 #twitter_merged_noRT <- read.csv(file.path(path, 'Merged_v2/twitter_merged_noRT_v2.csv'), stringsAsFactors = FALSE) 
 
 # DF of days when there are tweets 
@@ -29,26 +30,27 @@ RT_unique <- twitter_merged %>%
   mutate(created_at = ymd_hms(created_at)) %>% 
   mutate(created_at = round_date(created_at, unit = "day")) %>% 
   distinct(created_at, .keep_all = TRUE) %>% 
-  select(created_at) %>% 
+  dplyr::select(created_at) %>% 
   mutate(created_at = ymd(created_at))
 # plot of missing days in master data frame
 max_date <- max(RT_unique$created_at)
 RT_unique_viz <- ggplot(RT_unique, aes(x = created_at)) +
-  geom_bar(stat = 'count') +
-  scale_x_date(date_breaks = "1 month", date_labels = "%y %b") +
+  geom_bar(stat = 'count',position ="identity") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b'%y") +
   geom_segment(aes(x=ymd("2017-04-01"),xend=ymd("2017-04-01"),y=0,yend=1.05)) +
-  annotate("text", x = ymd("2017-04-01"), y = 1.1, label = "Purchased ->") +
+  ggplot2::annotate("text", x = ymd("2017-04-01"), y = 1.1, label = "Purchased ->", size = 5) +
   geom_segment(aes(x=ymd("2017-10-11"),xend=ymd("2017-10-11"),y=0,yend=1.05)) +
-  annotate("text", x = ymd("2017-10-11"), y = 1.1, label = "Manual API ->") +
+  ggplot2::annotate("text", x = ymd("2017-10-11"), y = 1.1, label = "Manual API ->",  size = 5) +
   geom_segment(aes(x=ymd("2019-06-15"),xend=ymd("2019-06-15"),y=0,yend=1.05)) +
-  annotate("text", x = ymd("2019-06-15"), y = 1.1, label = "Automatic API ->") +
+  ggplot2::annotate("text", x = ymd("2019-06-15"), y = 1.1, label = "Automatic API ->", size = 5) +
   geom_segment(aes(x=max_date,xend=max_date,y=0,yend=1.05)) +
-  annotate("text", x = max_date, y = 1.1, label = "End of Data") +
+  ggplot2::annotate("text", x = max_date, y = 1.1, label = "End of Data", size = 5) +
   theme_classic() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
         axis.title = element_blank(),
-        axis.text.y = element_blank())
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size = 16, angle = 90))
 
 
 
