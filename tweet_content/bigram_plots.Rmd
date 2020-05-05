@@ -32,7 +32,9 @@ noRT <- clean_data(noRT) %>%
   group_by(created_at, screen_name, text) %>% 
   filter(retweet_count == max(retweet_count)) %>% 
   ungroup() %>% 
-  distinct()
+  distinct()  %>% 
+  # end before may 2020
+  filter(created_at < "2020-05-01")
 
 top_100_noRT <- noRT %>% 
   arrange(-retweet_count) %>% 
@@ -75,7 +77,7 @@ gram_network(noRT_bigram,limit)
 ```{r, echo=F, fig.width=12, fig.height=9}
 ###soil
 soil_bigram <- create_bigram(noRT, "soil health", group = T, stem = T)
-limit <- soil_bigram$n[65]
+limit <- soil_bigram$n[75]
 gram_network(soil_bigram, limit)
 ```
 
