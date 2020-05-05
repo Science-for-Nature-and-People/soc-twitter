@@ -13,7 +13,7 @@ library(magick)
 library(knitr)
 library(kableExtra)
 library(tm)
-source("soc-twitter/text_analysis_functions.R")
+source("../../text_analysis_functions.R")
 
 #### LOAD DATA ####
 noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
@@ -82,12 +82,12 @@ kable(top_user_info) %>%
 #### RETWEET RATIO ####
 # Repeat above, using RT:Tweet ratio as metric
 # Define parameters:
-num_tweet_limit <- 5
+num_tweet_limit <- 10
 ratio_limit <- 2
 
 top_user_ratio <- all_counts %>%
   filter(n >= num_tweet_limit & ratio >= ratio_limit) %>%
-  select(screen_name, tot_retweet_count) %>%
+  select(screen_name, tot_retweet_count, ratio) %>%
   arrange(-tot_retweet_count) %>%
   head(num_users) ## defined on line 86
 
@@ -97,9 +97,8 @@ top_tweets_ratio <- noRT %>%
   filter(retweet_count == max(retweet_count)) %>%
   select(screen_name, retweet_count, text)
 
-
 top_ratio_info <- left_join(top_user_ratio, top_tweets_ratio)
-names(top_ratio_info) <- c("User name", "Total number of RTs", "RT count for most RTed tweet", "Most RTed tweet")
+names(top_ratio_info) <- c("User name", "Total number of RTs", "RTs:Tweets", "RT count for most RTed tweet", "Most RTed tweet")
 
 ### create table
 kable(top_ratio_info) %>%
