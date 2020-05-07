@@ -40,12 +40,13 @@ library(lubridate)
 library(ids)
 library(countrycode)
 
+source("pre_processing/fix_old_retweets.R")
 
 
 ##### CONSTANTS ####
 
 # folder containing the data downloaded from the API
-dir_fix_tweet <- "./API_csv"
+dir_fix_tweet <- "pre_processing/API_csv"
 
 ## Aurora path
 main_path <- "/home/shares/soilcarbon/Twitter"
@@ -68,10 +69,14 @@ snapp_twitterdata_raw <- stream_in(file.path(main_path,"twitter.json"))
 #' (1) Ensure path is linked to the soil-carbon twitter file
 #' (2) VERY LARGE DF: avoid viewing - 3480 columns, 96553 obs.
 
-## remove all NA rows  
+## remove all NA rows and add is_retweet column.
 snapp_twitterdata <- snapp_twitterdata_raw %>% 
-  filter(!is.na(body))
-  # nrow(snapp_twitterdata) #73074
+  filter(!is.na(body)) %>%
+  mutate(is_retweet = str_detect(body, "^RT @\\w+:"))
+
+# nrow(snapp_twitterdata)
+#> 73074
+
 
 # b. Read in API data  ####
 
@@ -82,29 +87,74 @@ getwd() # verify your working directory ensure it is the github repo where fix_t
 
 
 # Delete files if folder already exists
-if (dir.exists(paths = dir_fix_tweet)){ 
+if (dir.exists(paths = dir_fix_tweet)){
   unlink(dir_fix_tweet, recursive = TRUE)
 }
 
-# Create folder to store a copy of the tweet extracted from the API 
+# Create folder to store a copy of the tweet extracted from the API
 dir.create(path = dir_fix_tweet, showWarnings = F)
 
 # Copy the files from the shared directory to your repository
-file.copy(list.files("/home/shares/soilcarbon/Twitter/rTweet/", "*.csv", full.names=T), dir_fix_tweet)
+file.copy(list.files("/home/shares/soilcarbon/Twitter/API_csv/raw_api_data/old_manual/", "*.csv", full.names=T), dir_fix_tweet)
 
 # run the bash script to remove EOL
-system("sh fix_tweet.sh") # !!do not edit with RStudio, used CLI tools such as `vim`
+system("sh ./pre_processing/fix_tweet.sh") # !!do not edit with RStudio, used CLI tools such as `vim`
 
-# List the fixed files
-fixed_files <- list.files(path="./API_csv", pattern="^fixed_", full.names=TRUE)
+# List the all the csv files
+fixed_files <- list.files(path=file.path(dir_fix_tweet), pattern="^fixed_", full.names=TRUE)
 fixed_files
 
-# read the files in
-twitter_API <- do.call(rbind, lapply(fixed_files, function(x) {read.csv(x, stringsAsFactors =FALSE)}))
+# Not all the manual API files have the same number of columns. We need to identify the common columns before running rbind:
+list_data_api <- setNames(lapply(fixed_files, function(x) {read.csv(x, stringsAsFactors =FALSE)}),
+                          tools::file_path_sans_ext(basename(fixed_files)))
 
-lapply(list.files(path="./API_csv",
-                  pattern="^fixed_",
-                  full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)})
+# Find the number of columns 
+ind <- sapply(list_data_api, function(x) {length(names(x))})
+
+# There are files with 43 columns and files with 89. 43 is a subset of the 89
+# intersect(lc, sc)
+ind_small <- ind < 89
+api_43 <- list_data_api[ind_small]
+api_89 <- list_data_api[!ind_small]
+
+# Get the common column names to keep
+col_keep <- names(api_43[[1]])
+
+# Subset the api data
+api_89_sub <- lapply(api_89, function(x) {x[,col_keep]})
+
+# Combine all the different csv files
+df_89_sub <- do.call(rbind,api_89_sub)
+df_43 <- do.call(rbind,api_43)
+
+# Combined both manual API datasets
+df_manual_api <- rbind(df_43, df_89_sub)
+
+## need to read the automated API files
+
+auto_api_files <- list.files("/home/shares/soilcarbon/Twitter/API_csv", pattern = ".csv", full.names=TRUE)
+list_auto <- setNames(lapply(auto_api_files, function(x) {read.csv(x, stringsAsFactors =FALSE)}),
+         tools::file_path_sans_ext(basename(auto_api_files)))
+
+#removing the extra column for that date
+list_auto$`2019-09-30` <- list_auto$`2019-09-30` %>% select(-X1)
+main_auto <- do.call(rbind, list_auto)
+
+# combining the manual and automatic API data
+twitter_API <- main_auto %>% 
+  select(-X) %>%
+  bind_rows(df_manual_api) %>%
+  arrange(created_at)
+
+
+######################################### End of API processing ###############################################
+
+# read the files in
+# twitter_API <- do.call(rbind, lapply(fixed_files, function(x) {read.csv(x, stringsAsFactors =FALSE)}))
+
+# lapply(list.files(path="./API_csv",
+#                   pattern="^fixed_",
+#                   full.names=TRUE), function(x) {read.csv(x, stringsAsFactors =FALSE)})
 
 str(twitter_API) #check structure. mainly chr or num/int
 class(twitter_API$created_at) # is.character() at the moment - will covert upon merge
@@ -296,7 +346,8 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
          retweetCount,
          hashtag_text,
          location.displayName,
-         location.country_code) %>%
+         location.country_code,
+         is_retweet) %>%
   mutate(query = NA) %>%  # to be populated in next step
   set_colnames(c("created_at",
                  "user_id",
@@ -308,8 +359,10 @@ snapp_twitterdata_merge <- snapp_twitterdata %>%
                  "hashtags",
                  "place_name",
                  "country_code",
+                 "is_retweet",
                  # "id",
-                 "query")) 
+                 "query"
+                 )) 
 
 
 # c. Remove id:twitter.com in user id
@@ -365,7 +418,8 @@ twitter_API_merge <- twitter_API %>%
          hashtags,
          place_name,
          country_code,
-         query)
+         query,
+         is_retweet)
 
 # names(twitter_API_merge)
 
@@ -380,7 +434,7 @@ twitter_API_merge$user_id <- as.character(twitter_API_merge$user_id) # char --> 
 str(twitter_API_merge)
 str(snapp_twitterdata_merge)
   # matching_querywords <- sample_n(snapp_twitterdata_merge, 100)
-  # querywords <- unique(twitter_API_merge$query)
+  # querywords <- unique(twitter_API_merge$query) 
 
   # twitter_API$retweet_count[which(is.na(twitter_API_merge$retweet_count))]
   # class(twitter_API_merge$retweet_count)
@@ -405,8 +459,8 @@ sprintf(head(unique(twitter_merged$place_name)), 10)
 is.na(twitter_merged$place_name) <- twitter_merged$place_name == ""
 sprintf(head(unique(twitter_merged$place_name), 10))
 
-countrycode(twitter_merged$country_code[i], origin = "iso2c", destination = "country.name")
-?countrycode
+#countrycode(twitter_merged$country_code[i], origin = "iso2c", destination = "country.name")
+#?countrycode
 # change country code to country name
 for (i in 1:length(twitter_merged$country_code)){
   if(twitter_merged$country_code[i] != "台灣" & nchar(twitter_merged$country_code[i]) <= 2 & !is.na(twitter_merged$country_code[i])) {
@@ -414,19 +468,24 @@ for (i in 1:length(twitter_merged$country_code)){
     }
 }
 # unique(twitter_merged$country_code)
-unique(twitter_merged$country_code)
-?codelist
+# unique(twitter_merged$country_code)
+# ?codelist
 
 # Rename country column as it is not a code anymore
 # names(twitter_merged)
 names(twitter_merged)[names(twitter_merged) == 'country_code'] <- 'country'
+
+# Replace old retweets that started with "RT @xxxx:" and ended with "..." because they were truncated by Twitter.
+twitter_merged <- fix_old_retweets(twitter_merged)
+
 
 # d. DF with RT removed
 # twitter_merged_noRT <- bind_rows(namelist, .id = "provenance") 
 twitter_merged_noRT <- twitter_merged %>% 
   # mutate(UID = id(twitter_merged_noRT, drop = FALSE)) %>%
   # mutate(query = gsub("\"", "", query)) %>% 
-  filter(!str_detect(text, "^RT")) # ^ used to select only RT at start of text. subs with "starts_with()"
+  filter(!is_retweet)
+  #filter(!str_detect(text, "^RT")) # ^ used to select only RT at start of text. subs with "starts_with()"
                                    #note: issue with adding piping code lines on newly created df ...(to fix). Made two pipes sequences for now 
 
 str(twitter_merged_noRT)
@@ -494,8 +553,9 @@ str(twitter_merged_noRT)
 View(head(twitter_merged, 20))
 
 # f. Write CSV!
-saveRDS(twitter_merged, "/home/shares/soilcarbon/Twitter/twitter_merged")
-saveRDS(twitter_merged_noRT, "/home/shares/soilcarbon/Twitter/twitter_merged_noRT")
+# saveRDS(twitter_merged, "/home/shares/soilcarbon/Twitter/twitter_merged")
+# saveRDS(twitter_merged_noRT, "/home/shares/soilcarbon/Twitter/twitter_merged_noRT")
 
-#write.csv(twitter_merged, file = "./twitter_merged.csv", row.names = FALSE)
-#write.csv(twitter_merged_noRT, file = "./twitter_merged_noRT.csv", row.names = FALSE)
+
+write.csv(twitter_merged, file = "/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_v4.csv", row.names = FALSE)
+write.csv(twitter_merged_noRT, file = "/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", row.names = FALSE)

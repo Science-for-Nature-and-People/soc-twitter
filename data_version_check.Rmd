@@ -1,0 +1,254 @@
+---
+title: "Data Version Check"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(magrittr)
+library(fuzzyjoin)
+```
+
+Read in data (only up til when i updated v4, ie march 30)
+```{r}
+v3 <- read_csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv") %>%
+  filter(date(created_at) < as_date("2020-03-27"))
+v4 <- read_csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv")
+```
+
+
+```{r}
+tribble(
+  ~v3, ~v4,
+  dim(v3),
+  dim(v4)
+) %>%
+  unnest
+```
+
+Important columns: `text`, `user_id`, and `created_at`, `is_retweet`
+```{r}
+cols_of_interest <- c("user_id", "created_at", "text", "is_retweet")
+v3_sub <- v3 %>%
+  select(cols_of_interest) %>%
+  filter(text != "") %>%
+  distinct()
+
+v4_sub <- v4 %>%
+  select(cols_of_interest) %>%
+  filter(text != "") %>%
+  distinct()
+
+# shared rows
+inner_join(v3_sub, v4_sub)
+```
+
+```{r}
+# rows that are only in one dataframe, looking at all 4 of the important columns
+v4_only <- anti_join(v4_sub, v3_sub) %>%
+  distinct()
+v3_only <- anti_join(v3_sub, v4_sub) %>%
+  distinct()
+
+nrow(v4_only)
+nrow(v3_only)
+
+```
+
+```{r}
+# compare date range
+v4_only %>%
+  pull(created_at) %>%
+  summary()
+
+v3_only %>% 
+  pull(created_at) %>%
+  summary()
+
+
+```
+ 
+ We notice that the end datetimes for both dataframes are identical, indicating that they might be a match with slight differences. let's check it out
+```{r}
+v4_only %>%
+  arrange(desc(created_at))
+
+v3_only %>%
+  arrange(desc(created_at))
+
+```
+ 
+Comparing the texts, it looks like the differences are in quotes and in RT.. Let's remove and try the join again
+```{r}
+
+# Remove all instances of "RT @<username>" from v3, since they are removed in v4
+v3_fixed <- v3_only %>%
+  mutate(text = #str_replace_all(text, '\"', '') %>%
+           str_replace_all(text, "^RT @\\w+: ", "")
+         )
+
+# rearrange so text is the first column and sorted by date
+v3_fixed %>%
+  arrange(desc(created_at)) %>%
+  select(text, everything())
+
+
+# see the improvement. we were able to match all but 88 of these (69 unique)! below contains the leftovers
+(v3_only_fixed <- v3_fixed %>%
+  anti_join(v4_only) %>%
+  arrange(desc(created_at)) %>%
+  distinct(text, .keep_all = T)
+)
+
+
+
+```
+
+let's see if we can do even better by ignoring text and looking at files that have the same datetime and user_id
+```{r}
+v3_only_fixed %>%
+  select(created_at, user_id, textv3 = text) %>%
+  inner_join(v4, by = c("created_at", "user_id")) %>%
+  select(created_at, user_id, textv4 = text, textv3) %>%
+  mutate(textdiff = stringdist::stringdist(textv4, textv3))
+
+
+```
+
+It's looking like a common theme is the shortend twitter links keep changing.. Let's get rid of them and see if it helps the match. These are normally at the end of a tweet so to be crude I'll just cut off everything after http.
+
+While we're at it, let's also remove newline characters and trailing/leading whitespace
+```{r}
+v3_only_fixed_nolink <- v3_only_fixed %>%
+  mutate(text = str_replace_all(text, "https://t.co.+", "") %>%
+           str_replace_all("\n", "") %>%
+           str_trim()
+         )
+  
+v4_nolink <- v4 %>%
+  mutate(text = str_replace_all(text, "https://t.co.+", "") %>%
+           str_replace_all("\n", "") %>%
+           str_trim()
+         )
+
+
+# see if there are any that match userid/created by, but not text. The only difference is a SLIGHTLY earlier "..." in v4.
+# This is the result of v4 now including "fix_old_retweets()"!, so intended behavior.
+v3_only_fixed_nolink %>%
+  rename(text_v3 = text) %>%
+  inner_join(v4_nolink, by= c("created_at", "user_id")) %>%
+  select(text_v4 = text, text_v3) %>%
+  filter(text_v3 != text_v4) %>%
+  transmute_all(~nchar(.x))
+
+
+# then we don't really count this observation as an error between the two versions. let's remove it from our datasets
+v3_unmatched <- v3_only_fixed_nolink %>%
+  anti_join(v4_nolink, by = c("created_at", "user_id"))
+  
+```
+
+
+So the chunk above shows that the main problem is not in non-matching text, but rather in non-matching `created_at` or `user_id`s. Let's join by just one of these at a time and see what we can find.
+
+Starting with `created_at`
+```{r}
+
+# compare the two just by created_at
+v3_unmatched %>%
+  rename(text_v3 = text, user_id_v3 = user_id) %>%
+  inner_join(v4_unmatched, by = "created_at") %>%
+  select(created_at, user_id_v3, user_id_v4 = user_id, text_v3, text_v4 = text) %>%
+  mutate(same_user = identical(round(user_id_v3,2), round(user_id_v4), 2),
+         same_text = identical(text_v4, text_v3),
+         user_diff = all.equal(user_id_v3, user_id_v4)) 
+
+# this isn't a true mismatch, it's just difference in floating point precision, indicated by the "all.equal" passing. Not sure what caused the diff though..
+# anyways, because it's not a real difference, we can safely remove cases where created_at and text match, but not user id
+v3_unmatched <- v3_unmatched %>%
+  anti_join(v4_unmatched, by = c("created_at", "text"))
+
+```
+
+Moving on to `user_id`. Just joining by `user_id` is probably a really bad idea because the same user is likely to put out a lot of different tweets. To keep things easy for now, let's join by both user id and text.  
+This approach is likely to miss some observations, since we know that text isn't always a perfect match.
+
+Googling a few of these, I think v3 tends to be correct. (?)
+```{r}
+# if we join by user_id and text, the dates are slightly different. 
+
+# there are 16 of these
+v3_unmatched %>%
+  rename(created_at_v3 = created_at) %>%
+  inner_join(v4_unmatched, by = c("user_id", "text")) %>%
+  select(user_id, created_at_v3, created_at_v4 = created_at, text) %>%
+  distinct(created_at_v3, .keep_all = T) %>%
+  mutate(date_diff = (interval(created_at_v4, created_at_v3) / days(1)) %>% round(2)) %>% View
+  ggplot() +
+  geom_histogram(aes(date_diff)) +
+  labs(x = "date difference in days")
+```
+I'm not really sure how to interpret this... On one hand, it could be that a user tweets out the same thing multiple times. On the other hand, it could be a processing error by the API. I don't really feel comfortable removing these, but date difference accounts for 16/67 of the unmatched tweets.
+
+
+I'm just kinda curious -- how many can we match by text? This has multiple problems -- 1. text might not be exact between the two versions due to different processing steps shown a few chunks above. 2. even if we match text, this will throw out duplicate texts, ie if multiple users send out the same tweet, this comparison below won't be able to tell if version 4 captured both of the tweets, or just one of them.
+```{r}
+# match only by text
+v3_unmatched %>%
+  anti_join(v4_nolink, by = "text")
+
+
+
+# see how much text we're missing
+v3_unmatched_bytext <- v3_unmatched %>%
+  anti_join(v4_nolink, by = "text") %>%
+  distinct(text, .keep_all = TRUE)
+```
+
+This accounts for all by 18 rows (ie 49/67), 2 of these are the same tweet, and 1 is in russian.
+
+let's fuzzy match by text and see if we can find things that are really similar among the remaining
+```{r}
+# fuzzy_match_text <- v3_unmatched_bytext %>%
+#   rename_at(vars(-text), ~paste0(.x, "_v3", sep = "")) %>%
+#   fuzzyjoin::stringdist_inner_join(v4_nolink, by = "text")
+
+#this took forever to run, so i'm saving the result in a file
+#save(fuzzy_match_text, file = "data_v3v4_fuzzytext.RData")
+load(here::here("data_v3v4_fuzzytext.RData"))
+
+# it only found a match for 2 tweets. not very useful.
+fuzzy_match_text %>%
+  distinct(text.x, .keep_all = T)
+
+
+```
+
+Looking at duplicates
+```{r}
+v3_dups <- v3 %>%
+  count(user_id,created_at, text, sort =T)
+  
+v4_dups <- v4 %>%
+  filter(created_at <= max(v3$created_at)) %>%
+  count(user_id, created_at, text, sort = T)
+
+
+v3_dups %>% 
+  filter(n > 1) %>% 
+  nrow
+  
+
+v4_dups %>% 
+  filter(created_at <= max(v3$created_at), n > 1) %>% 
+  nrow
+
+
+qplot(v3_dups %>% filter(n>1) %>% pull(n))
+
+
+```
+
+
