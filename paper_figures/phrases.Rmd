@@ -1,0 +1,104 @@
+---
+title: "phrases"
+author: "Meilin"
+date: "7/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##### This markdown visualizes the common flow of words in tweets by using quanteda package to catch phrases. These visualizations are separated into: the full noRT dataset, top 25 tweets, top 100 tweets, tweets excluding top 100, and then repeat this by breaking out phrases by search terms: soil health | soil fertility | soil quality | rangeland health | regenerative agriculture.
+
+```{r, include=FALSE}
+# load packages
+library(tidyverse)
+library(tidytext)
+library(stringr)
+library(ggraph)
+library(igraph)
+library(tm)
+library(NLP)
+library(quanteda)
+library(SnowballC)
+source("text_analysis_functions.R")
+
+# load data
+noRT_clean <- read.csv("/home/shares/soilcarbon/Twitter/cleaned_data/noRT_clean.csv", stringsAsFactors = FALSE)
+```
+
+
+***
+---------------------------------------------
+# Break out the common phrases by search term
+
+```{r}
+### creating dataset for each seach term
+#### soil health
+input <- noRT_clean
+
+soil_health_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("soil health","#soilhealth","healthy soil","#healthysoil"), collapse = '|')))
+soil_health_tweets$hits <- "soil health"
+
+
+
+#### regenerative agriculture
+regen_agri_tweets <- input %>% 
+  filter(
+    str_detect(tolower(text), paste(c("regenerative agriculture","#regenerativeagriculture"), collapse = '|')))
+regen_agri_tweets$hits <- "regenerative agriculture"
+
+```
+
+```{r}
+# detect phrases based on search term
+# soil health | soil quality | soil fertility | rangeland health | regenerative agriculture
+# creat tokens with the search term dataset
+
+# soil health
+
+soil_health_col_caps <- phrases(soil_health_tweets, 200)
+
+counts <- head(soil_health_col_caps, 100)
+
+##for table in manuscript
+write_csv(counts[,1:2], "soil_health_phrases.csv")
+```
+
+```{r}
+# soil quality
+
+soil_quality_col_caps <- phrases(soil_quality_tweets, 20)
+
+head(soil_quality_col_caps, 100)
+```
+
+```{r}
+# soil fertility
+
+soil_fertility_col_caps <- phrases(soil_fertility_tweets, 20)
+
+head(soil_fertility_col_caps, 100)
+```
+
+```{r}
+# rangeland health
+
+range_health_col_caps <- phrases(rangeland_health_tweets, 2)
+
+head(range_health_col_caps, 100)
+```
+
+```{r}
+# regenerative agriculture
+
+regen_agri_col_caps <- phrases(regen_agri_tweets, 50)
+
+counts_regen <- head(regen_agri_col_caps, 100)
+
+write_csv(counts_regen[,1:2], "regen_phrases.csv")
+
+```
