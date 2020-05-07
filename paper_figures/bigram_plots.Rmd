@@ -16,10 +16,10 @@ library(tidytext)
 library(stringr)
 library(ggraph)
 library(igraph)
-source("../text_analysis_functions.R")
+source("text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE) 
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/cleaned_data/noRT_clean.csv", stringsAsFactors = FALSE) 
 
 ```
 
@@ -27,14 +27,6 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_
 
 ### TEST top 100 w/o numbers, usernames and website
 ```{r}
-noRT <- clean_data(noRT) %>% 
-  #### get rid of weird overlapping duplicates
-  group_by(created_at, screen_name, text) %>% 
-  filter(retweet_count == max(retweet_count)) %>% 
-  ungroup() %>% 
-  distinct()  %>% 
-  # end before may 2020
-  filter(created_at < "2020-05-01")
 
 top_100_noRT <- noRT %>% 
   arrange(-retweet_count) %>% 
