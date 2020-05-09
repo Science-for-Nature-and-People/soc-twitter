@@ -29,18 +29,13 @@ library(ggpubr)
 source("../text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE) 
-RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_v4.csv",stringsAsFactors = FALSE)
+noRT_clean <- read.csv("/home/shares/soilcarbon/Twitter/cleaned_data/noRT_clean.csv", stringsAsFactors = FALSE)
+RT_clean <- read.csv("/home/shares/soilcarbon/Twitter/cleaned_data/RT_clean.csv", stringsAsFactors = FALSE)
 
 ```
 
-```{r, include=FALSE}
-#clean data to remove numbers, usernames, websites, non-ASCII characters and outlier
-# can decided to include or not include pope/india
-noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
-RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
 
-```
+
 
 ```{r, include=FALSE}
 # select top 100 tweets based on their retweet count
@@ -433,18 +428,16 @@ ggarrange(counts, prop, labels = c("A", "B"))
 
 full$M_Y <- parse_date_time(full$M_Y, orders = "ym")
 
+no_na <- full %>% 
+  dplyr::filter(!is.na(.$query))
 
 
-ggplot(full, aes(M_Y, n, group = query, color = query)) +
-  geom_line() +  
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = c(.2,.8)) +
-  scale_x_datetime(date_labels = "%b-%Y", date_breaks = "1 month", date_minor_breaks = "1 month", expand = c(0,0)) 
-
-ggplot(full, aes(M_Y, n, fill = query, color = query)) +
+ggplot(no_na, aes(M_Y, n, fill = query, color = query)) +
   geom_bar(stat = "identity") +
+  theme_bw() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = c(.2,.8)) +
   scale_x_datetime(date_labels = "%b-%Y", date_breaks = "1 month", date_minor_breaks = "1 month", expand = c(0,0)) 
+  
 ```
 
