@@ -477,7 +477,7 @@ retweet_network <- function(users, noRT_cleaned, RT_cleaned, lab_limit, linear =
   
   selected_tweets <- noRT_cleaned %>% 
     filter(screen_name %in% users$screen_name) %>% 
-    select(text, screen_name) %>% 
+    dplyr::select(text, screen_name) %>% 
     dplyr::rename("author" = "screen_name")
   
   
@@ -572,21 +572,4 @@ retweet_network <- function(users, noRT_cleaned, RT_cleaned, lab_limit, linear =
       theme_graph()
   }
   
-}
-
-
-#####################################
-###    Remove Duplicate tweets    ###
-#####################################
-
-#' function to remove duplicate tweets from a dataset
-#' @description Groups by created_at, screen_name, and text, and pulls out row with most retweets. Breaks ties by picking the first row.
-#' @param dat is a dataframe with columns created_at, screen_name, text, and retweet_count
-
-rm_dups <- function(dat){
-  dat %>%
-    group_by(created_at, screen_name, text) %>% 
-    filter(retweet_count == max(retweet_count)) %>% 
-    slice(1) %>%
-    ungroup()
 }

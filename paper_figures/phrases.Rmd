@@ -22,62 +22,12 @@ library(tm)
 library(NLP)
 library(quanteda)
 library(SnowballC)
-source("../text_analysis_functions.R")
+source("text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE) 
+noRT_clean <- read.csv("/home/shares/soilcarbon/Twitter/cleaned_data/noRT_clean.csv", stringsAsFactors = FALSE)
 ```
 
-
-```{r, include=FALSE}
-# select top 25 and 100 tweets based on their retweet count
-# use a sample in the following code
-
-noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = F)
-
-top_25_noRT <- noRT_clean %>%
-  arrange(-retweet_count) %>%
-  head(25)
-
-top_100_noRT <- noRT_clean %>% 
-  arrange(-retweet_count) %>% 
-  head(100)
-
-rest_noRT <- noRT_clean %>% 
-  arrange(-retweet_count) %>%
-  slice(101:n())
-```
-
-***
-
-# detect phrases using the full noRT dataset
-```{r}
-tstat_col_caps <- phrases(noRT_clean, 100)
-
-head(tstat_col_caps, 100)
-```
-
-# Compare the phrases from the top 25, top 100 to the rest
-```{r}
-# top 25 noRT
-tstat_col_caps_25 <- phrases(top_25_noRT, 2)
-
-head(tstat_col_caps_25, 50) 
-```
-
-```{r}
-# top 100 noRT
-tstat_col_caps_100 <- phrases(top_100_noRT, 2)
-
-head(tstat_col_caps_100, 50) 
-```
-
-```{r}
-# compared to the rest (exclude the top 100)
-tstat_col_caps_rest <- phrases(rest_noRT, 100)
-
-head(tstat_col_caps_rest, 100)
-```
 
 ***
 ---------------------------------------------
@@ -93,24 +43,7 @@ soil_health_tweets <- input %>%
     str_detect(tolower(text), paste(c("soil health","#soilhealth","healthy soil","#healthysoil"), collapse = '|')))
 soil_health_tweets$hits <- "soil health"
 
-#### soil quality
-soil_quality_tweets <- input %>% 
-  filter(
-    str_detect(tolower(text), paste(c("soil quality","#soilquality"),collapse = '|')))
-soil_quality_tweets$hits <- "soil quality"
 
-### soil fertility
-soil_fertility_tweets <- input %>% 
-  filter(
-    str_detect(tolower(text), paste(c("soil fertility","#soilfertility"),collapse = '|')))
-soil_fertility_tweets$hits <- "soil fertility"
-
-#### rangeland health
-rangeland_health_tweets <- input %>% 
-  filter(
-    str_detect(tolower(text), paste(c("rangeland health","#rangelandhealth","healthy rangelands", "#healthyrangelands"),
-                                      collapse = '|')))
-rangeland_health_tweets$hits <- "rangeland health"
 
 #### regenerative agriculture
 regen_agri_tweets <- input %>% 

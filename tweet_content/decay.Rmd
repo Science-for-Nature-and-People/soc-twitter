@@ -29,14 +29,19 @@ library(ggplot2)
 source("../text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
-RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_v4.csv",stringsAsFactors = FALSE)
 ```
 
 
 ### noRT dataset
 ```{r}
-noRT_no_india <- clean_data(noRT, rm_pope = T, rm_india = T)
+noRT_no_india <- clean_data(noRT, rm_pope = T, rm_india = T) %>% 
+  #### get rid of weird overlapping duplicates
+  group_by(created_at, screen_name, text) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  ungroup() %>% 
+  distinct()
 RT_no_india <- clean_data(RT, rm_pope = T, rm_india = T)
 ```
 
@@ -145,7 +150,7 @@ g + ggtitle("Retweet decay during SHS 2019")
 ```{r}
 # select input
 # limiting the tweets for retweet_count > 1
-SHS19_RT <- SHS19_RT %>% filter(SHS19_RT$retweet_count > 2)
+SHS19_RT <- SHS19_RT %>% filter(SHS19_RT$retweet_count > 5)
 tt <- data.frame(SHS19_RT$text, SHS19_RT$screen_name)
 names(tt) <- c("text", "retweet_user")
 tt$author <- SHS19$screen_name[match(tt$text, SHS19$text)]
@@ -227,22 +232,24 @@ ggraph(routes_tidy, layout = "graphopt") +
 #### decay
 ```{r decay data, fig.width=12}
 
-noRT_no_india <- clean_data(noRT, rm_pope = T, rm_india = T)
-RT_no_india <- clean_data(RT, rm_pope = T, rm_india = T)
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
+RT_clean <- clean_data(RT, rm_pope = T, rm_india = T)
 
 
 ## set limit for number of retweets
-rt_limit <- 10
+limit <- 10
 
 rt_limit <- noRT_clean %>% 
-  filter(retweet_count > rt_limit)
+  filter(retweet_count > limit) %>% 
+  dplyr::select(created_at, user_id, screen_name, text) %>% 
+  distinct()
 
 
 
 decay <- list()
 
 ## identify rts
-# this will take a while what rt_limit is set
+# this will take a while baed on what rt_limit is set
 for (i in 1:nrow(rt_limit)) {
   tmp <- find_rt(i, rt_limit, RT_clean)
   tmp <- tmp %>% 
@@ -251,9 +258,14 @@ for (i in 1:nrow(rt_limit)) {
     )
   decay[[i]] <- tmp
   
+  if(i %% 500 == 0) {
+    print(i)
+  }
 }
 
 test <- bind_rows(decay)
+
+names(test) <- tolower(names(test))
 
 summ <- test %>% 
   group_by(time_since) %>% 
@@ -281,9 +293,11 @@ box <- test %>%
 
 ###combining soilhealth and healthysoil
 box$query[box$query == "healthysoil"] <- "soilhealth"
+box$query[box$query == "healthyrangelands"] <- "rangelandhealth"
+
 
 # define which search terms you want to include
-terms <- c("soilhealth", "rangelandhealth", "regenerativeagriculture")
+terms <- c("soilhealth", "regenerativeagriculture")
 
 box_sub <- filter(box, query %in% terms)
 
@@ -340,4 +354,177 @@ ggplot(summ, aes(time_since, mean)) +
        title = "Average retweet decay over 1 month") +
   scale_x_continuous(expand = c(0,0), breaks=pretty(summ$time_since,n=10)) +
   coord_cartesian(ylim = c(0, .6), expand = c(0,0)) 
+```
+
+
+
+#### RFSI RT network
+```{r rfsi}
+# select tweets with hashtag
+# 
+
+input <- noRT_no_india
+
+
+RFSI <- input %>% 
+  dplyr::filter(str_detect(tolower(text), "rfsi|rfsi19|invest_regenag|regenerative food systems investment") & 
+                !str_detect(text, "#rye|SRFSI")) 
+  
+
+RFSI$conference <- "RFSI"
+# select the noRT with retweet count > 1
+RFSI_n <- RFSI %>% filter(retweet_count > 1)
+
+
+# select the RT of RFSI
+RFSI_RT <- RT_no_india %>% filter(str_detect(tolower(text),"#rfsi|rfsi|rfsi19|invest_regenag|regenerative food systems investment"))
+RFSI_RT <- RFSI_RT %>% filter (is_retweet == TRUE)
+RFSI_RT <- RFSI_RT  %>% filter (retweet_count > 1)
+
+# remove 3 tweets unrelated to conference
+RFSI_RT <- RFSI_RT %>% filter(!str_detect(text, "#rye|SRFSI"))
+
+# select input
+# limiting the tweets for retweet_count > 1
+RFSI_RT <- RFSI_RT %>% filter(RFSI_RT$retweet_count > 1)
+tt <- data.frame(RFSI_RT$text, RFSI_RT$screen_name)
+names(tt) <- c("text", "retweet_user")
+tt$author <- RFSI$screen_name[match(tt$text, RFSI$text)]
+
+# filter out the ones w/o authors
+network <- tt %>% filter(tt$author != "NA")
+
+
+# generate node list
+authors <- network %>% distinct(author) 
+names(authors) <- "label"
+retweet_users <- network %>% distinct(retweet_user) 
+names(retweet_users) <- "label"
+
+nodes <- rbind(authors, retweet_users)
+nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
+nodes <- nodes %>% rowid_to_column("id")
+
+# generate edge list
+library(plyr)
+per_route <- ddply(network, .(network$author, network$retweet_user), nrow)
+names(per_route) <- c("authors", "retweet_users", "weight")
+
+edges <- per_route %>% left_join(nodes, by = c("authors" = "label"))
+colnames(edges)[4] <- "from"
+edges <- edges %>% 
+  left_join(nodes, by = c("retweet_users" = "label"))
+colnames(edges)[5] <- "to"
+
+edges <- dplyr::select(edges, from, to, weight)
+
+graph <- graph.data.frame(edges, directed = T)
+edges$value <- edges$weight
+degree_value <- degree(graph, mode = "in")
+nodes$value <- degree_value[match(nodes$id, names(degree_value))]
+
+# ggraph packages to show network diagram
+library(tidygraph)
+library(ggraph)
+
+routes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+
+routes_tidy %>% 
+  activate(edges) %>% 
+  dplyr::arrange(desc(weight))
+
+ggraph(routes_tidy, layout = "graphopt") + 
+  geom_node_point(aes(size = value)) +
+  geom_edge_link(aes(width = weight), alpha = 0.8) + 
+  scale_edge_width(range = c(0.1, 0.5)) +
+  geom_node_text(aes(label = label), label.size = 0.25, repel = TRUE) +
+  labs(edge_width = "Number") +
+  theme_graph()
+```
+
+
+
+
+#### REGEN RT network
+```{r REGEN}
+# select tweets with hashtag
+# 
+
+input <- noRT_no_india
+
+
+REGEN <- input %>%
+  dplyr::filter(str_detect(tolower(text), "#regenerate2018"),
+                str_detect(tolower(hashtags), "regenerate2018"))
+  
+
+REGEN$conference <- "REGEN"
+# select the noRT with retweet count > 1
+REGEN_n <- REGEN %>% filter(retweet_count > 1)
+
+
+# select the RT of REGEN
+REGEN_RT <- RT_no_india %>% filter(str_detect(tolower(text),"#REGEN|REGEN|REGEN19|invest_regenag|regenerative food systems investment"))
+REGEN_RT <- REGEN_RT %>% filter (is_retweet == TRUE)
+REGEN_RT <- REGEN_RT  %>% filter (retweet_count > 1)
+
+# remove 3 tweets unrelated to conference
+REGEN_RT <- REGEN_RT %>% filter(!str_detect(text, "#rye|SREGEN"))
+
+# select input
+# limiting the tweets for retweet_count > 1
+REGEN_RT <- REGEN_RT %>% filter(REGEN_RT$retweet_count > 1)
+tt <- data.frame(REGEN_RT$text, REGEN_RT$screen_name)
+names(tt) <- c("text", "retweet_user")
+tt$author <- REGEN$screen_name[match(tt$text, REGEN$text)]
+
+# filter out the ones w/o authors
+network <- tt %>% filter(tt$author != "NA")
+
+
+# generate node list
+authors <- network %>% distinct(author) 
+names(authors) <- "label"
+retweet_users <- network %>% distinct(retweet_user) 
+names(retweet_users) <- "label"
+
+nodes <- rbind(authors, retweet_users)
+nodes <- nodes %>% distinct(label) #to get rid of duplicates in both authors and retweet user
+nodes <- nodes %>% rowid_to_column("id")
+
+# generate edge list
+library(plyr)
+per_route <- ddply(network, .(network$author, network$retweet_user), nrow)
+names(per_route) <- c("authors", "retweet_users", "weight")
+
+edges <- per_route %>% left_join(nodes, by = c("authors" = "label"))
+colnames(edges)[4] <- "from"
+edges <- edges %>% 
+  left_join(nodes, by = c("retweet_users" = "label"))
+colnames(edges)[5] <- "to"
+
+edges <- dplyr::select(edges, from, to, weight)
+
+graph <- graph.data.frame(edges, directed = T)
+edges$value <- edges$weight
+degree_value <- degree(graph, mode = "in")
+nodes$value <- degree_value[match(nodes$id, names(degree_value))]
+
+# ggraph packages to show network diagram
+library(tidygraph)
+library(ggraph)
+
+routes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+
+routes_tidy %>% 
+  activate(edges) %>% 
+  dplyr::arrange(desc(weight))
+
+ggraph(routes_tidy, layout = "graphopt") + 
+  geom_node_point(aes(size = value)) +
+  geom_edge_link(aes(width = weight), alpha = 0.8) + 
+  scale_edge_width(range = c(0.1, 0.5)) +
+  geom_node_text(aes(label = label), label.size = 0.25, repel = TRUE) +
+  labs(edge_width = "Number") +
+  theme_graph()
 ```
