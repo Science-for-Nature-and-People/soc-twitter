@@ -21,6 +21,7 @@ Two different data sources are used:
      - V1 "Merged_data":  
      - V2 "Merged_v2":  
      - V3 "Merged_v3": this fixed issue where archive data did not have *is_retweet* flagged and replaced old retweets where usernames were present within the original tweet *text*, see: [fix_old_retweets.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/pre_processing/fix_old_retweets.R)  
+     - V4 "Merged_v4": this removed duplicates within and between datasets, with cleaner processing on the original purchased dataset. See [data_version_check.R](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/60809f78eef5ea52aba165526b55c1f1f018c0aa/data_version_check.Rmd) for a comparison between data versions 3 and 4
         
 
 For the archive data:
@@ -37,11 +38,9 @@ For the data collected via Twitter API:
 - Main: [automate.R](automate.R) 
   - saves two files:  
   (1) raw data from Twitter API in .csv format saved in directory /home/shares/soilcarbon/Twitter/API_csv/   
-  (2) writes over previous /home/shares/soilcarbon/Twitter/Merged_v3/ (master files) cleaning and standardizing to enable merge
+  (2) writes over previous /home/shares/soilcarbon/Twitter/Merged_v3/ (master files) cleaning and standardizing to enable merge, as well as removing duplicates
   - runs twice a week collecting the last 6-9 days of twitter data based on query words from [tag_list.csv](tag_list.csv)
   
-
-
 *** 
 
 - Inititial data exploration: 

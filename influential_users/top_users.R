@@ -16,11 +16,12 @@ library(tm)
 source("../../text_analysis_functions.R")
 
 #### LOAD DATA ####
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
+# noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
+noRT <- read.csv("/data_for_analysis/data.csv", stringsAsFactors = FALSE)
 
 #### MANIPULATE DATA ####
 # Set rm_pope & rm_india to FALSE to keep both the pope and india tweets respectively
-noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
+noRT_clean <- clean_data(noRT, rm_india = T)
 
 # Number of users to include in tables:
 num_users <- 20
