@@ -3,7 +3,7 @@
 The three .Rmd files in this folder are a first attempt at visuallzing the content of tweets from our dataset
 * The [content_creators](https://github.com/Science-for-Nature-and-People/soc-twitter/tree/master/tweet_content/content_creators) folder contains scripts that take various approaches for identifying "top users", included network analysis on retweets and user friends.
 
-* [bigram_plots](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/tweet_content/bigram_plots.Rmd) uses bigrams create network graphs that visualize the common flow of words among all tweets.  These visualizations are separated into:  
+* [bigram_plots](bigram_plots.Rmd) uses bigrams create network graphs that visualize the common flow of words among all tweets.  These visualizations are separated into:  
   - the full noRT dataset. 
   - tweets about:
       - soil 
@@ -20,7 +20,7 @@ The three .Rmd files in this folder are a first attempt at visuallzing the conte
   - forest, forest health, forest quality 
     
       
-* [word_clouds](https://github.com/Science-for-Nature-and-People/soc-twitter/blob/master/tweet_content/word_clouds.Rmd) creates wordclouds for the tweets within these same ^ categories 
+* [word_clouds](word_clouds.Rmd) creates wordclouds for the tweets within these same ^ categories 
 
 * [top_users](top_users.Rmd):  
   - creates a list of top 500 users based on the total number of retweets of their tweets.
