@@ -13,6 +13,7 @@ library(lubridate)
 library(jsonlite)
 library(streamR)
 library(httr)
+library(glue)
 
 
 ## DO NOT run the write.csv lines when making edits to script ----
@@ -176,15 +177,17 @@ charnull_set <- function(x){
 }
 
 # Text bits to search through # keywords = query words
-keywords <- paste0(keyword_list, collapse = "|")
+keywords_p1 <- keyword_list$tag_category
+keywords_p2 <- keyword_list %>% filter(!str_detect(tag_list,"\\#")) %>% pull(tag_list) # removing the hastag
+keywords <- paste(unique(c(keywords_p1, keywords_p2)), collapse="|")
 
-# Store the matches as a new columns with words seprated by `;`
+# Store the matches as a new columns with words separated by `;`
 twitterAPI_new <- twitterAPI_new %>%
   mutate(hits = str_extract_all(text, pattern = regex(keywords, ignore_case=TRUE)) %>%  # Extract all the keywords
-           map(~charnull_set(.x)) %>%   # Replace character(0) with NAs
-           map_chr(~glue::glue_collapse(.x, sep = ";")) %>%   # collapse the multiple hits/collapse instead of glue_collapse
-           tolower) %>% # all our keywords are lower case
-  distinct()
+           map(~charnull_set(.x)) %>%
+           map(~str_replace_all(.x, regex("\\W+"), " ")) %>%   # Replace character(0) with NAs
+           map_chr(~glue::glue_collapse(unique(tolower(trimws(.x))), sep = ";")))  # collapse the multiple hits/collapse instead of glue_collapse
+
 
 # Flag tweets with HINDI 
 twitterAPI_new <- flag_india(twitterAPI_new)
