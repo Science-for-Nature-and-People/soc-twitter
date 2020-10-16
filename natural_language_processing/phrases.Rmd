@@ -25,7 +25,7 @@ library(SnowballC)
 source("../text_analysis_functions.R")
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE) 
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE) 
 ```
 
 
@@ -33,7 +33,7 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_
 # select top 25 and 100 tweets based on their retweet count
 # use a sample in the following code
 
-noRT_clean <- clean_data(noRT, rm_pope = F, rm_india = F)
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = F)
 
 top_25_noRT <- noRT_clean %>%
   arrange(-retweet_count) %>%
@@ -129,7 +129,10 @@ regen_agri_tweets$hits <- "regenerative agriculture"
 
 soil_health_col_caps <- phrases(soil_health_tweets, 200)
 
-head(soil_health_col_caps, 100)
+counts <- head(soil_health_col_caps, 100)
+
+##for table in manuscript
+write_csv(counts[,1:2], "soil_health_phrases.csv")
 ```
 
 ```{r}
@@ -161,5 +164,8 @@ head(range_health_col_caps, 100)
 
 regen_agri_col_caps <- phrases(regen_agri_tweets, 50)
 
-head(regen_agri_col_caps, 100)
+counts_regen <- head(regen_agri_col_caps, 100)
+
+write_csv(counts_regen[,1:2], "regen_phrases.csv")
+
 ```

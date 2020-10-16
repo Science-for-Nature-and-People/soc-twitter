@@ -2,7 +2,10 @@
 title: "Network"
 author: "Meilin"
 date: "9/11/2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -25,7 +28,7 @@ source("../../text_analysis_functions.R")
 theme_set(theme_bw())
 
 # load data
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_v2.csv", stringsAsFactors = FALSE)
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v4/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE)
 ```
 
 #### **** IMPORTANT DECISION STEP: *****
@@ -34,7 +37,12 @@ noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v2/twitter_merged_noRT_
 ```{r}
 # data cleaning 
 # set rm_pope & rm_india to FALSE to keep both the pope and india tweets respectively
-noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T)
+noRT_clean <- clean_data(noRT, rm_pope = T, rm_india = T) %>% 
+  #### get rid of weird overlapping duplicates
+  group_by(created_at, screen_name, text) %>% 
+  filter(retweet_count == max(retweet_count)) %>% 
+  ungroup() %>% 
+  distinct()
 # number of users to include in tables:
 num_users <- 10
 ```
@@ -46,7 +54,7 @@ num_users <- 10
 
 # create a list with username, text and retweet_count
 user.df <- noRT_clean %>% 
-  select(screen_name, text, retweet_count, user_id)
+  dplyr::select(screen_name, text, retweet_count, user_id)
 
 user.df$text <- substring(user.df$text, 1, 30)
 
@@ -81,7 +89,7 @@ all_counts$ratio <- round(all_counts$tot_retweet_count/all_counts$n,2)
 
 #select top users
 top_user <- all_counts %>% 
-  select(-n, -ratio) %>% 
+  dplyr::select(-n, -ratio) %>% 
   arrange(-tot_retweet_count) %>% 
   head(num_users)
 
@@ -91,17 +99,20 @@ top_tweets <- noRT %>%
   filter(screen_name %in% top_user$screen_name) %>% 
   group_by(screen_name) %>% 
   filter(retweet_count == max(retweet_count)) %>% 
-  select(screen_name, retweet_count, text)
+  dplyr::select(screen_name, retweet_count, text) %>% 
+  ungroup()
 
-top_user_info <- left_join(top_user, top_tweets)
+top_user_info <- left_join(top_user, top_tweets) %>% 
+  distinct() 
 names(top_user_info) <- c("User name", "Total number of RTs", "RT count for most RTed tweet", "Most RTed tweet")
 
 ### create table
 kable(top_user_info) %>%
   kable_styling(bootstrap_options = "striped") %>%
   column_spec(2,width = "1in") %>%
-  column_spec(3,width = "1in") %>% 
-  as_image(file = "count_table.png") ## saves table
+  column_spec(3,width = "1in")
+# %>% 
+# kableExtra::save_kable("top_user_v4.pdf") ## saves table
 
 
 ```
@@ -132,8 +143,7 @@ names(top_ratio_info) <- c("User name", "Total number of RTs", "RT count for mos
 kable(top_ratio_info) %>%
   kable_styling(bootstrap_options = "striped") %>%
   column_spec(2,width = "1in") %>%
-  column_spec(3,width = "1in") %>% 
-  as_image(file = "ratio_table.png") ### saves table
+  column_spec(3,width = "1in") 
 ```
 
 
@@ -161,39 +171,39 @@ kable(top_10) %>%
 
 
 ```{r sentiment}
-#top 10
-
-## clean text and format (words w/ counts)
-tidy_counts <- prepare_text(top_10)
-
-## get sentiment for each lexicon
-nrc <- tidytext::get_sentiments("nrc")
-bing <- tidytext::get_sentiments("bing")
-afin <- tidytext::get_sentiments("afinn")
-lough <- tidytext::get_sentiments("loughran")
-
-top_10_nrc <- inner_join(tidy_counts, nrc)
-top_10_bing <- inner_join(tidy_counts, bing)
-top_10_afin <- inner_join(tidy_counts, afin)
-top_10_lough <- inner_join(tidy_counts, lough)
-
-#~~ bing seems to be the
-top_100 <- noRT %>%
-  dplyr::select(screen_name,retweet_count, text) %>%
-  arrange(-retweet_count) %>%
-  head(100)
-
-tidy_100 <- prepare_text(top_100)
-
-top_100_bing <- inner_join(tidy_100, bing)
-
-bing_100_sum <- top_100_bing %>%
-  group_by(sentiment, word) %>%
-  dplyr::summarise(n = sum(n)) %>%
-  filter(n > 1)
-
-ggplot(bing_100_sum, aes(sentiment, n)) +
-  geom_col()
+# #top 10
+# 
+# ## clean text and format (words w/ counts)
+# tidy_counts <- prepare_text(top_10)
+# 
+# ## get sentiment for each lexicon
+# nrc <- tidytext::get_sentiments("nrc")
+# bing <- tidytext::get_sentiments("bing")
+# afin <- tidytext::get_sentiments("afinn")
+# lough <- tidytext::get_sentiments("loughran")
+# 
+# top_10_nrc <- inner_join(tidy_counts, nrc)
+# top_10_bing <- inner_join(tidy_counts, bing)
+# top_10_afin <- inner_join(tidy_counts, afin)
+# top_10_lough <- inner_join(tidy_counts, lough)
+# 
+# #~~ bing seems to be the
+# top_100 <- noRT %>%
+#   dplyr::select(screen_name,retweet_count, text) %>%
+#   arrange(-retweet_count) %>%
+#   head(100)
+# 
+# tidy_100 <- prepare_text(top_100)
+# 
+# top_100_bing <- inner_join(tidy_100, bing)
+# 
+# bing_100_sum <- top_100_bing %>%
+#   group_by(sentiment, word) %>%
+#   dplyr::summarise(n = sum(n)) %>%
+#   filter(n > 1)
+# 
+# ggplot(bing_100_sum, aes(sentiment, n)) +
+#   geom_col()
 ## top
 ```
 

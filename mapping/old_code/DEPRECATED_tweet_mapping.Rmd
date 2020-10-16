@@ -19,8 +19,8 @@ library(tmap)
 
 
 
-noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v3.csv", stringsAsFactors = FALSE)
-RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v3.csv",stringsAsFactors = FALSE)
+noRT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_noRT_v4.csv", stringsAsFactors = FALSE)
+RT <- read.csv("/home/shares/soilcarbon/Twitter/Merged_v3/twitter_merged_v4.csv",stringsAsFactors = FALSE)
 ```
 
 
@@ -38,20 +38,30 @@ RT_sub <- RT %>%
 
 unique_loc <- unique(RT_sub$place_full)
 
-# coords <- geocode(unique_loc)
+ coords <- geocode(unique_loc)
 
-# coord_loc <- data.frame(place_full = unique_loc, coords)
+ coord_loc <- data.frame(place_full = unique_loc, coords)
 
-# locations <- left_join(RT_sub, coord_loc)
+ locations <- left_join(RT_sub, coord_loc)
 
-# write_csv(locations, "locations.csv")
+ write_csv(locations, "locations_v4.csv")
 
-locations <- read_csv("locations.csv")
+locations <- read_csv("locations_v4.csv")
 
 #remove spaces and hashtags from query terms
 locations <- locations %>% 
   mutate(query = tolower(str_replace_all(query, "#| |\"", "")))
-  
+
+locations$query[locations$query == "healthysoil"] <- "soilhealth"
+
+SH_RA_locs <- filter(locations, query %in% c("soilhealth", "regenerativeagriculture"))
+write_csv(SH_RA_locs, "SH_RA_locs_v4.csv")
+```
+
+
+```{r}
+write_csv(SH_RA_locs, "/home/shares/soilcarbon/Twitter/SH_RA_locs_v4.csv")
+list.dirs("/home/shares/soilcarbon/Twitter/")
 ```
 
 
